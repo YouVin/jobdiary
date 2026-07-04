@@ -77,4 +77,27 @@ interface DiaryEntry {
 - dev: 개발 통합
 - dev에서 작업 → main 머지 → 배포
 
+## ⚠️ 개발 규칙 (항상 준수)
+
+모든 개발은 docs/WORKING_AGREEMENT.md의 규칙을 따른다. 핵심:
+
+### 커밋 (Atomic and Focused)
+- 한 커밋 = 하나의 논리적 작업만
+- 완전한 빌드/실행 가능 상태로 커밋
+- 형식: `타입: 한글 설명 (#이슈번호)`
+
+### 디자인 시스템 (하드코딩 금지, 토큰만)
+- 색상: tailwind.config.ts의 brand/status/bg/text/platform 토큰
+- 타이포: Pretendard 스케일
+- 반응형: mobile-first 3단계 (기본 / md:768 / lg:1024)
+
+### 코드
+- named export, 함수형 컴포넌트
+- Server(표시)/Client(상태·이벤트) 분리
+- localStorage는 lib/storage.ts 헬퍼 경유
+
+### 작업 흐름
+이슈 → 브랜치 → 개발 → Atomic 커밋 → PR(base: dev, Closes #N) → 병합
+
+@docs/WORKING_AGREEMENT.md
 @AGENTS.md
