@@ -6,7 +6,7 @@ interface ApplicationState {
   applications: Application[];
   loadApplications: () => void;
   addApplication: (app: Omit<Application, 'id' | 'updatedAt'>) => void;
-  updateApplication: (id: string, updates: Partial<Application>) => void;
+  updateApplication: (id: string, updates: Partial<Omit<Application, 'id'>>) => void;
   updateStatus: (id: string, status: Status) => void;
   removeApplication: (id: string) => void;
 }
@@ -37,7 +37,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       if (application.id !== id) {
         return application;
       }
-      return { ...application, ...updates, updatedAt: new Date().toISOString() };
+      return { ...application, ...updates, id: application.id, updatedAt: new Date().toISOString() };
     });
     set({ applications });
     saveApplications(applications);

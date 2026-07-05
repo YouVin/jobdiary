@@ -25,5 +25,9 @@ export function saveApplications(apps: Application[]): void {
     return;
   }
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(apps));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(apps));
+  } catch (error) {
+    console.warn('failed to save applications to localStorage', error);
+  }
 }
