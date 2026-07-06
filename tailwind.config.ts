@@ -18,6 +18,16 @@ const config: Config = {
           offer: "#639922",
           rejected: "#E24B4A",
         },
+        platform: {
+          saramin: { bg: "#F4F4F5", text: "#3F3F46" },
+          wanted: { bg: "#EEF2FF", text: "#3730A3" },
+          jobkorea: { bg: "#FEF2F2", text: "#991B1B" },
+        },
+        text: {
+          primary: "#18181B",
+          secondary: "#52525B",
+          muted: "#A1A1AA",
+        },
         page: "#FAFAFA",
         column: "#F2F2F4",
         "card-border": "#DEDEE2",
