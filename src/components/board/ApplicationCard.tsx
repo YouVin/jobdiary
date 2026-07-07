@@ -32,7 +32,7 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
         {...attributes}
         {...listeners}
         className={clsx(
-          'cursor-pointer rounded-lg border-[0.5px] border-card-border bg-white p-2.5 shadow-sm transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+          'touch-none cursor-pointer rounded-lg border-[0.5px] border-card-border bg-white p-2.5 shadow-sm transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
           isDragging && 'opacity-40',
         )}
       >

@@ -6,7 +6,8 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -25,10 +26,14 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeWidth, setActiveWidth] = useState<number | undefined>(undefined);
 
-  // 카드 클릭과 드래그가 공존하도록 일정 거리 이상 움직여야 드래그 시작
+  // 데스크톱: 8px 이상 움직여야 드래그 시작 (클릭과 공존)
+  // 모바일: 250ms 이상 눌러야 드래그 시작 (짧은 탭/세로 스크롤과 공존)
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
     }),
   );
 
