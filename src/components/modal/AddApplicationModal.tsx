@@ -55,8 +55,14 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
     onClose();
   };
 
+  // 취소/ESC/오버레이 클릭 등 저장 없이 닫히는 모든 경로에서도 폼을 초기화
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="지원 추가">
+    <Modal isOpen={isOpen} onClose={handleClose} title="지원 추가">
       <ApplicationFormFields
         company={company}
         onCompanyChange={setCompany}
@@ -73,7 +79,7 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
       <div className="mt-5 flex justify-end gap-2">
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           className="rounded-lg border border-border-strong px-4 py-2 text-[14px] font-medium text-text-secondary transition-colors hover:bg-column"
         >
           취소
