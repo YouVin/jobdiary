@@ -32,6 +32,7 @@ const config: Config = {
         column: "#F2F2F4",
         card: "#FFFFFF",
         "card-border": "#DEDEE2",
+        "border-strong": "#A1A1AA",
       },
       fontFamily: {
         sans: ["var(--font-pretendard)"],
