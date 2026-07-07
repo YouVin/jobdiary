@@ -30,6 +30,7 @@ const config: Config = {
         },
         page: "#FAFAFA",
         column: "#F2F2F4",
+        card: "#FFFFFF",
         "card-border": "#DEDEE2",
       },
       fontFamily: {
