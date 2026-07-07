@@ -15,11 +15,22 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
   const { company, position, platform, appliedAt, diary, interviewDate } = application;
   const hasDiary = diary !== undefined && diary.length > 0;
 
+  // Enter/Space 키로도 클릭과 동일하게 수정 모달을 열 수 있도록 지원
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setIsEditOpen(true);
+    }
+  };
+
   return (
     <>
       <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsEditOpen(true)}
-        className="cursor-pointer rounded-lg border-[0.5px] border-card-border bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md"
+        onKeyDown={handleKeyDown}
+        className="cursor-pointer rounded-lg border-[0.5px] border-card-border bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
       >
         <p className="text-[13px] font-medium text-text-primary">{company}</p>
         <p className="mt-0.5 text-[11px] text-text-secondary">{position}</p>
