@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import { Application } from '@/types/application';
 import { PlatformBadge } from '@/components/badge/PlatformBadge';
 import { EditApplicationModal } from '@/components/modal/EditApplicationModal';
@@ -15,6 +17,9 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
   const { company, position, platform, appliedAt, diary, interviewDate } = application;
   const hasDiary = diary !== undefined && diary.length > 0;
 
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: application.id });
+  const style = transform ? { transform: CSS.Translate.toString(transform) } : undefined;
+
   // Enter/Space 키로도 클릭과 동일하게 수정 모달을 열 수 있도록 지원
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -26,10 +31,12 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
   return (
     <>
       <div
-        role="button"
-        tabIndex={0}
+        ref={setNodeRef}
+        style={style}
         onClick={() => setIsEditOpen(true)}
         onKeyDown={handleKeyDown}
+        {...attributes}
+        {...listeners}
         className="cursor-pointer rounded-lg border-[0.5px] border-card-border bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
       >
         <p className="text-[13px] font-medium text-text-primary">{company}</p>
