@@ -24,6 +24,8 @@ content script (정보 추출)
   → popup / 웹앱 (표시)
 ```
 
+> **진행 상황**: 현재는 content script가 3개 사이트(사람인/원티드/잡코리아)에서 지원내역을 파싱해 `console.table`로 결과를 검증하는 단계까지 완료. service worker(가공/중복제거) · `chrome.storage` 저장 · popup · 웹앱 연동은 다음 단계(연결 챕터)에서 구현 예정.
+
 ---
 
 ## 2. 스택
@@ -60,19 +62,35 @@ CRXJS + Vite + React + TypeScript
   "version": "1.0.0",
   "permissions": ["storage"],
   "host_permissions": [
-    "https://*.saramin.co.kr/*",
-    "https://*.wanted.co.kr/*",
-    "https://*.jobkorea.co.kr/*"
+    "https://www.saramin.co.kr/zf_user/*",
+    "https://saramin.co.kr/zf_user/*",
+    "https://www.wanted.co.kr/status/*",
+    "https://wanted.co.kr/status/*",
+    "https://www.jobkorea.co.kr/User/*",
+    "https://jobkorea.co.kr/User/*"
   ],
   "background": { "service_worker": "src/background/index.ts", "type": "module" },
   "content_scripts": [
-    { "matches": ["https://*.saramin.co.kr/*"], "js": ["src/content/saramin.ts"] },
-    { "matches": ["https://*.wanted.co.kr/*"], "js": ["src/content/wanted.ts"] },
-    { "matches": ["https://*.jobkorea.co.kr/*"], "js": ["src/content/jobkorea.ts"] }
+    {
+      "matches": ["https://www.saramin.co.kr/zf_user/*", "https://saramin.co.kr/zf_user/*"],
+      "js": ["src/content/saramin.ts"]
+    },
+    {
+      "matches": ["https://www.wanted.co.kr/status/*", "https://wanted.co.kr/status/*"],
+      "js": ["src/content/wanted.ts"]
+    },
+    {
+      "matches": ["https://www.jobkorea.co.kr/User/*", "https://jobkorea.co.kr/User/*"],
+      "js": ["src/content/jobkorea.ts"]
+    }
   ],
   "action": { "default_popup": "src/popup/index.html" }
 }
 ```
+
+> **계획 대비 변경**: 초안의 와일드카드(`https://*.saramin.co.kr/*`)와 달리, 실제로는 경로까지 좁히고 `www.` 서브도메인 유무 두 패턴을 모두 포함해 구현했다.
+> - 경로 제한: 모바일(`m.`) 서브도메인과 지원 현황과 무관한 페이지 제외
+> - `www.` + 맨몸 도메인 병기: 서브도메인 없이 접속하는 URL까지 대응
 
 ---
 
@@ -84,23 +102,51 @@ CRXJS + Vite + React + TypeScript
 3. 회사명 텍스트 클릭 → class 확인
 4. content script 셀렉터에 반영
 ```
+
 ---
 
-## 6. 개발 순서
+## 6. 파서 구현 패턴 (계획 이후 정립)
+
+계획서에는 없었지만, 실제로 사이트별 파서를 만들며 공통으로 정립된 규칙.
+
+### data 속성 우선
+텍스트 셀렉터보다 견고해서 `data-*` 속성이 있으면 그쪽을 우선 사용한다.
+- 사람인: `data-company_nm`, `data-rec_division`
+- 잡코리아: `data-memname`, `data-gititle`, `data-applydate`, `data-idx`
+- 원티드는 class명이 해시라 `data-*` 대신 부분 매칭 셀렉터(`[class*="..."]`)를 사용
+
+### 다건 순회 + 스킵 처리
+지원 현황 목록은 한 페이지에 여러 건이 나열되므로 전체를 순회하며 파싱한다. 빈 `tr`, 헤더 행처럼 실제 지원건이 아닌 행은 스킵.
+
+### 날짜 정규화
+사이트마다 날짜 포맷이 달라 파싱 후 공통 포맷(ISO)으로 정규화한다.
+- 잡코리아: 14자리 숫자 문자열
+- 원티드: `"2026. 7. 11"` 형식
+- 그 외 사이트별 원본 포맷도 동일하게 ISO 문자열로 변환
+
+### externalId 현황
+사이트별 지원건 고유 ID로, 중복 판별에 사용한다.
+- 사람인: `recruitapply_idx` 있음
+- 잡코리아: `data-idx` 있음
+- 원티드: 고유 ID 없음 → 웹앱 `Application.externalId`도 optional로 정의됨
+
+---
+
+## 7. 개발 순서
 
 ```
 사람인 1개 완성 (셀렉터 → 버튼 → 수집 → 저장)
   → 검증되면 원티드, 잡코리아 복제
 ```
 
-## 7. MV3 주의사항
+## 8. MV3 주의사항
 
 - service worker는 항상 떠있지 않음 → 전역변수 대신 chrome.storage
 - inline script 금지 (파일 분리)
 - 비동기 응답 시 listener에서 `return true`
 - 권한 최소화 (심사 통과)
 
-## 8. 배포
+## 9. 배포
 
 ```
 Chrome 개발자 대시보드 등록 ($5 일회성)
