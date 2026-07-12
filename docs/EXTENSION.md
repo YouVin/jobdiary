@@ -17,7 +17,7 @@
 | popup | 아이콘 클릭 시 뜨는 UI |
 
 ### 데이터 흐름
-```
+```text
 content script (정보 추출)
   → service worker (가공/중복제거)
   → chrome.storage (저장)
@@ -30,7 +30,7 @@ content script (정보 추출)
 
 ## 2. 스택
 
-```
+```text
 CRXJS + Vite + React + TypeScript
 ```
 - 웹앱과 스택 통일, 핫 리로드 지원
@@ -96,7 +96,7 @@ CRXJS + Vite + React + TypeScript
 
 ## 5. 셀렉터 찾는 법 (핵심 작업)
 
-```
+```text
 1. 채용 사이트 "지원 현황" 페이지 접속
 2. F12 → 요소 선택 화살표 클릭
 3. 회사명 텍스트 클릭 → class 확인
@@ -134,7 +134,7 @@ CRXJS + Vite + React + TypeScript
 
 ## 7. 개발 순서
 
-```
+```text
 사람인 1개 완성 (셀렉터 → 버튼 → 수집 → 저장)
   → 검증되면 원티드, 잡코리아 복제
 ```
@@ -148,7 +148,7 @@ CRXJS + Vite + React + TypeScript
 
 ## 9. 배포
 
-```
+```text
 Chrome 개발자 대시보드 등록 ($5 일회성)
 → npm run build → dist 폴더 zip → 업로드 → 심사 (1~3일)
 ```
