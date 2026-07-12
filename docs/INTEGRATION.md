@@ -1,0 +1,71 @@
+# 익스텐션 연동 설계 (INTEGRATION)
+
+> 익스텐션(`jobdiary-extension`)이 수집한 데이터를 이 웹앱으로 연동하는 설계 문서. "받는 쪽 계약"의 단일 진실 공급원.
+
+---
+
+## 1. 개요
+
+- 익스텐션이 사람인/잡코리아/원티드에서 수집한 `ScrapedApplication`을, 이 웹앱의 `Application` 형식으로 변환해 저장한다.
+- 변환(어댑터)은 익스텐션 쪽에 둔다. 웹앱은 완성된 `Application` 형식만 받는다.
+- 이 문서는 "웹앱이 받는 `Application`의 최종 형식과 규칙"을 정의한다. 익스텐션은 이 문서를 참조해 변환한다.
+
+---
+
+## 2. 저장 형식 (Application)
+
+- 웹앱은 `src/types/application.ts`의 `Application` 타입으로 저장한다.
+- 익스텐션이 채워 보내는 필드: `company`, `position`, `platform`, `status`, `appliedAt`, `externalId`
+- 웹앱이 자동 생성하는 필드: `id`(`crypto.randomUUID`), `updatedAt`(현재시각 ISO) — `addApplication` 액션이 처리
+- 즉 익스텐션은 `Omit<Application, 'id' | 'updatedAt'>` 형태로 전달하면 된다.
+
+---
+
+## 3. status 매핑 (한글 원본 → 웹앱 status)
+
+익스텐션이 사이트에서 긁는 한글 상태를 웹앱 영어 status로 변환한다. 변환은 익스텐션 어댑터가 수행:
+
+| 사이트 | 원본(한글) | 웹앱 status |
+| --- | --- | --- |
+| 사람인 | 지원완료 | applied |
+| 사람인 | 지원취소완료 | canceled |
+| 잡코리아 | 지원완료 | applied |
+| 잡코리아 | 지원취소 | canceled |
+| 원티드 | 접수 | applied |
+| 원티드 | 불합격 | rejected |
+
+- 매핑 규칙: 텍스트에 "취소"가 포함되면 `canceled`로 처리 (사람인 "지원취소완료", 잡코리아 "지원취소" 등 표기 차이 흡수)
+- `screening`/`interview`/`interviewed`/`offer`는 사이트가 제공하지 않음. 사용자가 웹앱에서 칸반으로 직접 관리한다. 익스텐션이 넣는 건 주로 `applied`, 일부 `rejected`/`canceled`.
+
+---
+
+## 4. 날짜 변환 (appliedAt)
+
+- 익스텐션 수집 포맷은 `"2026.06.09 20:27"`(사람인/잡코리아) 또는 `"2026.07.11"`(원티드) 형태.
+- 웹앱 저장 형식은 ISO 문자열(예: `"2026-06-09T20:27:00.000Z"`).
+- 시분이 없으면 `00:00:00`으로 채운다.
+
+---
+
+## 5. 중복 판별 (핵심 기능)
+
+목적: 같은 지원건 재수집(기술적 중복)은 막고, 같은 회사+포지션 재지원(실제 중복)은 알아차린다.
+
+- 기술적 중복 (재수집): 같은 `externalId`가 이미 저장돼 있으면 새로 추가하지 않고 스킵한다.
+- 실제 중복 지원 (알아차리기): `externalId`가 다르지만 `company` + `position`이 동일한 기존 지원건이 있으면, 추가하되 "중복 지원" 표시 대상으로 플래그한다.
+- 중복 판별 기준은 `company` + `position` 조합. (같은 회사라도 다른 포지션은 별개로 취급)
+- 원티드는 `externalId`가 없으므로, `company` + `position` + `appliedAt` 조합으로 유사 판별한다.
+
+---
+
+## 6. 전달 방식
+
+- (다음 이슈에서 확정) 익스텐션 → 웹앱 데이터 전달 방식은 추후 결정. 현재 웹앱은 `localStorage`(`jobdiary:applications`) 기반이며, 로그인/서버는 없다(1단계).
+
+---
+
+## 7. 미해결/추후 과제
+
+- 로그인 + Supabase(2단계) 도입 시 저장 경로 변경 필요.
+- "중복 지원" 표시 UI (카드 뱃지 등)는 데이터 갖춘 뒤 별도 설계.
+- 원티드 externalId 부재로 인한 유사 판별의 한계.
