@@ -30,7 +30,7 @@
 ## 데이터 구조
 ```typescript
 type Platform = 'saramin' | 'wanted' | 'jobkorea' | 'manual';
-type Status = 'applied' | 'screening' | 'interview' | 'interviewed' | 'offer' | 'rejected';
+type Status = 'applied' | 'screening' | 'interview' | 'interviewed' | 'offer' | 'rejected' | 'canceled';
 
 interface Application {
   id: string;
@@ -44,6 +44,7 @@ interface Application {
   diary?: DiaryEntry[];  // 일기 목록
   interviewDate?: string;
   url?: string;
+  externalId?: string;   // 각 사이트의 지원건 고유 ID (중복 판별용, 원티드는 없어서 optional)
 }
 
 interface DiaryEntry {
@@ -56,6 +57,8 @@ interface DiaryEntry {
 
 ## 상태 흐름
 지원완료(applied) → 서류통과(screening) → 면접예정(interview) → 면접완료(interviewed) → 합격(offer) / 탈락(rejected)
+
+- canceled(지원취소)는 사용자가 사이트에서 지원을 취소한 경우. 정상 흐름(applied→offer/rejected)과 별개의 종료 상태.
 
 ## 코딩 규칙
 - named export 사용 (page.tsx, layout.tsx 제외)
@@ -70,6 +73,7 @@ interface DiaryEntry {
 - 깔끔하고 정돈된 느낌 (매일 보는 도구)
 - 칸반 카드 가독성 최우선
 - 상태별 색상: 지원완료(회색), 서류통과(파랑), 면접(보라), 합격(초록), 탈락(연한빨강)
+- canceled(지원취소)는 회색 계열(비활성 느낌)로. 기존 applied가 회색이면 구분되게 canceled는 더 연한 회색 또는 취소선 느낌으로 표현
 - 플랫폼 뱃지: 사람인(파랑), 원티드(검정), 잡코리아(빨강)
 
 ## 브랜치 전략
