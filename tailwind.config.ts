@@ -17,6 +17,7 @@ const config: Config = {
           interview: "#7F77DD",
           offer: "#639922",
           rejected: "#E24B4A",
+          canceled: "#D4D4D8",
         },
         platform: {
           saramin: { bg: "#F4F4F5", text: "#3F3F46" },

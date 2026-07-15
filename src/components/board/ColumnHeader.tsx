@@ -14,6 +14,7 @@ const STATUS_DOT_CLASS: Record<Status, string> = {
   interviewed: 'bg-status-interview',
   offer: 'bg-status-offer',
   rejected: 'bg-status-rejected',
+  canceled: 'bg-status-canceled',
 };
 
 export function ColumnHeader({ status, count }: ColumnHeaderProps) {
@@ -21,7 +22,7 @@ export function ColumnHeader({ status, count }: ColumnHeaderProps) {
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className={`h-[7px] w-[7px] rounded-full ${STATUS_DOT_CLASS[status]}`} />
+      <span className={`h-1.75 w-1.75 rounded-full ${STATUS_DOT_CLASS[status]}`} />
       <span className="text-[12px] font-medium text-text-primary">{label}</span>
       <span className="text-[11px] font-normal text-text-muted">{count}</span>
     </div>

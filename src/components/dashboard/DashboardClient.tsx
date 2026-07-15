@@ -3,6 +3,7 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { useApplicationStore } from '@/store/applicationStore';
 import { mockApplications } from '@/constants/mockData';
+import { STATUS_ORDER } from '@/constants/status';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
 
 const noopSubscribe = () => () => {};
@@ -31,8 +32,10 @@ export function DashboardClient() {
 
   if (!mounted) {
     return (
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, index) => (
+      // lg:grid-cols-7은 KanbanBoard와 동일한 이유로 고정값(JIT 동적 클래스 purge 문제).
+      // 스켈레톤 개수는 실제 컬럼 수와 어긋나지 않도록 STATUS_ORDER.length로 계산.
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3 lg:grid-cols-7">
+        {Array.from({ length: STATUS_ORDER.length }).map((_, index) => (
           <div key={index} className="min-h-30 animate-pulse rounded-[10px] bg-column" />
         ))}
       </div>
