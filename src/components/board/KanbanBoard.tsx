@@ -75,7 +75,10 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
       onDragEnd={handleDragEnd}
       onDragCancel={resetActiveDrag}
     >
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-3 lg:grid-cols-6">
+      {/* lg:grid-cols-7은 STATUS_ORDER 길이(7)에 맞춘 고정값 — Tailwind JIT가 빌드 시 소스의 리터럴 클래스만 스캔해서
+          `grid-cols-${STATUS_ORDER.length}` 같은 동적 클래스는 CSS가 생성되지 않아(purge) 안전하지 않음.
+          STATUS_ORDER에 상태를 추가/삭제하면 이 값도 함께 맞춰야 함. */}
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3 lg:grid-cols-7">
         {STATUS_ORDER.map((status) => {
           const columnApplications = applications.filter((application) => application.status === status);
 

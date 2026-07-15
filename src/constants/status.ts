@@ -7,6 +7,7 @@ export const STATUS_INFO: Record<Status, { label: string; color: string }> = {
   interviewed: { label: '면접완료', color: '#7F77DD' },
   offer: { label: '합격', color: '#639922' },
   rejected: { label: '탈락', color: '#E24B4A' },
+  canceled: { label: '지원취소', color: '#D4D4D8' },
 };
 
 // 칸반 컬럼 순서
@@ -17,4 +18,5 @@ export const STATUS_ORDER: Status[] = [
   'interviewed',
   'offer',
   'rejected',
+  'canceled',
 ];

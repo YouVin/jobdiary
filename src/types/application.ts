@@ -6,7 +6,8 @@ export type Status =
   | 'interview'
   | 'interviewed'
   | 'offer'
-  | 'rejected';
+  | 'rejected'
+  | 'canceled';
 
 export interface DiaryEntry {
   id: string;
