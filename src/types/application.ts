@@ -28,4 +28,5 @@ export interface Application {
   diary?: DiaryEntry[]; // 일기 목록
   interviewDate?: string;
   url?: string;
+  externalId?: string; // 각 사이트의 지원건 고유 ID (중복 판별용, 원티드는 없어서 optional)
 }
