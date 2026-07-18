@@ -64,12 +64,13 @@
 
 새 지원건이 들어왔을 때 다음 순서로 판별한다.
 
-1. `externalId`가 있는 경우(사람인/잡코리아): 기존 저장분에 같은 `externalId`가 있으면 스킵한다 (기술적 중복, 여기서 종료).
+1. `externalId`가 있는 경우(사람인/잡코리아): 기존 저장분에 같은 `platform` + 같은 `externalId`가 있으면 스킵한다 (기술적 중복, 여기서 종료).
+   - `platform`도 함께 봐야 하는 이유: `externalId`는 사이트별로 독립 발급되므로, `platform`이 다르면 값이 우연히 같아도 서로 다른 지원건이다.
 2. `externalId`가 없거나(원티드) 새 값인 경우: `company` + `position`이 동일한 기존 지원건이 있는지 확인한다.
    - 있으면: 추가하되 "중복 지원"으로 감지한다.
    - 없으면: 일반 추가한다.
 
-- 원티드는 `externalId`가 없으므로 1)을 건너뛰고, `company` + `position` + `appliedAt`(날짜) 조합으로 유사 중복을 판별한다.
+- 원티드는 `externalId`가 없으므로 1)을 건너뛰고, `platform` + `company` + `position` + `appliedAt`(날짜) 조합으로 유사 중복을 판별한다.
 - 중복 판별의 기본 기준은 `company` + `position` 조합이다 (같은 회사라도 다른 포지션은 별개로 취급).
 
 ### 플래그 저장 방식 (미확정)
