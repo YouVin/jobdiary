@@ -18,6 +18,7 @@ interface ApplicationState {
   updateApplication: (id: string, updates: Partial<Omit<Application, 'id'>>) => void;
   updateStatus: (id: string, status: Status) => void;
   removeApplication: (id: string) => void;
+  resetApplications: () => void;
 }
 
 export const useApplicationStore = create<ApplicationState>((set, get) => ({
@@ -105,5 +106,11 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
     const applications = get().applications.filter((application) => application.id !== id);
     set({ applications });
     saveApplications(applications);
+  },
+
+  // 로그아웃 시 호출 — 다음 사용자에게 이전 사용자 데이터가 보이지 않도록 초기화
+  resetApplications: () => {
+    set({ applications: [] });
+    saveApplications([]);
   },
 }));

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import { signIn, signUp } from '@/lib/auth';
+import { useAuthStore } from '@/store/authStore';
 
 type Mode = 'signin' | 'signup';
 
@@ -31,23 +33,27 @@ function getFriendlyErrorMessage(rawMessage: string): string {
 }
 
 export function LoginForm() {
+  const router = useRouter();
+  const status = useAuthStore((state) => state.status);
+
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const isSignUp = mode === 'signup';
 
-  const resetMessages = () => {
-    setErrorMessage(null);
-    setSuccessMessage(null);
-  };
+  // 이미 로그인된 상태로 /login에 들어오거나, 방금 로그인/회원가입에 성공하면 보드로 이동
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace('/');
+    }
+  }, [status, router]);
 
   const handleModeChange = (nextMode: Mode) => {
     setMode(nextMode);
-    resetMessages();
+    setErrorMessage(null);
   };
 
   // 기본적인 형식 검증만 (이메일 형식, 비밀번호 최소 길이)
@@ -63,7 +69,7 @@ export function LoginForm() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    resetMessages();
+    setErrorMessage(null);
 
     const validationError = validate();
     if (validationError) {
@@ -81,10 +87,20 @@ export function LoginForm() {
       return;
     }
 
-    // 성공 처리: 세션 유지/화면 분기는 S-3c에서 다룬다. 이번엔 성공 확인까지만.
+    // authStore가 onAuthStateChange로 곧 authenticated가 되어 위 useEffect가 이동시키지만,
+    // 한 박자라도 빠르게 보드로 넘어가도록 여기서도 바로 이동시킨다.
     console.log(`[${mode}] 성공:`, result.user);
-    setSuccessMessage(isSignUp ? '회원가입 성공! 로그인 상태입니다.' : '로그인 성공!');
+    router.replace('/');
   };
+
+  // 세션 확인 중이거나 이미 로그인된 상태(리다이렉트 진행 중)면 폼 대신 로딩만 보여준다
+  if (status !== 'unauthenticated') {
+    return (
+      <div className="w-full max-w-105 rounded-[14px] bg-card p-6 shadow-lg">
+        <p className="text-center text-[14px] text-text-muted">로딩 중...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-105 rounded-[14px] bg-card p-6 shadow-lg">
@@ -137,7 +153,6 @@ export function LoginForm() {
         </div>
 
         {errorMessage && <p className="text-[12px] text-status-rejected">{errorMessage}</p>}
-        {successMessage && <p className="text-[12px] text-status-offer">{successMessage}</p>}
 
         <button
           type="submit"
