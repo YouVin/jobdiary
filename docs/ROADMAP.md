@@ -45,11 +45,18 @@
 
 ## 4단계 — 로그인 + 동기화
 
-**목표**: 여러 기기 동기화
+**목표**: 여러 기기 동기화. `localStorage` → Supabase로 전환한다 (마이그레이션 없이 로그인하면 새로 시작하는 깨끗한 전환).
 
-- [ ] Supabase 연동
-- [ ] 로그인 (소셜)
-- [ ] 데이터 마이그레이션 (localStorage → DB)
+자세한 설계는 [SUPABASE.md](./SUPABASE.md) 참고.
+
+- [ ] S-1. Supabase 프로젝트 세팅 + `applications` 테이블 생성
+- [ ] S-2. 웹앱-Supabase 연결 (`@supabase/supabase-js`, 환경변수)
+- [ ] S-3. 이메일+비밀번호 인증 (회원가입/로그인 UI + 세션)
+- [ ] S-4. 저장 로직 전환 (`storage.ts` / `applicationStore` → Supabase)
+- [ ] S-5. RLS 적용
+- [ ] (이후) 소셜 로그인(구글/카카오) 추가
+- [ ] (이후) 익스텐션 → 웹앱 데이터 전달 방식 연동
+- [ ] (이후) 중복 감지 결과 표시 UI
 
 ---
 
