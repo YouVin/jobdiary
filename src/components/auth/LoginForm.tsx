@@ -41,6 +41,7 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const isSignUp = mode === 'signup';
 
@@ -54,6 +55,7 @@ export function LoginForm() {
   const handleModeChange = (nextMode: Mode) => {
     setMode(nextMode);
     setErrorMessage(null);
+    setInfoMessage(null);
   };
 
   // 기본적인 형식 검증만 (이메일 형식, 비밀번호 최소 길이)
@@ -70,6 +72,7 @@ export function LoginForm() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage(null);
+    setInfoMessage(null);
 
     const validationError = validate();
     if (validationError) {
@@ -87,9 +90,17 @@ export function LoginForm() {
       return;
     }
 
+    // Confirm email이 켜져 있으면 회원가입은 성공해도 세션이 아직 없다 (메일 인증 대기).
+    // 이 경우 홈으로 보내지 않고 메일 확인 안내만 표시한다.
+    if (isSignUp && !result.session) {
+      console.log(`[${mode}] 성공 (이메일 확인 대기)`);
+      setInfoMessage('확인 메일을 발송했습니다. 메일함에서 인증 후 로그인해주세요.');
+      return;
+    }
+
     // authStore가 onAuthStateChange로 곧 authenticated가 되어 위 useEffect가 이동시키지만,
     // 한 박자라도 빠르게 보드로 넘어가도록 여기서도 바로 이동시킨다.
-    console.log(`[${mode}] 성공:`, result.user);
+    console.log(`[${mode}] 성공`);
     router.replace('/');
   };
 
@@ -153,6 +164,7 @@ export function LoginForm() {
         </div>
 
         {errorMessage && <p className="text-[12px] text-status-rejected">{errorMessage}</p>}
+        {infoMessage && <p className="text-[12px] text-status-offer">{infoMessage}</p>}
 
         <button
           type="submit"
