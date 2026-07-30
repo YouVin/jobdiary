@@ -7,9 +7,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  closeDisabled?: boolean; // true면 X/ESC/오버레이 클릭 모두 무시 (제출 중 등 닫으면 안 되는 상태)
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, closeDisabled = false }: ModalProps) {
   // ESC 키로 닫기
   useEffect(() => {
     if (!isOpen) {
@@ -17,23 +18,29 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !closeDisabled) {
         onClose();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, closeDisabled]);
 
   if (!isOpen) {
     return null;
   }
 
+  const handleRequestClose = () => {
+    if (!closeDisabled) {
+      onClose();
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
-      onClick={onClose}
+      onClick={handleRequestClose}
     >
       <div
         className="w-full max-w-105 rounded-[14px] bg-card p-5 shadow-lg"
@@ -43,9 +50,10 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
           <h2 className="text-[18px] font-medium text-text-primary">{title}</h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleRequestClose}
+            disabled={closeDisabled}
             aria-label="닫기"
-            className="flex h-6 w-6 items-center justify-center rounded text-text-secondary transition-colors hover:bg-column"
+            className="flex h-6 w-6 items-center justify-center rounded text-text-secondary transition-colors hover:bg-column disabled:cursor-not-allowed disabled:opacity-50"
           >
             <svg
               className="h-4 w-4"
