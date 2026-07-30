@@ -18,6 +18,18 @@ export interface DeleteResult {
   error: ApiError | null;
 }
 
+// update 시 필드별 의미: undefined = 변경 안 함(요청에서 제외), null = 명시적으로 비움(DB에 null 저장).
+// company/position 등 필수 필드는 애초에 비울 수 없으므로 null을 허용하지 않는다.
+export type ApplicationChanges = Partial<
+  Omit<Application, 'id' | 'updatedAt' | 'memo' | 'diary' | 'interviewDate' | 'url' | 'externalId'>
+> & {
+  memo?: string | null;
+  diary?: Application['diary'] | null;
+  interviewDate?: string | null;
+  url?: string | null;
+  externalId?: string | null;
+};
+
 const TABLE_NAME = 'applications';
 
 // DB의 applications 행 (snake_case). docs/SUPABASE.md §2 스키마와 대응.
@@ -76,7 +88,7 @@ function applicationToInsertRow(app: Omit<Application, 'id' | 'updatedAt'>, user
 
 // 수정할 필드(camelCase, 일부만)를 update용 행(snake_case)으로 변환한다.
 // updatedAt은 호출자가 뭘 넘기든 무시하고 항상 현재 시각으로 갱신한다 (기존 로컬 스토어와 동일한 규칙).
-function changesToUpdateRow(changes: Partial<Omit<Application, 'id' | 'updatedAt'>>) {
+function changesToUpdateRow(changes: ApplicationChanges) {
   const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   if (changes.company !== undefined) {
@@ -186,10 +198,7 @@ export async function insertApplications(
 }
 
 // 지원건 1건 수정. 어떤 행을 고칠 수 있는지는 RLS(본인 것만)가 최종적으로 보장한다.
-export async function updateApplication(
-  id: string,
-  changes: Partial<Omit<Application, 'id' | 'updatedAt'>>,
-): Promise<ApplicationResult> {
+export async function updateApplication(id: string, changes: ApplicationChanges): Promise<ApplicationResult> {
   try {
     const { data, error } = await supabase
       .from(TABLE_NAME)
@@ -208,8 +217,22 @@ export async function updateApplication(
   }
 }
 
-// 지원건 1건 삭제
+// 지원건 1건 삭제. RLS나 잘못된 id로 실제 삭제된 행이 0개면 에러로 취급한다
+// (.delete()만 쓰면 매칭된 행이 없어도 error: null이 와서 삭제 성공과 구분이 안 됨).
 export async function deleteApplication(id: string): Promise<DeleteResult> {
-  const { error } = await supabase.from(TABLE_NAME).delete().eq('id', id);
-  return { error };
+  try {
+    const { data, error } = await supabase.from(TABLE_NAME).delete().eq('id', id).select();
+
+    if (error) {
+      return { error };
+    }
+
+    if (!data || data.length === 0) {
+      return { error: new Error('삭제할 지원 내역을 찾을 수 없거나 권한이 없습니다.') };
+    }
+
+    return { error: null };
+  } catch (error) {
+    return { error: error as Error };
+  }
 }

@@ -47,33 +47,40 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
     }
 
     setIsSubmitting(true);
-    const succeeded = await addApplication({
-      company: company.trim(),
-      position: position.trim(),
-      platform,
-      status,
-      appliedAt: new Date(appliedAt).toISOString(),
-    });
-    setIsSubmitting(false);
+    try {
+      const succeeded = await addApplication({
+        company: company.trim(),
+        position: position.trim(),
+        platform,
+        status,
+        appliedAt: new Date(appliedAt).toISOString(),
+      });
 
-    // 실패 시 에러는 store.error에 남아 아래에 표시되고, 모달은 닫지 않는다.
-    if (!succeeded) {
-      return;
+      // 실패 시 에러는 store.error에 남아 아래에 표시되고, 모달은 닫지 않는다.
+      if (!succeeded) {
+        return;
+      }
+
+      resetForm();
+      onClose();
+    } finally {
+      setIsSubmitting(false);
     }
-
-    resetForm();
-    onClose();
   };
 
-  // 취소/ESC/오버레이 클릭 등 저장 없이 닫히는 모든 경로에서도 폼과 에러를 초기화
+  // 취소/ESC/오버레이 클릭 등 저장 없이 닫히는 모든 경로에서도 폼과 에러를 초기화.
+  // 저장 요청이 진행 중일 때는 무시 (버튼은 disabled로 막히지만 ESC/오버레이/X는 별도 경로라 여기서도 막아야 함).
   const handleClose = () => {
+    if (isSubmitting) {
+      return;
+    }
     clearError();
     resetForm();
     onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="지원 추가">
+    <Modal isOpen={isOpen} onClose={handleClose} title="지원 추가" closeDisabled={isSubmitting}>
       <ApplicationFormFields
         company={company}
         onCompanyChange={setCompany}

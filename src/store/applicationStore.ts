@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { saveApplications } from '@/lib/storage';
 import {
+  ApplicationChanges,
   deleteApplication,
   fetchApplications,
   insertApplication,
@@ -25,7 +26,7 @@ interface ApplicationState {
   loadApplications: () => Promise<void>;
   addApplication: (app: Omit<Application, 'id' | 'updatedAt'>) => Promise<boolean>;
   addApplicationsFromExtension: (apps: Omit<Application, 'id' | 'updatedAt'>[]) => Promise<ImportSummary>;
-  updateApplication: (id: string, updates: Partial<Omit<Application, 'id' | 'updatedAt'>>) => Promise<boolean>;
+  updateApplication: (id: string, updates: ApplicationChanges) => Promise<boolean>;
   updateStatus: (id: string, status: Status) => Promise<boolean>;
   removeApplication: (id: string) => Promise<boolean>;
   resetApplications: () => void;
@@ -53,15 +54,20 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
   // 추가: 서버 저장에 성공했을 때만 로컬 state에 반영
   addApplication: async (app) => {
     set({ error: null });
-    const { application, error } = await insertApplication(app);
+    try {
+      const { application, error } = await insertApplication(app);
 
-    if (error || !application) {
-      set({ error: error?.message ?? '지원 내역을 추가하지 못했습니다.' });
+      if (error || !application) {
+        set({ error: error?.message ?? '지원 내역을 추가하지 못했습니다.' });
+        return false;
+      }
+
+      set({ applications: [...get().applications, application] });
+      return true;
+    } catch (error) {
+      set({ error: (error as Error).message ?? '지원 내역을 추가하지 못했습니다.' });
       return false;
     }
-
-    set({ applications: [...get().applications, application] });
-    return true;
   },
 
   // 익스텐션이 수집한 여러 건을 한 번에 받아 중복 판별 후 Supabase에 일괄 저장한다.
@@ -117,17 +123,22 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
   // 수정: 서버 반영에 성공했을 때만 로컬 state 갱신
   updateApplication: async (id, updates) => {
     set({ error: null });
-    const { application, error } = await apiUpdateApplication(id, updates);
+    try {
+      const { application, error } = await apiUpdateApplication(id, updates);
 
-    if (error || !application) {
-      set({ error: error?.message ?? '지원 내역을 수정하지 못했습니다.' });
+      if (error || !application) {
+        set({ error: error?.message ?? '지원 내역을 수정하지 못했습니다.' });
+        return false;
+      }
+
+      set({
+        applications: get().applications.map((item) => (item.id === id ? application : item)),
+      });
+      return true;
+    } catch (error) {
+      set({ error: (error as Error).message ?? '지원 내역을 수정하지 못했습니다.' });
       return false;
     }
-
-    set({
-      applications: get().applications.map((item) => (item.id === id ? application : item)),
-    });
-    return true;
   },
 
   // 상태만 변경 (드래그용) — updateApplication과 같은 API를 재사용
@@ -135,18 +146,23 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
     return get().updateApplication(id, { status });
   },
 
-  // 삭제: 서버 반영에 성공했을 때만 로컬 state에서 제거
+  // 삭제: 서버에서 실제로 삭제됐다고 확인된 경우에만 로컬 state에서 제거
   removeApplication: async (id) => {
     set({ error: null });
-    const { error } = await deleteApplication(id);
+    try {
+      const { error } = await deleteApplication(id);
 
-    if (error) {
-      set({ error: error.message });
+      if (error) {
+        set({ error: error.message });
+        return false;
+      }
+
+      set({ applications: get().applications.filter((item) => item.id !== id) });
+      return true;
+    } catch (error) {
+      set({ error: (error as Error).message ?? '지원 내역을 삭제하지 못했습니다.' });
       return false;
     }
-
-    set({ applications: get().applications.filter((item) => item.id !== id) });
-    return true;
   },
 
   // 로그아웃 시 호출 — 다음 사용자에게 이전 사용자 데이터가 보이지 않도록 로컬 state 초기화

@@ -9,9 +9,16 @@ import { toDateInputValue } from '@/utils/format';
 interface EditApplicationFormProps {
   application: Application;
   onClose: () => void;
+  isSubmitting: boolean;
+  onSubmittingChange: (isSubmitting: boolean) => void;
 }
 
-export function EditApplicationForm({ application, onClose }: EditApplicationFormProps) {
+export function EditApplicationForm({
+  application,
+  onClose,
+  isSubmitting,
+  onSubmittingChange,
+}: EditApplicationFormProps) {
   const updateApplication = useApplicationStore((state) => state.updateApplication);
   const removeApplication = useApplicationStore((state) => state.removeApplication);
   const error = useApplicationStore((state) => state.error);
@@ -25,30 +32,33 @@ export function EditApplicationForm({ application, onClose }: EditApplicationFor
     application.interviewDate ? toDateInputValue(application.interviewDate) : '',
   );
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSave = async () => {
     if (!company.trim()) {
       return;
     }
 
-    setIsSubmitting(true);
-    const succeeded = await updateApplication(application.id, {
-      company: company.trim(),
-      position: position.trim(),
-      platform,
-      status,
-      appliedAt: new Date(appliedAt).toISOString(),
-      interviewDate: interviewDate ? new Date(interviewDate).toISOString() : undefined,
-    });
-    setIsSubmitting(false);
+    onSubmittingChange(true);
+    try {
+      const succeeded = await updateApplication(application.id, {
+        company: company.trim(),
+        position: position.trim(),
+        platform,
+        status,
+        appliedAt: new Date(appliedAt).toISOString(),
+        // 비운 경우 undefined(변경 안 함)가 아니라 null(명시적으로 비움)을 보내야 DB에도 반영된다.
+        interviewDate: interviewDate ? new Date(interviewDate).toISOString() : null,
+      });
 
-    // 실패 시 에러는 store.error에 남아 아래에 표시되고, 모달은 닫지 않는다.
-    if (!succeeded) {
-      return;
+      // 실패 시 에러는 store.error에 남아 아래에 표시되고, 모달은 닫지 않는다.
+      if (!succeeded) {
+        return;
+      }
+
+      onClose();
+    } finally {
+      onSubmittingChange(false);
     }
-
-    onClose();
   };
 
   // 삭제 버튼은 한 번 더 클릭해야 실제 삭제되는 2단계 확인 방식
@@ -58,15 +68,18 @@ export function EditApplicationForm({ application, onClose }: EditApplicationFor
       return;
     }
 
-    setIsSubmitting(true);
-    const succeeded = await removeApplication(application.id);
-    setIsSubmitting(false);
+    onSubmittingChange(true);
+    try {
+      const succeeded = await removeApplication(application.id);
 
-    if (!succeeded) {
-      return;
+      if (!succeeded) {
+        return;
+      }
+
+      onClose();
+    } finally {
+      onSubmittingChange(false);
     }
-
-    onClose();
   };
 
   return (
