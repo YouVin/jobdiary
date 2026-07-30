@@ -4,6 +4,7 @@ import {
   deleteApplication,
   fetchApplications,
   insertApplication,
+  insertApplications,
   updateApplication as apiUpdateApplication,
 } from '@/lib/applicationsApi';
 import { Application, Status } from '@/types/application';
@@ -14,6 +15,7 @@ export interface ImportSummary {
   addedCount: number; // 중복 없이 정상 추가된 건수
   duplicateCount: number; // 추가는 됐지만 중복 지원으로 감지된 건수
   skippedCount: number; // 같은 건 재수집으로 판단해 스킵한 건수
+  error: string | null; // 배치 저장 자체가 실패한 경우의 에러 메시지 (성공 시 null)
 }
 
 interface ApplicationState {
@@ -22,7 +24,7 @@ interface ApplicationState {
   error: string | null;
   loadApplications: () => Promise<void>;
   addApplication: (app: Omit<Application, 'id' | 'updatedAt'>) => Promise<boolean>;
-  addApplicationsFromExtension: (apps: Omit<Application, 'id' | 'updatedAt'>[]) => ImportSummary;
+  addApplicationsFromExtension: (apps: Omit<Application, 'id' | 'updatedAt'>[]) => Promise<ImportSummary>;
   updateApplication: (id: string, updates: Partial<Omit<Application, 'id' | 'updatedAt'>>) => Promise<boolean>;
   updateStatus: (id: string, status: Status) => Promise<boolean>;
   removeApplication: (id: string) => Promise<boolean>;
@@ -62,30 +64,31 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
     return true;
   },
 
-  // 익스텐션 수신 연동은 다음 단계(S-4c)에서 Supabase로 전환한다.
-  // 지금은 기존 localStorage 기반 로직을 그대로 둔다 — 현재 UI에서 호출하는 곳이 없어 당장은 안전하지만,
-  // 실제로 쓰기 시작하면 이 액션만 Supabase에 저장되지 않고 로컬에만 쌓이는 불일치가 생기니 S-4c에서 반드시 같이 전환해야 한다.
-  addApplicationsFromExtension: (apps) => {
-    const applications = [...get().applications];
+  // 익스텐션이 수집한 여러 건을 한 번에 받아 중복 판별 후 Supabase에 일괄 저장한다.
+  // (수동 추가와 달리 getImportDecision으로 판별을 거침 — 판별 로직 자체는 그대로 재사용)
+  addApplicationsFromExtension: async (apps) => {
+    set({ error: null });
+
+    // 판별용으로 점점 늘려가는 후보 목록: 기존 데이터(스토어에 이미 로드된 것) + 이번 배치에서
+    // 저장 대상으로 확정된 것들. getImportDecision은 id/updatedAt을 읽지 않지만 Application 타입을
+    // 요구하므로 임시값을 채운다 — 실제 id/updatedAt은 삽입 후 Supabase 응답으로만 반영된다.
+    const candidates: Application[] = [...get().applications];
+    const toInsert: Omit<Application, 'id' | 'updatedAt'>[] = [];
+
     let addedCount = 0;
     let duplicateCount = 0;
     let skippedCount = 0;
 
     apps.forEach((app) => {
-      const decision = getImportDecision(applications, app);
+      const decision = getImportDecision(candidates, app);
 
       if (decision === 'skip') {
         skippedCount += 1;
         return;
       }
 
-      const newApplication: Application = {
-        ...app,
-        id: crypto.randomUUID(),
-        updatedAt: new Date().toISOString(),
-      };
-      // 같은 배치 안에서도 뒤에 오는 건이 방금 추가한 건과 중복인지 판별할 수 있도록 즉시 반영
-      applications.push(newApplication);
+      candidates.push({ ...app, id: crypto.randomUUID(), updatedAt: new Date().toISOString() });
+      toInsert.push(app);
 
       if (decision === 'add-duplicate') {
         duplicateCount += 1;
@@ -94,10 +97,21 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       }
     });
 
-    set({ applications });
-    saveApplications(applications);
+    if (toInsert.length === 0) {
+      return { addedCount, duplicateCount, skippedCount, error: null };
+    }
 
-    return { addedCount, duplicateCount, skippedCount };
+    const { applications: inserted, error } = await insertApplications(toInsert);
+
+    if (error) {
+      const message = error.message || '지원 내역을 저장하지 못했습니다.';
+      set({ error: message });
+      // 삽입 자체가 실패했으니 실제로는 아무것도 저장되지 않았다 — skippedCount만 그대로 두고 나머지는 0으로 정정.
+      return { addedCount: 0, duplicateCount: 0, skippedCount, error: message };
+    }
+
+    set({ applications: [...get().applications, ...inserted] });
+    return { addedCount, duplicateCount, skippedCount, error: null };
   },
 
   // 수정: 서버 반영에 성공했을 때만 로컬 state 갱신
