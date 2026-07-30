@@ -22,12 +22,15 @@ function getTodayDateString(): string {
 
 export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProps) {
   const addApplication = useApplicationStore((state) => state.addApplication);
+  const clearError = useApplicationStore((state) => state.clearError);
+  const error = useApplicationStore((state) => state.error);
 
   const [company, setCompany] = useState('');
   const [position, setPosition] = useState('');
   const [platform, setPlatform] = useState<Platform>('saramin');
   const [status, setStatus] = useState<Status>('applied');
   const [appliedAt, setAppliedAt] = useState(getTodayDateString);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 저장 후 다음 입력을 위해 폼 초기화
   const resetForm = () => {
@@ -38,25 +41,33 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
     setAppliedAt(getTodayDateString());
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!company.trim()) {
       return;
     }
 
-    addApplication({
+    setIsSubmitting(true);
+    const succeeded = await addApplication({
       company: company.trim(),
       position: position.trim(),
       platform,
       status,
       appliedAt: new Date(appliedAt).toISOString(),
     });
+    setIsSubmitting(false);
+
+    // 실패 시 에러는 store.error에 남아 아래에 표시되고, 모달은 닫지 않는다.
+    if (!succeeded) {
+      return;
+    }
 
     resetForm();
     onClose();
   };
 
-  // 취소/ESC/오버레이 클릭 등 저장 없이 닫히는 모든 경로에서도 폼을 초기화
+  // 취소/ESC/오버레이 클릭 등 저장 없이 닫히는 모든 경로에서도 폼과 에러를 초기화
   const handleClose = () => {
+    clearError();
     resetForm();
     onClose();
   };
@@ -76,21 +87,24 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
         onAppliedAtChange={setAppliedAt}
       />
 
+      {error && <p className="mt-3 text-[12px] text-status-rejected">{error}</p>}
+
       <div className="mt-5 flex justify-end gap-2">
         <button
           type="button"
           onClick={handleClose}
-          className="rounded-lg border border-border-strong px-4 py-2 text-[14px] font-medium text-text-secondary transition-colors hover:bg-column"
+          disabled={isSubmitting}
+          className="rounded-lg border border-border-strong px-4 py-2 text-[14px] font-medium text-text-secondary transition-colors hover:bg-column disabled:cursor-not-allowed disabled:opacity-50"
         >
           취소
         </button>
         <button
           type="button"
           onClick={handleSave}
-          disabled={!company.trim()}
+          disabled={!company.trim() || isSubmitting}
           className="rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
-          저장
+          {isSubmitting ? '저장 중...' : '저장'}
         </button>
       </div>
     </Modal>

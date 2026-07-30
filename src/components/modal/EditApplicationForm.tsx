@@ -14,6 +14,7 @@ interface EditApplicationFormProps {
 export function EditApplicationForm({ application, onClose }: EditApplicationFormProps) {
   const updateApplication = useApplicationStore((state) => state.updateApplication);
   const removeApplication = useApplicationStore((state) => state.removeApplication);
+  const error = useApplicationStore((state) => state.error);
 
   const [company, setCompany] = useState(application.company);
   const [position, setPosition] = useState(application.position);
@@ -24,13 +25,15 @@ export function EditApplicationForm({ application, onClose }: EditApplicationFor
     application.interviewDate ? toDateInputValue(application.interviewDate) : '',
   );
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!company.trim()) {
       return;
     }
 
-    updateApplication(application.id, {
+    setIsSubmitting(true);
+    const succeeded = await updateApplication(application.id, {
       company: company.trim(),
       position: position.trim(),
       platform,
@@ -38,18 +41,31 @@ export function EditApplicationForm({ application, onClose }: EditApplicationFor
       appliedAt: new Date(appliedAt).toISOString(),
       interviewDate: interviewDate ? new Date(interviewDate).toISOString() : undefined,
     });
+    setIsSubmitting(false);
+
+    // 실패 시 에러는 store.error에 남아 아래에 표시되고, 모달은 닫지 않는다.
+    if (!succeeded) {
+      return;
+    }
 
     onClose();
   };
 
   // 삭제 버튼은 한 번 더 클릭해야 실제 삭제되는 2단계 확인 방식
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!isConfirmingDelete) {
       setIsConfirmingDelete(true);
       return;
     }
 
-    removeApplication(application.id);
+    setIsSubmitting(true);
+    const succeeded = await removeApplication(application.id);
+    setIsSubmitting(false);
+
+    if (!succeeded) {
+      return;
+    }
+
     onClose();
   };
 
@@ -70,14 +86,17 @@ export function EditApplicationForm({ application, onClose }: EditApplicationFor
         onInterviewDateChange={setInterviewDate}
       />
 
+      {error && <p className="mt-3 text-[12px] text-status-rejected">{error}</p>}
+
       <div className="mt-5 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={handleDelete}
+          disabled={isSubmitting}
           className={
             isConfirmingDelete
-              ? 'rounded-lg bg-status-rejected px-4 py-2 text-[14px] font-medium text-white transition-colors hover:opacity-90'
-              : 'rounded-lg border border-status-rejected px-4 py-2 text-[14px] font-medium text-status-rejected transition-colors hover:bg-status-rejected/10'
+              ? 'rounded-lg bg-status-rejected px-4 py-2 text-[14px] font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
+              : 'rounded-lg border border-status-rejected px-4 py-2 text-[14px] font-medium text-status-rejected transition-colors hover:bg-status-rejected/10 disabled:cursor-not-allowed disabled:opacity-50'
           }
         >
           {isConfirmingDelete ? '정말 삭제할까요?' : '삭제'}
@@ -87,17 +106,18 @@ export function EditApplicationForm({ application, onClose }: EditApplicationFor
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-border-strong px-4 py-2 text-[14px] font-medium text-text-secondary transition-colors hover:bg-column"
+            disabled={isSubmitting}
+            className="rounded-lg border border-border-strong px-4 py-2 text-[14px] font-medium text-text-secondary transition-colors hover:bg-column disabled:cursor-not-allowed disabled:opacity-50"
           >
             취소
           </button>
           <button
             type="button"
             onClick={handleSave}
-            disabled={!company.trim()}
+            disabled={!company.trim() || isSubmitting}
             className="rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
-            저장
+            {isSubmitting ? '저장 중...' : '저장'}
           </button>
         </div>
       </div>

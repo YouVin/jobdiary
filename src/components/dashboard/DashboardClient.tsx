@@ -2,7 +2,6 @@
 
 import { useEffect, useSyncExternalStore } from 'react';
 import { useApplicationStore } from '@/store/applicationStore';
-import { mockApplications } from '@/constants/mockData';
 import { STATUS_ORDER } from '@/constants/status';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
 
@@ -16,21 +15,16 @@ export function DashboardClient() {
     () => false,
   );
   const applications = useApplicationStore((state) => state.applications);
+  const isLoading = useApplicationStore((state) => state.isLoading);
+  const error = useApplicationStore((state) => state.error);
   const loadApplications = useApplicationStore((state) => state.loadApplications);
 
-  // localStorage 로드는 클라이언트에서만 가능해서 마운트 후에 실행
+  // AuthGuard가 로그인 상태에서만 이 컴포넌트를 마운트시키므로, 마운트 시 바로 조회한다.
   useEffect(() => {
     loadApplications();
   }, [loadApplications]);
 
-  // 개발 단계 전용: 스토어가 비어있으면 더미 데이터로 초기화 (실유저는 빈 보드로 시작)
-  useEffect(() => {
-    if (mounted && process.env.NODE_ENV === 'development' && applications.length === 0) {
-      useApplicationStore.setState({ applications: mockApplications });
-    }
-  }, [mounted, applications.length]);
-
-  if (!mounted) {
+  if (!mounted || isLoading) {
     return (
       // lg:grid-cols-7은 KanbanBoard와 동일한 이유로 고정값(JIT 동적 클래스 purge 문제).
       // 스켈레톤 개수는 실제 컬럼 수와 어긋나지 않도록 STATUS_ORDER.length로 계산.
@@ -42,5 +36,14 @@ export function DashboardClient() {
     );
   }
 
-  return <KanbanBoard applications={applications} />;
+  return (
+    <>
+      {error && (
+        <div className="mb-3 rounded-lg border border-status-rejected/30 bg-status-rejected/10 px-3 py-2 text-[13px] text-status-rejected">
+          {error}
+        </div>
+      )}
+      <KanbanBoard applications={applications} />
+    </>
+  );
 }
