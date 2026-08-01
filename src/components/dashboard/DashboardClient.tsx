@@ -2,7 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from 'react';
 import { useApplicationStore } from '@/store/applicationStore';
-import { useExtensionImportListener } from '@/hooks/useExtensionImportListener';
+import { useExtensionImport } from '@/hooks/useExtensionImport';
 import { STATUS_ORDER } from '@/constants/status';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
 
@@ -19,7 +19,8 @@ export function DashboardClient() {
   const isLoading = useApplicationStore((state) => state.isLoading);
   const error = useApplicationStore((state) => state.error);
   const loadApplications = useApplicationStore((state) => state.loadApplications);
-  const { importSummary, dismissImportSummary } = useExtensionImportListener();
+  const { requestImport, isRequesting, isExtensionAvailable, importSummary, dismissImportSummary } =
+    useExtensionImport();
 
   // AuthGuard가 로그인 상태에서만 이 컴포넌트를 마운트시키므로, 마운트 시 바로 조회한다.
   useEffect(() => {
@@ -40,6 +41,17 @@ export function DashboardClient() {
 
   return (
     <>
+      <div className="mb-3 flex justify-end">
+        <button
+          type="button"
+          onClick={requestImport}
+          disabled={!isExtensionAvailable || isRequesting}
+          title={isExtensionAvailable ? undefined : '익스텐션이 설치되어 있지 않습니다'}
+          className="flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-2 text-[13px] font-medium text-text-primary transition-colors hover:bg-page disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isRequesting ? '가져오는 중...' : '익스텐션에서 가져오기'}
+        </button>
+      </div>
       {error && (
         <div className="mb-3 rounded-lg border border-status-rejected/30 bg-status-rejected/10 px-3 py-2 text-[13px] text-status-rejected">
           {error}
