@@ -55,14 +55,19 @@ export function useExtensionImport() {
         });
       });
 
-      const payload = sanitizeCollectResponse(response);
+      const result = sanitizeCollectResponse(response);
 
-      if (!payload) {
+      if (!result) {
         setImportSummary(failedSummary('익스텐션 응답 형식이 올바르지 않습니다.'));
         return;
       }
 
-      const summary = await addApplicationsFromExtension(payload);
+      if (!result.ok) {
+        setImportSummary(failedSummary(result.error));
+        return;
+      }
+
+      const summary = await addApplicationsFromExtension(result.applications);
       setImportSummary(summary);
     } catch (error) {
       setImportSummary(failedSummary((error as Error).message || '익스텐션과 통신하지 못했습니다.'));

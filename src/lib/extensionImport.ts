@@ -56,21 +56,51 @@ function toApplicationInput(item: CollectItem): CollectItem {
   return input;
 }
 
-// 익스텐션 응답이 기대하는 배열 형태인지 검증하고, 통과하면 허용된 필드만 남긴 배열을 반환한다.
-// 항목 하나라도 형식이 어긋나면 전체 응답을 신뢰하지 않고 null을 반환한다.
-export function sanitizeCollectResponse(response: unknown): CollectItem[] | null {
-  if (!Array.isArray(response)) {
+// 익스텐션이 실제로 보내는 응답 형태 (docs/INTEGRATION.md §6.4)
+interface ExternalCollectResponse {
+  ok: boolean;
+  applications?: unknown;
+  error?: string;
+}
+
+function isExternalCollectResponse(response: unknown): response is ExternalCollectResponse {
+  if (typeof response !== 'object' || response === null) {
+    return false;
+  }
+
+  const candidate = response as { ok?: unknown; error?: unknown };
+
+  return typeof candidate.ok === 'boolean' && (candidate.error === undefined || typeof candidate.error === 'string');
+}
+
+export type CollectResponseResult = { ok: true; applications: CollectItem[] } | { ok: false; error: string };
+
+// 익스텐션 응답 { ok, applications?, error? }을 검증한다.
+// - 봉투 형식(ok 필드) 자체가 어긋나면 null (형식 오류)
+// - ok:false면 익스텐션이 보낸 에러 메시지를 그대로 반환
+// - ok:true면 applications가 배열인지, 각 항목이 유효한지 확인 후 허용된 필드만 남겨 반환
+//   (applications가 없거나 배열이 아니거나, 항목 하나라도 형식이 어긋나면 null)
+export function sanitizeCollectResponse(response: unknown): CollectResponseResult | null {
+  if (!isExternalCollectResponse(response)) {
+    return null;
+  }
+
+  if (!response.ok) {
+    return { ok: false, error: response.error || '익스텐션에서 오류가 발생했습니다.' };
+  }
+
+  if (!Array.isArray(response.applications)) {
     return null;
   }
 
   const sanitized: CollectItem[] = [];
 
-  for (const item of response) {
+  for (const item of response.applications) {
     if (!isValidCollectItem(item)) {
       return null;
     }
     sanitized.push(toApplicationInput(item));
   }
 
-  return sanitized;
+  return { ok: true, applications: sanitized };
 }
