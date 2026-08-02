@@ -67,7 +67,10 @@ function isExternalCollectResponse(response: unknown): response is ExternalColle
   if (typeof response !== 'object' || response === null) {
     return false;
   }
-  return typeof (response as { ok?: unknown }).ok === 'boolean';
+
+  const candidate = response as { ok?: unknown; error?: unknown };
+
+  return typeof candidate.ok === 'boolean' && (candidate.error === undefined || typeof candidate.error === 'string');
 }
 
 export type CollectResponseResult = { ok: true; applications: CollectItem[] } | { ok: false; error: string };
