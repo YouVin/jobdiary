@@ -104,10 +104,9 @@ export function LoginForm() {
       return;
     }
 
-    // authStore가 onAuthStateChange로 곧 authenticated가 되어 위 useEffect가 이동시키지만,
-    // 한 박자라도 빠르게 보드로 넘어가도록 여기서도 바로 이동시킨다.
+    // 리다이렉트는 여기서 하지 않는다 — authStore가 onAuthStateChange로 곧 authenticated가 되면
+    // 위 useEffect가 이동시킨다. 리다이렉트 주체를 한 곳으로 유지해 중복 이동을 막는다.
     console.log(`[${mode}] 성공`);
-    redirectToBoard();
   };
 
   // 세션 확인 중이거나 이미 로그인된 상태(리다이렉트 진행 중)면 폼 대신 로딩만 보여준다
