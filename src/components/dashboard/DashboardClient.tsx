@@ -27,6 +27,24 @@ export function DashboardClient() {
     loadApplications();
   }, [loadApplications]);
 
+  // 익스텐션이 "취준일기 열기"로 붙인 ?import=1 신호를 감지하면 자동으로 가져오기를 실행한다.
+  // 처리 전에 먼저 URL에서 신호를 지워, 새로고침해도 다시 트리거되지 않게 한다(중복 방지).
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('import') !== '1') {
+      return;
+    }
+
+    url.searchParams.delete('import');
+    window.history.replaceState({}, '', url.toString());
+
+    requestImport();
+  }, [requestImport]);
+
   if (!mounted || isLoading) {
     return (
       // lg:grid-cols-7은 KanbanBoard와 동일한 이유로 고정값(JIT 동적 클래스 purge 문제).
