@@ -18,7 +18,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.replace('/login');
+      // 쿼리(예: 익스텐션이 붙이는 ?import=1)를 보존해, 로그인 후 되돌아왔을 때도 신호가 살아있게 한다.
+      const search = typeof window !== 'undefined' ? window.location.search : '';
+      router.replace(`/login${search}`);
     }
   }, [status, router]);
 

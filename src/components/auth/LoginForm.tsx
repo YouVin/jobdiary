@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import { signIn, signUp } from '@/lib/auth';
@@ -45,12 +45,18 @@ export function LoginForm() {
 
   const isSignUp = mode === 'signup';
 
+  // /login에 붙은 쿼리(예: 익스텐션이 붙인 ?import=1)를 보존한 채 보드로 돌아간다.
+  const redirectToBoard = useCallback(() => {
+    const search = typeof window !== 'undefined' ? window.location.search : '';
+    router.replace(`/${search}`);
+  }, [router]);
+
   // 이미 로그인된 상태로 /login에 들어오거나, 방금 로그인/회원가입에 성공하면 보드로 이동
   useEffect(() => {
     if (status === 'authenticated') {
-      router.replace('/');
+      redirectToBoard();
     }
-  }, [status, router]);
+  }, [status, redirectToBoard]);
 
   const handleModeChange = (nextMode: Mode) => {
     setMode(nextMode);
@@ -98,10 +104,9 @@ export function LoginForm() {
       return;
     }
 
-    // authStore가 onAuthStateChange로 곧 authenticated가 되어 위 useEffect가 이동시키지만,
-    // 한 박자라도 빠르게 보드로 넘어가도록 여기서도 바로 이동시킨다.
+    // 리다이렉트는 여기서 하지 않는다 — authStore가 onAuthStateChange로 곧 authenticated가 되면
+    // 위 useEffect가 이동시킨다. 리다이렉트 주체를 한 곳으로 유지해 중복 이동을 막는다.
     console.log(`[${mode}] 성공`);
-    router.replace('/');
   };
 
   // 세션 확인 중이거나 이미 로그인된 상태(리다이렉트 진행 중)면 폼 대신 로딩만 보여준다
