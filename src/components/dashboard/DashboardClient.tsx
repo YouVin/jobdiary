@@ -86,7 +86,7 @@ export function DashboardClient() {
           <span>
             {importSummary.error
               ? `익스텐션 수집 데이터 저장 실패: ${importSummary.error}`
-              : `익스텐션에서 ${importSummary.addedCount}건 추가, ${importSummary.duplicateCount}건 중복 지원 감지, ${importSummary.skippedCount}건 재수집으로 스킵됐습니다.`}
+              : `익스텐션에서 ${importSummary.addedCount}건 추가, ${importSummary.duplicateCount}건 중복, ${importSummary.updatedCount}건 업데이트, ${importSummary.skippedCount}건 스킵됐습니다.`}
           </span>
           <button
             type="button"
