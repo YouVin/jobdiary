@@ -13,7 +13,7 @@ function isChromeRuntimeAvailable(): boolean {
 }
 
 function failedSummary(error: string): ImportSummary {
-  return { addedCount: 0, duplicateCount: 0, skippedCount: 0, error };
+  return { addedCount: 0, duplicateCount: 0, updatedCount: 0, skippedCount: 0, error };
 }
 
 const noopSubscribe = () => () => {};
