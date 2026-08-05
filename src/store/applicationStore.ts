@@ -106,10 +106,17 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
           return;
         }
 
-        toUpdate.push({ id: decision.target.id, changes: { status: app.status, appliedAt: app.appliedAt } });
+        // externalId도 함께 갱신해야, 다음에 같은 내용이 그대로 재수집됐을 때 isSameSubmissionRecollected가
+        // (최신) externalId 일치로 skip 처리할 수 있다 — 안 하면 저장된 externalId가 옛 값에 머물러 매번 update된다.
+        toUpdate.push({
+          id: decision.target.id,
+          changes: { status: app.status, appliedAt: app.appliedAt, externalId: app.externalId ?? null },
+        });
         // 같은 배치 안에서 이 공고가 다시 등장할 경우를 대비해 후보 목록도 갱신해둔다.
         candidates = candidates.map((item) =>
-          item.id === decision.target.id ? { ...item, status: app.status, appliedAt: app.appliedAt } : item,
+          item.id === decision.target.id
+            ? { ...item, status: app.status, appliedAt: app.appliedAt, externalId: app.externalId }
+            : item,
         );
         return;
       }
