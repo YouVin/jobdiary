@@ -73,3 +73,34 @@ export function getImportDecision(
 
   return hasSameCompanyPosition ? { type: 'add-duplicate' } : { type: 'add' };
 }
+
+// 보드에 표시된 지원건들 중 "중복 지원"으로 표시할 id 집합을 실시간으로 계산한다 (docs/INTEGRATION.md §5).
+// company+position별로 묶어, 서로 다른 platform이 2개 이상 섞여 있는 그룹만 중복으로 본다 — 같은
+// platform끼리는 같은 공고의 상태 변화라 이미 update로 합쳐졌을 것이므로 대상에서 제외한다.
+// 저장하지 않고 렌더 시점에만 계산하는 값이라 별도 DB 필드나 캐시가 필요 없다.
+export function getDuplicateApplicationIds(applications: Application[]): Set<string> {
+  const groups = new Map<string, Application[]>();
+
+  applications.forEach((application) => {
+    const key = `${application.company}::${application.position}`;
+    const group = groups.get(key);
+
+    if (group) {
+      group.push(application);
+    } else {
+      groups.set(key, [application]);
+    }
+  });
+
+  const duplicateIds = new Set<string>();
+
+  groups.forEach((group) => {
+    const distinctPlatforms = new Set(group.map((application) => application.platform));
+
+    if (distinctPlatforms.size >= 2) {
+      group.forEach((application) => duplicateIds.add(application.id));
+    }
+  });
+
+  return duplicateIds;
+}

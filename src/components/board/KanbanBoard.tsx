@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -16,6 +16,7 @@ import { STATUS_ORDER } from '@/constants/status';
 import { Column } from '@/components/board/Column';
 import { ApplicationCardContent } from '@/components/board/ApplicationCardContent';
 import { useApplicationStore } from '@/store/applicationStore';
+import { getDuplicateApplicationIds } from '@/utils/duplicateDetection';
 
 interface KanbanBoardProps {
   applications: Application[];
@@ -68,6 +69,9 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
 
   const activeApplication = applications.find((application) => application.id === activeId);
 
+  // 크로스플랫폼 중복 지원 여부는 저장하지 않고 목록이 바뀔 때만 다시 계산한다.
+  const duplicateIds = useMemo(() => getDuplicateApplicationIds(applications), [applications]);
+
   return (
     <DndContext
       sensors={sensors}
@@ -82,7 +86,7 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
         {STATUS_ORDER.map((status) => {
           const columnApplications = applications.filter((application) => application.status === status);
 
-          return <Column key={status} status={status} applications={columnApplications} />;
+          return <Column key={status} status={status} applications={columnApplications} duplicateIds={duplicateIds} />;
         })}
       </div>
 
@@ -92,7 +96,7 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
             style={{ width: activeWidth }}
             className="rotate-2 cursor-grabbing rounded-lg border-[0.5px] border-card-border bg-white p-2.5 shadow-xl"
           >
-            <ApplicationCardContent application={activeApplication} />
+            <ApplicationCardContent application={activeApplication} isDuplicate={duplicateIds.has(activeApplication.id)} />
           </div>
         )}
       </DragOverlay>
