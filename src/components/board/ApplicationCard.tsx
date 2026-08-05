@@ -9,9 +9,10 @@ import { EditApplicationModal } from '@/components/modal/EditApplicationModal';
 
 interface ApplicationCardProps {
   application: Application;
+  isDuplicate?: boolean;
 }
 
-export function ApplicationCard({ application }: ApplicationCardProps) {
+export function ApplicationCard({ application, isDuplicate = false }: ApplicationCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: application.id });
 
@@ -36,7 +37,7 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
           isDragging && 'opacity-40',
         )}
       >
-        <ApplicationCardContent application={application} />
+        <ApplicationCardContent application={application} isDuplicate={isDuplicate} />
       </div>
 
       <EditApplicationModal
