@@ -5,15 +5,25 @@ import { useRouter } from 'next/navigation';
 import { clsx } from 'clsx';
 import { signIn, signUp } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
+import { getConfirmPasswordError, getEmailError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
+import { getPasswordStrength, PasswordStrength } from '@/utils/passwordStrength';
 
 type Mode = 'signin' | 'signup';
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MIN_PASSWORD_LENGTH = 6;
 
 const inputClassName =
   'w-full rounded-lg border border-border-strong px-3 py-2 text-[14px] text-text-primary focus:border-brand focus:outline-none';
 const labelClassName = 'mb-1 block text-[12px] font-medium text-text-secondary';
+const fieldErrorClassName = 'mt-1 text-[12px] text-status-rejected';
+
+// 강도별 막대 색/문구 — 기존 상태 색 토큰을 재사용한다 (하드코딩 색상 금지).
+const PASSWORD_STRENGTH_INFO: Record<
+  PasswordStrength,
+  { label: string; barClassName: string; textClassName: string; filledSegments: number }
+> = {
+  weak: { label: '약함', barClassName: 'bg-status-rejected', textClassName: 'text-status-rejected', filledSegments: 1 },
+  medium: { label: '보통', barClassName: 'bg-status-screening', textClassName: 'text-status-screening', filledSegments: 2 },
+  strong: { label: '강함', barClassName: 'bg-status-offer', textClassName: 'text-status-offer', filledSegments: 3 },
+};
 
 // Supabase 에러 메시지는 영어·기술적이라 사용자에게는 번역된 문구로 보여준다
 function getFriendlyErrorMessage(rawMessage: string): string {
@@ -39,11 +49,26 @@ export function LoginForm() {
   const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // blur(필드를 벗어남) 시점부터 해당 필드의 인라인 에러를 보여주기 위한 플래그
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
+  const [termsTouched, setTermsTouched] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const isSignUp = mode === 'signup';
+
+  // 이메일/비밀번호 형식 검증은 로그인·회원가입 공통. 비밀번호 확인은 회원가입 전용.
+  const emailError = getEmailError(email);
+  const passwordError = getPasswordError(password);
+  const confirmPasswordError = isSignUp ? getConfirmPasswordError(password, confirmPassword) : null;
+  const passwordStrength = getPasswordStrength(password);
 
   // /login에 붙은 쿼리(예: 익스텐션이 붙인 ?import=1)를 보존한 채 보드로 돌아간다.
   const redirectToBoard = useCallback(() => {
@@ -62,17 +87,13 @@ export function LoginForm() {
     setMode(nextMode);
     setErrorMessage(null);
     setInfoMessage(null);
-  };
-
-  // 기본적인 형식 검증만 (이메일 형식, 비밀번호 최소 길이)
-  const validate = (): string | null => {
-    if (!EMAIL_PATTERN.test(email)) {
-      return '올바른 이메일 형식을 입력해주세요.';
-    }
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      return `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`;
-    }
-    return null;
+    // 회원가입 전용 입력/터치 상태는 모드를 바꾸면 초기화해 이전 모드의 흔적이 남지 않게 한다.
+    setConfirmPassword('');
+    setAgreedToTerms(false);
+    setEmailTouched(false);
+    setPasswordTouched(false);
+    setConfirmPasswordTouched(false);
+    setTermsTouched(false);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -80,9 +101,16 @@ export function LoginForm() {
     setErrorMessage(null);
     setInfoMessage(null);
 
-    const validationError = validate();
-    if (validationError) {
-      setErrorMessage(validationError);
+    // 제출을 시도하면 아직 blur하지 않은 필드의 인라인 에러도 바로 보이게 한다.
+    setEmailTouched(true);
+    setPasswordTouched(true);
+    if (isSignUp) {
+      setConfirmPasswordTouched(true);
+      setTermsTouched(true);
+    }
+
+    if (emailError || passwordError || (isSignUp && (confirmPasswordError || !agreedToTerms))) {
+      // 어떤 필드가 왜 막혔는지는 필드 아래 인라인 에러가 이미 보여주므로, 별도 상단 배너는 띄우지 않는다.
       return;
     }
 
@@ -143,32 +171,130 @@ export function LoginForm() {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         <div>
-          <label className={labelClassName}>이메일</label>
+          <label htmlFor="email" className={labelClassName}>
+            이메일
+          </label>
           <input
+            id="email"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
+            onBlur={() => setEmailTouched(true)}
             placeholder="you@example.com"
             className={inputClassName}
             autoComplete="email"
+            aria-required="true"
+            aria-invalid={emailTouched && !!emailError}
           />
+          {emailTouched && emailError && (
+            <p role="alert" className={fieldErrorClassName}>
+              {emailError}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className={labelClassName}>비밀번호</label>
+          <label htmlFor="password" className={labelClassName}>
+            비밀번호
+          </label>
           <input
+            id="password"
             type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
+            onBlur={() => setPasswordTouched(true)}
             placeholder="6자 이상"
             className={inputClassName}
             autoComplete={isSignUp ? 'new-password' : 'current-password'}
+            aria-required="true"
+            aria-invalid={passwordTouched && !!passwordError}
           />
+          {passwordTouched && passwordError && (
+            <p role="alert" className={fieldErrorClassName}>
+              {passwordError}
+            </p>
+          )}
+
+          {isSignUp && password && (
+            <div className="mt-1.5">
+              <div className="flex gap-1">
+                {[0, 1, 2].map((segmentIndex) => (
+                  <div
+                    key={segmentIndex}
+                    className={clsx(
+                      'h-1 flex-1 rounded-full',
+                      segmentIndex < PASSWORD_STRENGTH_INFO[passwordStrength].filledSegments
+                        ? PASSWORD_STRENGTH_INFO[passwordStrength].barClassName
+                        : 'bg-column',
+                    )}
+                  />
+                ))}
+              </div>
+              <p className={clsx('mt-1 text-[11px] font-medium', PASSWORD_STRENGTH_INFO[passwordStrength].textClassName)}>
+                비밀번호 강도: {PASSWORD_STRENGTH_INFO[passwordStrength].label}
+              </p>
+            </div>
+          )}
         </div>
 
-        {errorMessage && <p className="text-[12px] text-status-rejected">{errorMessage}</p>}
+        {isSignUp && (
+          <div>
+            <label htmlFor="confirmPassword" className={labelClassName}>
+              비밀번호 확인
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              onBlur={() => setConfirmPasswordTouched(true)}
+              placeholder="비밀번호를 한 번 더 입력해주세요"
+              className={inputClassName}
+              autoComplete="new-password"
+              aria-required="true"
+              aria-invalid={confirmPasswordTouched && !!confirmPasswordError}
+            />
+            {confirmPasswordTouched && confirmPasswordError && (
+              <p role="alert" className={fieldErrorClassName}>
+                {confirmPasswordError}
+              </p>
+            )}
+          </div>
+        )}
+
+        {isSignUp && (
+          <div>
+            <div className="flex items-start gap-2">
+              <input
+                id="terms"
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(event) => {
+                  setAgreedToTerms(event.target.checked);
+                  setTermsTouched(true);
+                }}
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-brand"
+                aria-required="true"
+              />
+              <label htmlFor="terms" className="text-[12px] text-text-secondary">
+                이용약관 및 개인정보처리방침(준비 중)에 동의합니다.
+              </label>
+            </div>
+            {termsTouched && !agreedToTerms && (
+              <p role="alert" className={fieldErrorClassName}>
+                약관에 동의해야 회원가입할 수 있습니다.
+              </p>
+            )}
+          </div>
+        )}
+
+        {errorMessage && (
+          <p role="alert" className="text-[12px] text-status-rejected">
+            {errorMessage}
+          </p>
+        )}
         {infoMessage && <p className="text-[12px] text-status-offer">{infoMessage}</p>}
 
         <button
