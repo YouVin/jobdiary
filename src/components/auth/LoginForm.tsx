@@ -277,6 +277,7 @@ export function LoginForm() {
                 }}
                 className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-brand"
                 aria-required="true"
+                aria-invalid={termsTouched && !agreedToTerms}
               />
               <label htmlFor="terms" className="text-[12px] text-text-secondary">
                 이용약관 및 개인정보처리방침(준비 중)에 동의합니다.
