@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { clsx } from 'clsx';
 import { signIn, signUp } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
@@ -12,6 +13,7 @@ type Mode = 'signin' | 'signup';
 
 const inputClassName =
   'w-full rounded-lg border border-border-strong px-3 py-2 text-[14px] text-text-primary focus:border-brand focus:outline-none';
+const passwordInputClassName = `${inputClassName} pr-9`;
 const labelClassName = 'mb-1 block text-[12px] font-medium text-text-secondary';
 const fieldErrorClassName = 'mt-1 text-[12px] text-status-rejected';
 
@@ -25,7 +27,7 @@ const PASSWORD_STRENGTH_INFO: Record<
   strong: { label: '강함', barClassName: 'bg-status-offer', textClassName: 'text-status-offer', filledSegments: 3 },
 };
 
-// Supabase 에러 메시지는 영어·기술적이라 사용자에게는 번역된 문구로 보여준다
+// Supabase 에러 메시지는 영어·기술적이라 사용자에게는 번역된 문구로 보여준다 (docs/AUTH.md §4)
 function getFriendlyErrorMessage(rawMessage: string): string {
   if (rawMessage.includes('Invalid login credentials')) {
     return '이메일 또는 비밀번호가 올바르지 않습니다.';
@@ -39,7 +41,72 @@ function getFriendlyErrorMessage(rawMessage: string): string {
   if (rawMessage.includes('Unable to validate email address')) {
     return '이메일 형식이 올바르지 않습니다.';
   }
+  if (rawMessage.includes('Email not confirmed')) {
+    return '이메일 인증이 완료되지 않았습니다. 메일함에서 확인 메일을 확인해주세요. (인증 메일 재전송 기능은 곧 추가될 예정입니다)';
+  }
+  if (rawMessage.includes('For security purposes') || rawMessage.toLowerCase().includes('rate limit')) {
+    return '요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.';
+  }
+  if (
+    rawMessage.includes('Failed to fetch') ||
+    rawMessage.includes('NetworkError') ||
+    rawMessage.toLowerCase().includes('network')
+  ) {
+    return '네트워크 연결을 확인한 뒤 다시 시도해주세요.';
+  }
+  // 매칭 기준을 error.code(예: invalid_credentials, email_not_confirmed) 기반으로 옮기는 방안은
+  // docs/AUTH.md §4.2에서 검토됐지만, 이번 Phase 범위를 넘어서 적용하지 않는다. 문자열 부분일치라
+  // Supabase가 메시지 문구를 바꾸면 매칭이 조용히 깨질 수 있다는 한계는 남아있다.
   return '요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+}
+
+interface PasswordToggleButtonProps {
+  isVisible: boolean;
+  onToggle: () => void;
+  fieldLabel: string;
+}
+
+// 비밀번호/비밀번호 확인 입력 안에 겹쳐 그리는 표시·숨김 토글 버튼. 두 필드에서 재사용한다.
+function PasswordToggleButton({ isVisible, onToggle, fieldLabel }: PasswordToggleButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={isVisible ? `${fieldLabel} 숨기기` : `${fieldLabel} 표시`}
+      aria-pressed={isVisible}
+      className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary"
+    >
+      {isVisible ? (
+        <svg
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a13.16 13.16 0 0 1-1.67 2.68" />
+          <path d="M6.61 6.61A13.526 13.526 0 0 0 1 12s4 8 11 8a9.74 9.74 0 0 0 5.39-1.61" />
+          <path d="M2 2l20 20" />
+        </svg>
+      ) : (
+        <svg
+          className="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      )}
+    </button>
+  );
 }
 
 export function LoginForm() {
@@ -51,6 +118,10 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+
+  // 비밀번호 표시/숨김은 필드별로 독립 — 비밀번호는 보이게 하고 확인란은 가려두는 등 조합이 자연스럽다.
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // blur(필드를 벗어남) 시점부터 해당 필드의 인라인 에러를 보여주기 위한 플래그
   const [emailTouched, setEmailTouched] = useState(false);
@@ -87,9 +158,10 @@ export function LoginForm() {
     setMode(nextMode);
     setErrorMessage(null);
     setInfoMessage(null);
-    // 회원가입 전용 입력/터치 상태는 모드를 바꾸면 초기화해 이전 모드의 흔적이 남지 않게 한다.
+    // 회원가입 전용 입력/터치/표시 상태는 모드를 바꾸면 초기화해 이전 모드의 흔적이 남지 않게 한다.
     setConfirmPassword('');
     setAgreedToTerms(false);
+    setShowConfirmPassword(false);
     setEmailTouched(false);
     setPasswordTouched(false);
     setConfirmPasswordTouched(false);
@@ -115,26 +187,33 @@ export function LoginForm() {
     }
 
     setIsSubmitting(true);
-    const result = isSignUp ? await signUp(email, password) : await signIn(email, password);
-    setIsSubmitting(false);
+    try {
+      const result = isSignUp ? await signUp(email, password) : await signIn(email, password);
 
-    if (result.error) {
-      console.error(`[${mode}] 실패:`, result.error);
-      setErrorMessage(getFriendlyErrorMessage(result.error.message));
-      return;
+      if (result.error) {
+        console.error(`[${mode}] 실패:`, result.error);
+        setErrorMessage(getFriendlyErrorMessage(result.error.message));
+        return;
+      }
+
+      // Confirm email이 켜져 있으면 회원가입은 성공해도 세션이 아직 없다 (메일 인증 대기).
+      // 이 경우 홈으로 보내지 않고 메일 확인 안내만 표시한다.
+      if (isSignUp && !result.session) {
+        console.log(`[${mode}] 성공 (이메일 확인 대기)`);
+        setInfoMessage('확인 메일을 발송했습니다. 메일함에서 인증 후 로그인해주세요.');
+        return;
+      }
+
+      // 리다이렉트는 여기서 하지 않는다 — authStore가 onAuthStateChange로 곧 authenticated가 되면
+      // 위 useEffect가 이동시킨다. 리다이렉트 주체를 한 곳으로 유지해 중복 이동을 막는다.
+      console.log(`[${mode}] 성공`);
+    } catch (error) {
+      // signIn/signUp이 예외를 던지는 경우(네트워크 오류 등)도 놓치지 않고 같은 매핑으로 안내한다.
+      console.error(`[${mode}] 실패(예외):`, error);
+      setErrorMessage(getFriendlyErrorMessage(error instanceof Error ? error.message : ''));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Confirm email이 켜져 있으면 회원가입은 성공해도 세션이 아직 없다 (메일 인증 대기).
-    // 이 경우 홈으로 보내지 않고 메일 확인 안내만 표시한다.
-    if (isSignUp && !result.session) {
-      console.log(`[${mode}] 성공 (이메일 확인 대기)`);
-      setInfoMessage('확인 메일을 발송했습니다. 메일함에서 인증 후 로그인해주세요.');
-      return;
-    }
-
-    // 리다이렉트는 여기서 하지 않는다 — authStore가 onAuthStateChange로 곧 authenticated가 되면
-    // 위 useEffect가 이동시킨다. 리다이렉트 주체를 한 곳으로 유지해 중복 이동을 막는다.
-    console.log(`[${mode}] 성공`);
   };
 
   // 세션 확인 중이거나 이미 로그인된 상태(리다이렉트 진행 중)면 폼 대신 로딩만 보여준다
@@ -199,18 +278,25 @@ export function LoginForm() {
           <label htmlFor="password" className={labelClassName}>
             비밀번호
           </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            onBlur={() => setPasswordTouched(true)}
-            placeholder="6자 이상"
-            className={inputClassName}
-            autoComplete={isSignUp ? 'new-password' : 'current-password'}
-            aria-required="true"
-            aria-invalid={passwordTouched && !!passwordError}
-          />
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              onBlur={() => setPasswordTouched(true)}
+              placeholder="6자 이상"
+              className={passwordInputClassName}
+              autoComplete={isSignUp ? 'new-password' : 'current-password'}
+              aria-required="true"
+              aria-invalid={passwordTouched && !!passwordError}
+            />
+            <PasswordToggleButton
+              isVisible={showPassword}
+              onToggle={() => setShowPassword((prev) => !prev)}
+              fieldLabel="비밀번호"
+            />
+          </div>
           {passwordTouched && passwordError && (
             <p role="alert" className={fieldErrorClassName}>
               {passwordError}
@@ -237,6 +323,14 @@ export function LoginForm() {
               </p>
             </div>
           )}
+
+          {!isSignUp && (
+            <div className="mt-1.5 text-right">
+              <Link href="/reset-password" className="text-[12px] font-medium text-brand hover:underline">
+                비밀번호를 잊으셨나요?
+              </Link>
+            </div>
+          )}
         </div>
 
         {isSignUp && (
@@ -244,18 +338,25 @@ export function LoginForm() {
             <label htmlFor="confirmPassword" className={labelClassName}>
               비밀번호 확인
             </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              onBlur={() => setConfirmPasswordTouched(true)}
-              placeholder="비밀번호를 한 번 더 입력해주세요"
-              className={inputClassName}
-              autoComplete="new-password"
-              aria-required="true"
-              aria-invalid={confirmPasswordTouched && !!confirmPasswordError}
-            />
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                onBlur={() => setConfirmPasswordTouched(true)}
+                placeholder="비밀번호를 한 번 더 입력해주세요"
+                className={passwordInputClassName}
+                autoComplete="new-password"
+                aria-required="true"
+                aria-invalid={confirmPasswordTouched && !!confirmPasswordError}
+              />
+              <PasswordToggleButton
+                isVisible={showConfirmPassword}
+                onToggle={() => setShowConfirmPassword((prev) => !prev)}
+                fieldLabel="비밀번호 확인"
+              />
+            </div>
             {confirmPasswordTouched && confirmPasswordError && (
               <p role="alert" className={fieldErrorClassName}>
                 {confirmPasswordError}
