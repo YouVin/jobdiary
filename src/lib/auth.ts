@@ -19,6 +19,19 @@ export async function signIn(email: string, password: string): Promise<AuthResul
   return { user: data.user, session: data.session, error };
 }
 
+// 구글 로그인/회원가입 (하나로 겸함 — provider 특성상 가입/로그인을 구분하지 않는다).
+// 성공 시 브라우저 전체가 구글로 이동하므로 이 Promise는 보통 resolve되기 전에 페이지를 벗어난다.
+// 여기서 받는 error는 리다이렉트 자체가 시작되지 못한 경우(네트워크 오류 등)만 해당하고,
+// 사용자가 구글 화면에서 취소/실패한 경우는 redirectTo로 되돌아온 뒤 URL에 담겨오므로 별도로 처리한다
+// (docs/AUTH.md §2.4, §4.1 "OAuth 로그인 실패/취소").
+export async function signInWithGoogle(redirectTo: string): Promise<{ error: AuthError | null }> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo },
+  });
+  return { error };
+}
+
 // 로그아웃
 export async function signOut(): Promise<{ error: AuthError | null }> {
   const { error } = await supabase.auth.signOut();

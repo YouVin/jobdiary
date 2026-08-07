@@ -23,6 +23,7 @@ const config: Config = {
           saramin: { bg: "#F4F4F5", text: "#3F3F46" },
           wanted: { bg: "#EEF2FF", text: "#3730A3" },
           jobkorea: { bg: "#FEF2F2", text: "#991B1B" },
+          google: { blue: "#4285F4", green: "#34A853", yellow: "#FBBC05", red: "#EA4335" },
         },
         text: {
           primary: "#18181B",
