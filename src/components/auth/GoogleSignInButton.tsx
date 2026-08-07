@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { signInWithGoogle } from '@/lib/auth';
 
 interface GoogleSignInButtonProps {
-  onStart: () => void;
+  onStart: () => boolean;
   onError: (message: string) => void;
 }
 
@@ -16,7 +16,12 @@ export function GoogleSignInButton({ onStart, onError }: GoogleSignInButtonProps
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleClick = async () => {
-    onStart();
+    // onStart가 false를 반환하면(예: 회원가입 모드에서 약관 미동의) OAuth를 아예 시작하지 않는다 —
+    // 진행 허용 여부를 상위(LoginForm)가 판단하므로, 여기서는 isRedirecting 상태에도 들어가지 않는다.
+    if (!onStart()) {
+      return;
+    }
+
     setIsRedirecting(true);
 
     // 현재 URL(쿼리 포함) 그대로 돌아오게 해, 익스텐션이 붙인 ?import=1 같은 신호를 보존한다.
@@ -43,21 +48,24 @@ export function GoogleSignInButton({ onStart, onError }: GoogleSignInButtonProps
   );
 }
 
-// 구글 공식 4색 "G" 로고 — 브랜드 마크라 프로젝트 디자인 토큰 대신 구글 고유 색상을 그대로 사용한다.
+// 구글 공식 4색 "G" 로고. 색상은 tailwind.config.ts의 platform.google 토큰을 참조한다.
 function GoogleIcon() {
   return (
     <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
       <path
-        fill="#4285F4"
+        className="fill-platform-google-blue"
         d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.48a5.54 5.54 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.56-5.17 3.56-8.82Z"
       />
       <path
-        fill="#34A853"
+        className="fill-platform-google-green"
         d="M12 24c3.24 0 5.95-1.07 7.93-2.91l-3.88-3a7.4 7.4 0 0 1-10.98-3.89H1.06v3.09A12 12 0 0 0 12 24Z"
       />
-      <path fill="#FBBC05" d="M5.07 14.2a7.2 7.2 0 0 1 0-4.4V6.72H1.06a12 12 0 0 0 0 10.57L5.07 14.2Z" />
       <path
-        fill="#EA4335"
+        className="fill-platform-google-yellow"
+        d="M5.07 14.2a7.2 7.2 0 0 1 0-4.4V6.72H1.06a12 12 0 0 0 0 10.57L5.07 14.2Z"
+      />
+      <path
+        className="fill-platform-google-red"
         d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.06 6.72L5.07 9.8A7.16 7.16 0 0 1 12 4.77Z"
       />
     </svg>

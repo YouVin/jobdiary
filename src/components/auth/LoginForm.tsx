@@ -421,6 +421,14 @@ export function LoginForm() {
         onStart={() => {
           setAuthError(null);
           setInfoMessage(null);
+
+          // 회원가입 모드에선 이메일 가입과 동일하게 약관 동의를 먼저 요구한다 — 구글이라고 우회할 순 없다.
+          if (isSignUp && !agreedToTerms) {
+            setTermsTouched(true);
+            return false;
+          }
+
+          return true;
         }}
         onError={(message) => setAuthError({ message, kind: 'other' })}
       />
