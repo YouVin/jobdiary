@@ -25,6 +25,24 @@ export async function signOut(): Promise<{ error: AuthError | null }> {
   return { error };
 }
 
+// 비밀번호 재설정 이메일 발송. redirectTo는 반드시 /update-password를 가리켜야 한다 (docs/AUTH.md §6.3.5).
+export async function resetPasswordForEmail(email: string, redirectTo: string): Promise<{ error: AuthError | null }> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  return { error };
+}
+
+// 복구 세션(authStore status==='recovering') 상태에서 새 비밀번호로 갱신
+export async function updatePassword(password: string): Promise<{ error: AuthError | null }> {
+  const { error } = await supabase.auth.updateUser({ password });
+  return { error };
+}
+
+// 회원가입 확인 메일 재전송 (이메일 미인증으로 로그인이 막혔을 때)
+export async function resendSignUpEmail(email: string): Promise<{ error: AuthError | null }> {
+  const { error } = await supabase.auth.resend({ type: 'signup', email });
+  return { error };
+}
+
 // 현재 세션 조회 (비로그인 상태면 session이 null)
 export async function getSession(): Promise<{ session: Session | null; error: AuthError | null }> {
   const { data, error } = await supabase.auth.getSession();
