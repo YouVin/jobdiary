@@ -1,112 +1,72 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 import { signIn, signUp } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 import { getConfirmPasswordError, getEmailError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
-import { getPasswordStrength, PasswordStrength } from '@/utils/passwordStrength';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
+import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
+import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
+import { fieldErrorClassName, inputClassName, labelClassName, passwordInputClassName } from '@/components/auth/authFormStyles';
 
 type Mode = 'signin' | 'signup';
 
-const inputClassName =
-  'w-full rounded-lg border border-border-strong px-3 py-2 text-[14px] text-text-primary focus:border-brand focus:outline-none';
-const passwordInputClassName = `${inputClassName} pr-9`;
-const labelClassName = 'mb-1 block text-[12px] font-medium text-text-secondary';
-const fieldErrorClassName = 'mt-1 text-[12px] text-status-rejected';
+const noopSubscribe = () => () => {};
 
-// 강도별 막대 색/문구 — 기존 상태 색 토큰을 재사용한다 (하드코딩 색상 금지).
-const PASSWORD_STRENGTH_INFO: Record<
-  PasswordStrength,
-  { label: string; barClassName: string; textClassName: string; filledSegments: number }
-> = {
-  weak: { label: '약함', barClassName: 'bg-status-rejected', textClassName: 'text-status-rejected', filledSegments: 1 },
-  medium: { label: '보통', barClassName: 'bg-status-screening', textClassName: 'text-status-screening', filledSegments: 2 },
-  strong: { label: '강함', barClassName: 'bg-status-offer', textClassName: 'text-status-offer', filledSegments: 3 },
-};
+// /update-password가 완료 후 붙이는 ?passwordUpdated=1 신호가 현재 URL에 있는지.
+// 서버에서는 항상 false, 하이드레이션 후 클라이언트에서만 실제 URL을 읽는다 (hydration mismatch 방지).
+function hasPasswordUpdatedSignal(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  return new URLSearchParams(window.location.search).get('passwordUpdated') === '1';
+}
+
+// 로그인 실패 원인의 "종류" — 특정 종류일 때만 추가 UI(예: 인증 메일 재전송 버튼)를 보여주기 위해 구분한다.
+type AuthErrorKind = 'email-not-confirmed' | 'other';
+
+interface FriendlyAuthError {
+  message: string;
+  kind: AuthErrorKind;
+}
 
 // Supabase 에러 메시지는 영어·기술적이라 사용자에게는 번역된 문구로 보여준다 (docs/AUTH.md §4)
-function getFriendlyErrorMessage(rawMessage: string): string {
+function getFriendlyErrorMessage(rawMessage: string): FriendlyAuthError {
   if (rawMessage.includes('Invalid login credentials')) {
-    return '이메일 또는 비밀번호가 올바르지 않습니다.';
+    return { message: '이메일 또는 비밀번호가 올바르지 않습니다.', kind: 'other' };
   }
   if (rawMessage.includes('User already registered')) {
-    return '이미 가입된 이메일입니다. 로그인을 이용해주세요.';
+    return { message: '이미 가입된 이메일입니다. 로그인을 이용해주세요.', kind: 'other' };
   }
   if (rawMessage.includes('Password should be at least')) {
-    return `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`;
+    return { message: `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`, kind: 'other' };
   }
   if (rawMessage.includes('Unable to validate email address')) {
-    return '이메일 형식이 올바르지 않습니다.';
+    return { message: '이메일 형식이 올바르지 않습니다.', kind: 'other' };
   }
   if (rawMessage.includes('Email not confirmed')) {
-    return '이메일 인증이 완료되지 않았습니다. 메일함에서 확인 메일을 확인해주세요. (인증 메일 재전송 기능은 곧 추가될 예정입니다)';
+    return {
+      message: '이메일 인증이 완료되지 않았습니다. 메일함에서 확인 메일을 확인해주세요.',
+      kind: 'email-not-confirmed',
+    };
   }
   if (rawMessage.includes('For security purposes') || rawMessage.toLowerCase().includes('rate limit')) {
-    return '요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.';
+    return { message: '요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.', kind: 'other' };
   }
   if (
     rawMessage.includes('Failed to fetch') ||
     rawMessage.includes('NetworkError') ||
     rawMessage.toLowerCase().includes('network')
   ) {
-    return '네트워크 연결을 확인한 뒤 다시 시도해주세요.';
+    return { message: '네트워크 연결을 확인한 뒤 다시 시도해주세요.', kind: 'other' };
   }
   // 매칭 기준을 error.code(예: invalid_credentials, email_not_confirmed) 기반으로 옮기는 방안은
   // docs/AUTH.md §4.2에서 검토됐지만, 이번 Phase 범위를 넘어서 적용하지 않는다. 문자열 부분일치라
   // Supabase가 메시지 문구를 바꾸면 매칭이 조용히 깨질 수 있다는 한계는 남아있다.
-  return '요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
-}
-
-interface PasswordToggleButtonProps {
-  isVisible: boolean;
-  onToggle: () => void;
-  fieldLabel: string;
-}
-
-// 비밀번호/비밀번호 확인 입력 안에 겹쳐 그리는 표시·숨김 토글 버튼. 두 필드에서 재사용한다.
-function PasswordToggleButton({ isVisible, onToggle, fieldLabel }: PasswordToggleButtonProps) {
-  return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-label={isVisible ? `${fieldLabel} 숨기기` : `${fieldLabel} 표시`}
-      aria-pressed={isVisible}
-      className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted transition-colors hover:text-text-secondary"
-    >
-      {isVisible ? (
-        <svg
-          className="h-4 w-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 11 8 11 8a13.16 13.16 0 0 1-1.67 2.68" />
-          <path d="M6.61 6.61A13.526 13.526 0 0 0 1 12s4 8 11 8a9.74 9.74 0 0 0 5.39-1.61" />
-          <path d="M2 2l20 20" />
-        </svg>
-      ) : (
-        <svg
-          className="h-4 w-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-      )}
-    </button>
-  );
+  return { message: '요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.', kind: 'other' };
 }
 
 export function LoginForm() {
@@ -130,7 +90,7 @@ export function LoginForm() {
   const [termsTouched, setTermsTouched] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<FriendlyAuthError | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   const isSignUp = mode === 'signup';
@@ -139,7 +99,6 @@ export function LoginForm() {
   const emailError = getEmailError(email);
   const passwordError = getPasswordError(password);
   const confirmPasswordError = isSignUp ? getConfirmPasswordError(password, confirmPassword) : null;
-  const passwordStrength = getPasswordStrength(password);
 
   // /login에 붙은 쿼리(예: 익스텐션이 붙인 ?import=1)를 보존한 채 보드로 돌아간다.
   const redirectToBoard = useCallback(() => {
@@ -154,9 +113,32 @@ export function LoginForm() {
     }
   }, [status, redirectToBoard]);
 
+  // /update-password에서 비밀번호 변경을 마치고 돌아온 경우(?passwordUpdated=1) 안내를 보여준다.
+  // 렌더 중 상태를 맞추는 방식(React 공식 권장 패턴)이라 effect 안에서 setState를 직접 호출하지 않는다 —
+  // 실제 부수효과(URL 정리)는 아래의 별도 effect가 담당한다.
+  const passwordUpdatedSignal = useSyncExternalStore(noopSubscribe, hasPasswordUpdatedSignal, () => false);
+  const [hasShownPasswordUpdatedMessage, setHasShownPasswordUpdatedMessage] = useState(false);
+
+  if (passwordUpdatedSignal && !hasShownPasswordUpdatedMessage) {
+    setHasShownPasswordUpdatedMessage(true);
+    setInfoMessage('비밀번호가 변경됐습니다. 새 비밀번호로 로그인해주세요.');
+  }
+
+  // 새로고침해도 안내가 다시 뜨지 않도록 신호를 URL에서 제거한다 (?import=1과 같은 패턴). 이 effect는
+  // setState를 호출하지 않고 history API만 다루므로 위 렌더 중 상태 조정과 역할이 분리돼 있다.
+  useEffect(() => {
+    if (!passwordUpdatedSignal) {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete('passwordUpdated');
+    window.history.replaceState({}, '', url.toString());
+  }, [passwordUpdatedSignal]);
+
   const handleModeChange = (nextMode: Mode) => {
     setMode(nextMode);
-    setErrorMessage(null);
+    setAuthError(null);
     setInfoMessage(null);
     // 회원가입 전용 입력/터치/표시 상태는 모드를 바꾸면 초기화해 이전 모드의 흔적이 남지 않게 한다.
     setConfirmPassword('');
@@ -170,7 +152,7 @@ export function LoginForm() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setErrorMessage(null);
+    setAuthError(null);
     setInfoMessage(null);
 
     // 제출을 시도하면 아직 blur하지 않은 필드의 인라인 에러도 바로 보이게 한다.
@@ -192,7 +174,7 @@ export function LoginForm() {
 
       if (result.error) {
         console.error(`[${mode}] 실패:`, result.error);
-        setErrorMessage(getFriendlyErrorMessage(result.error.message));
+        setAuthError(getFriendlyErrorMessage(result.error.message));
         return;
       }
 
@@ -210,7 +192,7 @@ export function LoginForm() {
     } catch (error) {
       // signIn/signUp이 예외를 던지는 경우(네트워크 오류 등)도 놓치지 않고 같은 매핑으로 안내한다.
       console.error(`[${mode}] 실패(예외):`, error);
-      setErrorMessage(getFriendlyErrorMessage(error instanceof Error ? error.message : ''));
+      setAuthError(getFriendlyErrorMessage(error instanceof Error ? error.message : ''));
     } finally {
       setIsSubmitting(false);
     }
@@ -303,26 +285,7 @@ export function LoginForm() {
             </p>
           )}
 
-          {isSignUp && password && (
-            <div className="mt-1.5">
-              <div className="flex gap-1">
-                {[0, 1, 2].map((segmentIndex) => (
-                  <div
-                    key={segmentIndex}
-                    className={clsx(
-                      'h-1 flex-1 rounded-full',
-                      segmentIndex < PASSWORD_STRENGTH_INFO[passwordStrength].filledSegments
-                        ? PASSWORD_STRENGTH_INFO[passwordStrength].barClassName
-                        : 'bg-column',
-                    )}
-                  />
-                ))}
-              </div>
-              <p className={clsx('mt-1 text-[11px] font-medium', PASSWORD_STRENGTH_INFO[passwordStrength].textClassName)}>
-                비밀번호 강도: {PASSWORD_STRENGTH_INFO[passwordStrength].label}
-              </p>
-            </div>
-          )}
+          {isSignUp && password && <PasswordStrengthMeter password={password} />}
 
           {!isSignUp && (
             <div className="mt-1.5 text-right">
@@ -392,10 +355,13 @@ export function LoginForm() {
           </div>
         )}
 
-        {errorMessage && (
-          <p role="alert" className="text-[12px] text-status-rejected">
-            {errorMessage}
-          </p>
+        {authError && (
+          <div>
+            <p role="alert" className="text-[12px] text-status-rejected">
+              {authError.message}
+            </p>
+            {authError.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
+          </div>
         )}
         {infoMessage && <p className="text-[12px] text-status-offer">{infoMessage}</p>}
 
