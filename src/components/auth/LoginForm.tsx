@@ -7,6 +7,7 @@ import { clsx } from 'clsx';
 import { signIn, signUp } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 import { getConfirmPasswordError, getEmailError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
 import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
@@ -23,6 +24,18 @@ function hasPasswordUpdatedSignal(): boolean {
     return false;
   }
   return new URLSearchParams(window.location.search).get('passwordUpdated') === '1';
+}
+
+// 구글 로그인 취소/실패 시 Supabase가 redirectTo(현재 URL)에 error 정보를 담아 되돌려보낸다.
+// implicit 플로우 기본값이라 해시(#error=...)로 오는 경우가 기본이지만, 쿼리(?error=...)로 오는
+// 경우도 함께 본다 — supabase-js의 parseParametersFromURL과 동일하게 쿼리가 해시보다 우선한다.
+function getOAuthErrorSignal(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  new URLSearchParams(window.location.search).forEach((value, key) => params.set(key, value));
+  return params.get('error_description') || params.get('error');
 }
 
 // 로그인 실패 원인의 "종류" — 특정 종류일 때만 추가 UI(예: 인증 메일 재전송 버튼)를 보여주기 위해 구분한다.
@@ -135,6 +148,29 @@ export function LoginForm() {
     url.searchParams.delete('passwordUpdated');
     window.history.replaceState({}, '', url.toString());
   }, [passwordUpdatedSignal]);
+
+  // 구글 로그인 취소/실패 후 되돌아온 경우(#error=... 또는 ?error=...) 안내를 보여준다.
+  // 위 passwordUpdatedSignal과 동일한 패턴: 렌더 중 상태 조정 + 별도 effect로 URL 정리.
+  const oauthErrorSignal = useSyncExternalStore(noopSubscribe, getOAuthErrorSignal, () => null);
+  const [hasShownOAuthError, setHasShownOAuthError] = useState(false);
+
+  if (oauthErrorSignal && !hasShownOAuthError) {
+    setHasShownOAuthError(true);
+    setAuthError({ message: '구글 로그인에 실패했습니다. 다시 시도해주세요.', kind: 'other' });
+  }
+
+  useEffect(() => {
+    if (!oauthErrorSignal) {
+      return;
+    }
+
+    const url = new URL(window.location.href);
+    url.hash = '';
+    url.searchParams.delete('error');
+    url.searchParams.delete('error_description');
+    url.searchParams.delete('error_code');
+    window.history.replaceState({}, '', url.toString());
+  }, [oauthErrorSignal]);
 
   const handleModeChange = (nextMode: Mode) => {
     setMode(nextMode);
@@ -355,16 +391,6 @@ export function LoginForm() {
           </div>
         )}
 
-        {authError && (
-          <div>
-            <p role="alert" className="text-[12px] text-status-rejected">
-              {authError.message}
-            </p>
-            {authError.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
-          </div>
-        )}
-        {infoMessage && <p className="text-[12px] text-status-offer">{infoMessage}</p>}
-
         <button
           type="submit"
           disabled={isSubmitting}
@@ -373,6 +399,31 @@ export function LoginForm() {
           {isSubmitting ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
         </button>
       </form>
+
+      {/* 이메일/구글 공통 에러·안내 — 두 로그인 방식 모두 여기 하나로 표시한다 */}
+      {authError && (
+        <div className="mt-3">
+          <p role="alert" className="text-[12px] text-status-rejected">
+            {authError.message}
+          </p>
+          {authError.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
+        </div>
+      )}
+      {infoMessage && <p className="mt-3 text-[12px] text-status-offer">{infoMessage}</p>}
+
+      <div className="my-4 flex items-center gap-3">
+        <div className="h-px flex-1 bg-card-border" />
+        <span className="text-[12px] text-text-muted">또는</span>
+        <div className="h-px flex-1 bg-card-border" />
+      </div>
+
+      <GoogleSignInButton
+        onStart={() => {
+          setAuthError(null);
+          setInfoMessage(null);
+        }}
+        onError={(message) => setAuthError({ message, kind: 'other' })}
+      />
     </div>
   );
 }
