@@ -12,7 +12,7 @@ function findMatchedParam(paramNames: string[]): string | null {
   return paramNames.find((name) => params.get(name) === '1') ?? null;
 }
 
-// URL 쿼리에 한 번성 신호(예: ?passwordUpdated=1)가 있으면 대응하는 안내 메시지를 반환하고,
+// URL 쿼리에 일회성 신호(예: ?passwordUpdated=1)가 있으면 대응하는 안내 메시지를 반환하고,
 // 새로고침해도 다시 뜨지 않도록 신호를 URL에서 제거한다. 서버에서는 항상 없음으로 시작해
 // 하이드레이션 후에만 실제 URL을 읽는다(hydration mismatch 방지) — DashboardClient의 ?import=1,
 // LoginForm의 ?passwordUpdated=1 패턴과 동일한 기법을 여러 신호에 재사용할 수 있게 일반화했다.

@@ -10,6 +10,9 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  // Authorization 헤더를 실은 요청은 preflight를 타는데, Allow-Methods가 없으면 일부 브라우저가
+  // preflight 응답을 거부해 본 요청(POST)까지 막힐 수 있다.
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 function jsonResponse(body: Record<string, unknown>, status: number): Response {
@@ -62,8 +65,9 @@ Deno.serve(async (req: Request) => {
   const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id);
 
   if (deleteError) {
+    // 상세 원인은 서버 로그에만 남기고, 클라이언트에는 내부 구현이 드러나지 않는 고정 문구만 준다.
     console.error("[delete-account] 삭제 실패:", deleteError.message);
-    return jsonResponse({ error: deleteError.message }, 500);
+    return jsonResponse({ error: "계정 삭제에 실패했습니다." }, 500);
   }
 
   return jsonResponse({ ok: true }, 200);

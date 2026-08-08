@@ -26,28 +26,28 @@ export function DeleteAccountSection() {
 
     setErrorMessage(null);
     setIsSubmitting(true);
-    try {
-      const { error } = await deleteAccount();
 
-      if (error) {
-        console.error('[delete-account] 실패:', error);
-        setErrorMessage('탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
-        return;
-      }
+    const { error } = await deleteAccount();
 
-      // 서버에서는 이미 계정이 삭제됐다. signOut()의 서버 측 결과(이미 없는 계정이라 에러가 날 수
-      // 있다)와 무관하게 로컬 세션·데이터는 능동적으로 정리한다 (docs/AUTH.md §6.5.4 "완료 후 처리",
-      // §6.5.7 엣지케이스 2 — 잔여 토큰이 남지 않도록).
-      resetApplications();
-      try {
-        await signOut();
-      } catch (signOutError) {
-        console.error('[delete-account] 탈퇴 후 signOut 실패(무시하고 진행):', signOutError);
-      }
-      router.replace('/login?accountDeleted=1');
-    } finally {
+    if (error) {
+      console.error('[delete-account] 실패:', error);
+      setErrorMessage('탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해주세요.');
       setIsSubmitting(false);
+      return;
     }
+
+    // 성공 시엔 isSubmitting을 되돌리지 않는다 — 곧 /login으로 리다이렉트되므로, 버튼을 다시
+    // 활성화하면 이미 삭제된 계정으로 중복 요청을 보낼 틈이 생긴다.
+    // 서버에서는 이미 계정이 삭제됐다. signOut()의 서버 측 결과(이미 없는 계정이라 에러가 날 수
+    // 있다)와 무관하게 로컬 세션·데이터는 능동적으로 정리한다 (docs/AUTH.md §6.5.4 "완료 후 처리",
+    // §6.5.7 엣지케이스 2 — 잔여 토큰이 남지 않도록).
+    resetApplications();
+    try {
+      await signOut();
+    } catch (signOutError) {
+      console.error('[delete-account] 탈퇴 후 signOut 실패(무시하고 진행):', signOutError);
+    }
+    router.replace('/login?accountDeleted=1');
   };
 
   return (
