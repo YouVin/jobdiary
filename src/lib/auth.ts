@@ -56,6 +56,13 @@ export async function resendSignUpEmail(email: string): Promise<{ error: AuthErr
   return { error };
 }
 
+// 이메일 변경 요청 — Supabase가 새(설정에 따라 기존도) 이메일로 확인 메일을 보내고,
+// 확인 전까지는 실제 이메일이 바뀌지 않는다 (docs/AUTH.md §6.5.3).
+export async function updateEmail(email: string): Promise<{ error: AuthError | null }> {
+  const { error } = await supabase.auth.updateUser({ email });
+  return { error };
+}
+
 // 현재 세션 조회 (비로그인 상태면 session이 null)
 export async function getSession(): Promise<{ session: Session | null; error: AuthError | null }> {
   const { data, error } = await supabase.auth.getSession();
