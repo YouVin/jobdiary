@@ -12,19 +12,11 @@ import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
 import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
 import { fieldErrorClassName, inputClassName, labelClassName, passwordInputClassName } from '@/components/auth/authFormStyles';
+import { useOneTimeQueryMessage } from '@/hooks/useOneTimeQueryMessage';
 
 type Mode = 'signin' | 'signup';
 
 const noopSubscribe = () => () => {};
-
-// /update-password가 완료 후 붙이는 ?passwordUpdated=1 신호가 현재 URL에 있는지.
-// 서버에서는 항상 false, 하이드레이션 후 클라이언트에서만 실제 URL을 읽는다 (hydration mismatch 방지).
-function hasPasswordUpdatedSignal(): boolean {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-  return new URLSearchParams(window.location.search).get('passwordUpdated') === '1';
-}
 
 // 구글 로그인 취소/실패 시 Supabase가 redirectTo(현재 URL)에 error 정보를 담아 되돌려보낸다.
 // implicit 플로우 기본값이라 해시(#error=...)로 오는 경우가 기본이지만, 쿼리(?error=...)로 오는
@@ -126,28 +118,13 @@ export function LoginForm() {
     }
   }, [status, redirectToBoard]);
 
-  // /update-password에서 비밀번호 변경을 마치고 돌아온 경우(?passwordUpdated=1) 안내를 보여준다.
-  // 렌더 중 상태를 맞추는 방식(React 공식 권장 패턴)이라 effect 안에서 setState를 직접 호출하지 않는다 —
-  // 실제 부수효과(URL 정리)는 아래의 별도 effect가 담당한다.
-  const passwordUpdatedSignal = useSyncExternalStore(noopSubscribe, hasPasswordUpdatedSignal, () => false);
-  const [hasShownPasswordUpdatedMessage, setHasShownPasswordUpdatedMessage] = useState(false);
-
-  if (passwordUpdatedSignal && !hasShownPasswordUpdatedMessage) {
-    setHasShownPasswordUpdatedMessage(true);
-    setInfoMessage('비밀번호가 변경됐습니다. 새 비밀번호로 로그인해주세요.');
-  }
-
-  // 새로고침해도 안내가 다시 뜨지 않도록 신호를 URL에서 제거한다 (?import=1과 같은 패턴). 이 effect는
-  // setState를 호출하지 않고 history API만 다루므로 위 렌더 중 상태 조정과 역할이 분리돼 있다.
-  useEffect(() => {
-    if (!passwordUpdatedSignal) {
-      return;
-    }
-
-    const url = new URL(window.location.href);
-    url.searchParams.delete('passwordUpdated');
-    window.history.replaceState({}, '', url.toString());
-  }, [passwordUpdatedSignal]);
+  // /update-password(비밀번호 변경 완료), 계정 탈퇴 완료 후 돌아온 경우의 1회성 안내.
+  // useOneTimeQueryMessage가 렌더 중 상태 조정 + URL 정리를 함께 처리한다 (아래 oauthErrorSignal과
+  // 동일한 기법을 여러 신호에 재사용할 수 있도록 일반화한 버전).
+  const oneTimeMessage = useOneTimeQueryMessage({
+    passwordUpdated: '비밀번호가 변경됐습니다. 새 비밀번호로 로그인해주세요.',
+    accountDeleted: '탈퇴가 완료됐습니다. 그동안 이용해주셔서 감사합니다.',
+  });
 
   // 구글 로그인 취소/실패 후 되돌아온 경우(#error=... 또는 ?error=...) 안내를 보여준다.
   // 위 passwordUpdatedSignal과 동일한 패턴: 렌더 중 상태 조정 + 별도 effect로 URL 정리.
@@ -409,7 +386,9 @@ export function LoginForm() {
           {authError.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
         </div>
       )}
-      {infoMessage && <p className="mt-3 text-[12px] text-status-offer">{infoMessage}</p>}
+      {(infoMessage ?? oneTimeMessage) && (
+        <p className="mt-3 text-[12px] text-status-offer">{infoMessage ?? oneTimeMessage}</p>
+      )}
 
       <div className="my-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-card-border" />

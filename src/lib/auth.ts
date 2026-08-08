@@ -63,6 +63,21 @@ export async function updateEmail(email: string): Promise<{ error: AuthError | n
   return { error };
 }
 
+// 회원 탈퇴 — Edge Function(delete-account) 호출. service_role은 함수 안에만 있고 웹앱은 절대
+// 갖지 않는다. 함수가 요청 헤더의 세션 JWT로 본인을 직접 확인하므로 여기서 별도로 신원 정보를
+// 실어 보낼 필요가 없다 (docs/AUTH.md §6.5.4, §6.5.5).
+export async function deleteAccount(): Promise<{ error: Error | null }> {
+  const { data, error } = await supabase.functions.invoke<{ ok?: boolean; error?: string }>('delete-account');
+
+  if (error) {
+    return { error };
+  }
+  if (!data?.ok) {
+    return { error: new Error(data?.error || '회원 탈퇴에 실패했습니다.') };
+  }
+  return { error: null };
+}
+
 // 현재 세션 조회 (비로그인 상태면 session이 null)
 export async function getSession(): Promise<{ session: Session | null; error: AuthError | null }> {
   const { data, error } = await supabase.auth.getSession();
