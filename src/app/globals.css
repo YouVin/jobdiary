@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @config "../../tailwind.config.ts";
 
+/* 디자인 토큰(색/폰트/타이포/모서리/그림자)은 전부 tailwind.config.ts 한 곳에서만 관리한다.
+   여기 @theme inline은 그 토큰들과 별개로, next/font가 만드는 --font-pretendard 같은 런타임
+   CSS 변수를 Tailwind가 쓸 수 있는 이름으로 연결하는 배선(wiring) 용도로만 좁게 쓴다 — 새 색/폰트
+   토큰을 추가할 때는 여기가 아니라 tailwind.config.ts의 theme.extend에 넣는다. */
 :root {
   --background: #fafafa;
   --foreground: #18181b;
