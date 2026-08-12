@@ -214,14 +214,29 @@ export function LoginForm() {
   // 세션 확인 중이거나 이미 로그인된 상태(리다이렉트 진행 중)면 폼 대신 로딩만 보여준다
   if (status !== 'unauthenticated') {
     return (
-      <div className="w-full max-w-105 rounded-[14px] bg-card p-6 shadow-lg">
-        <p className="text-center text-[14px] text-text-muted">로딩 중...</p>
+      <div className="w-full max-w-105 text-center">
+        <p className="text-body text-text-muted">로딩 중...</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-105 rounded-[14px] bg-card p-6 shadow-lg">
+    <div className="w-full max-w-105">
+      {/* 데스크탑 전용 로고 — 모바일에서는 비주얼 영역(AuthVisualPanel) 상단 로고가 이 역할을 한다 */}
+      <div className="mb-6 hidden items-center gap-2 md:flex">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white">
+          J
+        </div>
+        <span className="text-heading-md text-text-primary">취준일기</span>
+      </div>
+
+      <div className="mb-6">
+        <h1 className="text-heading-lg text-text-primary">{isSignUp ? '환영해요' : '다시 오셨네요'}</h1>
+        <p className="mt-1 text-label text-text-secondary">
+          {isSignUp ? '지원 여정을 함께 기록해봐요' : '지원 현황을 이어서 관리해보세요'}
+        </p>
+      </div>
+
       <div className="mb-5 flex rounded-lg bg-column p-1">
         <button
           type="button"
@@ -302,7 +317,7 @@ export function LoginForm() {
 
           {!isSignUp && (
             <div className="mt-1.5 text-right">
-              <Link href="/reset-password" className="text-[12px] font-medium text-brand hover:underline">
+              <Link href="/reset-password" className="text-label text-brand hover:underline">
                 비밀번호를 잊으셨나요?
               </Link>
             </div>
@@ -356,7 +371,7 @@ export function LoginForm() {
                 aria-required="true"
                 aria-invalid={termsTouched && !agreedToTerms}
               />
-              <label htmlFor="terms" className="text-[12px] text-text-secondary">
+              <label htmlFor="terms" className="text-label text-text-secondary">
                 이용약관 및 개인정보처리방침(준비 중)에 동의합니다.
               </label>
             </div>
@@ -380,14 +395,14 @@ export function LoginForm() {
       {/* 이메일/구글 공통 에러·안내 — 두 로그인 방식 모두 여기 하나로 표시한다 */}
       {authError && (
         <div className="mt-3">
-          <p role="alert" className="text-[12px] text-status-rejected">
+          <p role="alert" className="text-label text-status-rejected">
             {authError.message}
           </p>
           {authError.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
         </div>
       )}
       {(infoMessage ?? oneTimeMessage) && (
-        <p className="mt-3 text-[12px] text-status-offer">{infoMessage ?? oneTimeMessage}</p>
+        <p className="mt-3 text-label text-status-offer">{infoMessage ?? oneTimeMessage}</p>
       )}
 
       <div className="my-4 flex items-center gap-3">

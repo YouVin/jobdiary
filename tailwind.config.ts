@@ -45,6 +45,12 @@ const config: Config = {
           hover: "#4338CA",
           tint: "#EEF2FF",
           text: "#3730A3",
+          // 로그인 화면 비주얼 패널(AuthVisualPanel) 전용 — 연보라 배경 그라데이션/글로우/구 장식에만
+          // 쓰는, 기존 tint보다 옅거나 톤이 다른 라벤더 3단계. 다른 화면에서 새로 쓸 필요가 생기면
+          // 그때 이름을 일반화한다(지금은 이 패널 용도로 한정).
+          "tint-100": "#F1F0FF",
+          "tint-200": "#DCD9FF",
+          "tint-300": "#D8D5FF",
         },
         status: {
           applied: "#A1A1AA",
