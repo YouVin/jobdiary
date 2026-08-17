@@ -89,13 +89,13 @@ export function AuthVisualPanel({ className }: AuthVisualPanelProps) {
 
         {/* 폰 목업 + D-day 카드 + 구 장식 — 폰을 가운데 두고 카드들이 주변에 떠 있다. 모바일은 소형
             폰 하나만 노출, 카드/구/반짝이는 데스크탑에서만 노출한다. */}
-        <div className="relative mt-6 flex w-full justify-center md:mt-10 md:min-h-88 md:max-w-lg md:flex-1 md:items-center lg:min-h-96">
+        <div
+          aria-hidden="true"
+          className="relative mt-6 flex w-full justify-center md:mt-10 md:min-h-88 md:max-w-lg md:flex-1 md:items-center lg:min-h-96"
+        >
           {/* 구(sphere) — 순수 radial-gradient 원. 톤은 새로 추가한 brand-tint-* 토큰을 CSS 변수로
               참조한다(Tailwind가 theme 색상을 --color-* 변수로도 노출) */}
-          <div
-            aria-hidden="true"
-            className="absolute -right-6 -top-4 hidden h-28 w-28 rounded-full opacity-90 md:block md:h-36 md:w-36 md:bg-[radial-gradient(circle_at_35%_30%,var(--color-card)_0%,var(--color-brand-tint-200)_55%,var(--color-brand-tint-300)_100%)]"
-          />
+          <div className="absolute -right-6 -top-4 hidden h-28 w-28 rounded-full opacity-90 md:block md:h-36 md:w-36 md:bg-[radial-gradient(circle_at_35%_30%,var(--color-card)_0%,var(--color-brand-tint-200)_55%,var(--color-brand-tint-300)_100%)]" />
 
           <PhoneMockup />
 
