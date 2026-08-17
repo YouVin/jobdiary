@@ -103,20 +103,25 @@ export function AuthVisualPanel({ className }: AuthVisualPanelProps) {
             <div
               key={card.platform + card.position}
               className={clsx(
-                'hidden rounded-card bg-card p-2.5 shadow-card md:absolute md:block md:w-28 md:p-3 lg:w-36 lg:p-3.5',
+                'hidden rounded-card bg-card p-2.5 shadow-card md:absolute md:block md:w-24 md:p-2 lg:w-36 lg:p-3.5',
                 DDAY_CARD_POSITION[index],
               )}
             >
               <div className="flex items-center justify-between gap-1.5">
-                <span className={clsx('text-label font-medium', PLATFORM_TEXT_CLASS[card.platform])}>
+                <span
+                  className={clsx(
+                    'text-caption font-medium whitespace-nowrap lg:text-label',
+                    PLATFORM_TEXT_CLASS[card.platform],
+                  )}
+                >
                   {PLATFORM_INFO[card.platform].label}
                 </span>
                 {card.isNew && (
                   <span className="rounded bg-brand-tint px-1.5 py-px text-badge text-brand-text">NEW</span>
                 )}
               </div>
-              <p className="mt-2 text-caption text-text-secondary">{card.position}</p>
-              <p className="mt-0.5 text-heading-lg text-brand-text">D-{card.dday}</p>
+              <p className="mt-2 text-badge text-text-secondary lg:text-caption">{card.position}</p>
+              <p className="mt-0.5 text-heading-md text-brand-text lg:text-heading-lg">D-{card.dday}</p>
             </div>
           ))}
         </div>
@@ -130,7 +135,7 @@ export function AuthVisualPanel({ className }: AuthVisualPanelProps) {
 // (primary/oklch → brand, lavender-* → brand-tint-*, muted-foreground → text-secondary).
 function PhoneMockup() {
   return (
-    <div className="relative z-10 aspect-196/400 w-28 shrink-0 -rotate-3 rounded-[1.6rem] bg-linear-to-b from-brand to-brand-hover p-0.75 shadow-float lg:w-48 lg:rounded-[2.2rem]">
+    <div className="relative z-10 aspect-196/400 w-28 shrink-0 -rotate-3 rounded-[1.6rem] bg-linear-to-b from-brand to-brand-hover p-0.75 shadow-float md:w-36 lg:w-48 lg:rounded-[2.2rem]">
       {/* 화면 */}
       <div className="relative flex h-full w-full flex-col overflow-hidden rounded-[1.4rem] bg-card px-3 pb-3 pt-4 lg:rounded-4xl lg:px-4 lg:pb-5 lg:pt-6">
         {/* 노치 */}
