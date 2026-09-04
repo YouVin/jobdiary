@@ -132,7 +132,10 @@
 
 **확정된 값**:
 - 웹앱 origin (`externally_connectable.matches`에 등록): `http://localhost:3000`, `https://jobdiary.vercel.app`
-- 익스텐션 ID: `dckfpbmglbagcpnkkkdcnbnpjdpfjcde` (`jobdiary-extension`의 `manifest.json`에 `key` 필드로 고정)
+- 익스텐션 ID: 크롬 웹스토어 정식 배포 후 dev/prod 두 값으로 나뉜다 (`src/constants/extension.ts`가 `NODE_ENV`로 분기).
+  - 프로덕션: `afnboeihbppogfinbickjaaadcgjkmil` (크롬 웹스토어가 최초 업로드 시 부여한 ID)
+  - 로컬 dev: `dckfpbmglbagcpnkkkdcnbnpjdpfjcde` (`jobdiary-extension`을 압축해제 상태로 로드할 때 `manifest.config.ts`의 `key`로 고정되는 ID)
+  - 스토어 배포판은 업로드 매니페스트에 `key` 필드를 넣을 수 없어 스토어가 별도 ID를 부여하므로, 두 ID는 같은 익스텐션이라도 서로 다르다.
 
 #### 흐름
 
