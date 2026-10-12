@@ -29,6 +29,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # 5. 빌드 확인
+      # 5. 익스텐션 재수집/수동 상태 보존 회귀 테스트
+      - name: Test
+        run: npm test
+
+      # 6. 빌드 확인
       - name: Build
         run: npm run build

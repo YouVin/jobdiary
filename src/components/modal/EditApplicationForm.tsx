@@ -44,7 +44,7 @@ export function EditApplicationForm({
         company: company.trim(),
         position: position.trim(),
         platform,
-        status,
+        status: status !== application.status ? status : undefined,
         appliedAt: new Date(appliedAt).toISOString(),
         // 비운 경우 undefined(변경 안 함)가 아니라 null(명시적으로 비움)을 보내야 DB에도 반영된다.
         interviewDate: interviewDate ? new Date(interviewDate).toISOString() : null,

@@ -34,6 +34,7 @@ function isValidCollectItem(item: unknown): item is CollectItem {
     VALID_STATUSES.includes(candidate.status) &&
     typeof candidate.appliedAt === 'string' &&
     candidate.appliedAt.trim() !== '' &&
+    Number.isFinite(Date.parse(candidate.appliedAt)) &&
     (candidate.externalId === undefined || typeof candidate.externalId === 'string')
   );
 }
@@ -42,15 +43,15 @@ function isValidCollectItem(item: unknown): item is CollectItem {
 // id/updatedAt 같은 웹앱 전용 필드나 스키마 밖 필드가 응답에 섞여 와도 여기서 걸러진다.
 function toApplicationInput(item: CollectItem): CollectItem {
   const input: CollectItem = {
-    company: item.company,
-    position: item.position,
+    company: item.company.normalize('NFKC').replace(/\s+/g, ' ').trim(),
+    position: item.position.normalize('NFKC').replace(/\s+/g, ' ').trim(),
     platform: item.platform,
     status: item.status,
     appliedAt: item.appliedAt,
   };
 
   if (item.externalId !== undefined) {
-    input.externalId = item.externalId;
+    input.externalId = item.externalId.trim() || undefined;
   }
 
   return input;

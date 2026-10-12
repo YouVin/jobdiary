@@ -28,6 +28,7 @@
 | `position` | `position` | `text` | not null | Postgres 예약어는 아니지만 문자열 함수 `POSITION()`과 이름이 겹친다. 실제 적용 시 `job_position`처럼 바꿀지 팀 판단 필요 |
 | `platform` | `platform` | `text` | not null | 아래 "platform/status 타입" 참고 |
 | `status` | `status` | `text` | not null | 아래 "platform/status 타입" 참고 |
+| `statusSource` | `status_source` | `text` | not null, `default 'extension'`, CHECK | `extension` / `manual`. 수동 상태는 재수집 시 보호 |
 | `appliedAt` | `applied_at` | `timestamptz` | not null | INTEGRATION.md §4대로 자정 기준 날짜만 저장 |
 | `updatedAt` | `updated_at` | `timestamptz` | not null, `default now()` | |
 | — | `created_at` | `timestamptz` | not null, `default now()` | ★신규. TS 타입엔 없던 필드 — DB가 자동으로 채우는 메타데이터로 두고, 앱 로직은 당장 안 씀. 필요해지면 `Application`에 `createdAt?`을 추가 |
@@ -38,6 +39,24 @@
 | `externalId` | `external_id` | `text` | null 허용 | 원티드는 항상 null |
 
 camelCase(TS) ↔ snake_case(DB) 변환은 `supabase-js`가 자동으로 해주지 않으므로, DB 접근 계층에 얇은 매핑 함수를 두고 `applicationStore`를 포함한 나머지 코드는 지금처럼 camelCase `Application`만 다루게 한다 (아래 4번 참고).
+
+상태 출처를 사용하는 웹앱 배포 전에는 [상태 출처 마이그레이션](../supabase/migrations/202610130001_application_status_source.sql)을 Supabase SQL Editor에서 한 번 실행해야 한다. 이 파일은 컬럼, 기존 진행/종료 상태 보호용 보정, 수동 상태 보호 트리거를 함께 만든다. 저장소에 파일이 존재하는 것만으로 운영 DB에 적용되지는 않는다. 재수집 규칙과 기존 데이터 처리 범위는 [INTEGRATION.md §5](./INTEGRATION.md#5-재수집과-수동-상태-보존)를 참고한다.
+
+#### 상태 출처 적용 기록 — 2026-10-13, 이슈 #67
+
+- `jobdiary` 프로젝트(`gkbtqpbdbsymvnwcpacw`)에 `202610130001` 마이그레이션을 CLI로 적용했고 원격 이력과 일치함을 확인했다. **이 프로젝트에서 같은 SQL을 다시 실행하지 않는다.** 웹앱 변경 배포는 별도다.
+- 기존 27건 중 자동 상태 26건, 보호할 수동 상태 1건으로 보정했다. 새 컬럼을 제외한 전체 데이터 지문이 적용 전후 동일했다.
+- 실제 DB 함수로 수동 탈락 보존, 자동 상태 갱신, 수동 재변경을 검증했다. 테스트는 임시 테이블에서 수행하고 롤백하여 운영 지원내역을 수정하지 않았다.
+- 저장소의 CLI 연결을 웹앱 환경변수와 동일한 `jobdiary`로 수정했다. 기존 `supabase/.temp/linked-project.json`에는 다른 프로젝트 정보가 남아 있었다.
+- 설치된 CLI `2.112.0`에서 연결 응답 해석 오류가 발생해 `npx supabase@2.120.0`을 사용했다. 프로젝트 의존성이나 전역 설치 버전은 변경하지 않았다.
+
+재검증 명령(프로젝트 루트):
+
+```sh
+npx supabase@2.120.0 migration list --linked
+npx supabase@2.120.0 db query --linked --file supabase/checks/application_status_preflight.sql --output json
+npx supabase@2.120.0 db query --linked --file supabase/checks/application_status_verify.sql --output json
+```
 
 ### platform / status 타입
 

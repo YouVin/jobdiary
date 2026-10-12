@@ -22,6 +22,7 @@ export interface Application {
   position: string; // 공고명
   platform: Platform; // 어느 사이트
   status: Status; // 현재 상태
+  statusSource?: 'extension' | 'manual'; // 직접 변경한 상태는 재수집 시 유지
   appliedAt: string; // 지원일 (ISO)
   updatedAt: string;
   memo?: string;
