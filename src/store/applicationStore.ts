@@ -16,8 +16,7 @@ import { withApplicationLock } from '@/lib/applicationLock';
 export interface ImportSummary {
   addedCount: number; // 중복 없이 정상 추가된 건수
   duplicateCount: number; // 추가는 됐지만 중복 지원으로 감지된 건수
-  updatedCount: number; // 같은 공고의 상태 변화로 판단해 기존 건을 갱신한 건수
-  skippedCount: number; // 같은 건 재수집(또는 오래된 갱신 시도)으로 판단해 스킵한 건수
+  skippedCount: number; // 이미 저장된 지원 또는 배치 내 중복으로 건너뛴 건수
   error: string | null; // 배치 저장 자체가 실패한 경우의 에러 메시지 (성공 시 null)
 }
 
@@ -81,52 +80,30 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
     const { applications, error } = await fetchApplications();
     if (error) {
       set({ error: error.message });
-      return { addedCount: 0, duplicateCount: 0, updatedCount: 0, skippedCount: 0, error: error.message };
+      return { addedCount: 0, duplicateCount: 0, skippedCount: 0, error: error.message };
     }
     set({ applications });
-    const { toInsert, toUpdate, addedCount, duplicateCount, skippedCount } = buildExtensionImportPlan(applications, apps);
+    const { toInsert, addedCount, duplicateCount, skippedCount } = buildExtensionImportPlan(applications, apps);
 
-    if (toInsert.length === 0 && toUpdate.length === 0) {
-      return { addedCount, duplicateCount, updatedCount: 0, skippedCount, error: null };
+    if (toInsert.length === 0) {
+      return { addedCount, duplicateCount, skippedCount, error: null };
     }
 
-    const [insertResult, updateResults] = await Promise.all([
-      insertApplications(toInsert),
-      Promise.all(toUpdate.map((item) => apiUpdateApplication(item.id, item.changes))),
-    ]);
-
-    const successfulUpdates = updateResults
-      .map((result) => result.application)
-      .filter((application): application is Application => application !== null);
-    const failedUpdateCount = toUpdate.length - successfulUpdates.length;
-
-    const errorMessages: string[] = [];
-    if (insertResult.error) {
-      errorMessages.push(insertResult.error.message || '지원 내역을 저장하지 못했습니다.');
-    }
-    if (failedUpdateCount > 0) {
-      errorMessages.push(`${failedUpdateCount}건 갱신에 실패했습니다.`);
-    }
-    const combinedError = errorMessages.length > 0 ? errorMessages.join(' ') : null;
+    const insertResult = await insertApplications(toInsert);
+    const combinedError = insertResult.error?.message ?? null;
 
     if (combinedError) {
       set({ error: combinedError });
     }
 
-    set((state) => {
-      const withUpdates = state.applications.map((item) => {
-        const updated = successfulUpdates.find((updatedItem) => updatedItem.id === item.id);
-        return updated ?? item;
-      });
-      const withInserts = insertResult.error ? withUpdates : [...withUpdates, ...insertResult.applications];
-      return { applications: withInserts };
-    });
+    if (!insertResult.error) {
+      set((state) => ({ applications: [...state.applications, ...insertResult.applications] }));
+    }
 
     return {
       // 삽입 자체가 실패했으면 실제로는 아무것도 추가되지 않았다 — 0으로 정정.
       addedCount: insertResult.error ? 0 : addedCount,
       duplicateCount: insertResult.error ? 0 : duplicateCount,
-      updatedCount: successfulUpdates.length,
       skippedCount,
       error: combinedError,
     };

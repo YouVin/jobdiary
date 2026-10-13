@@ -1,12 +1,10 @@
-import type { ApplicationChanges } from '@/lib/applicationsApi';
 import type { Application } from '@/types/application';
-import { getImportDecision, hasManualStatus, IncomingApplication, mergeImportedApplication } from '@/utils/duplicateDetection';
+import { getImportDecision, IncomingApplication, mergeImportedApplication } from '@/utils/duplicateDetection';
 
-// 배치 안에서 같은 지원이 여러 번 등장해도 insert/update는 지원당 한 번만 수행한다.
+// 기존 지원은 조회만 하고 절대 갱신하지 않는다. 이번 배치의 신규 지원만 한 번 삽입한다.
 export function buildExtensionImportPlan(existing: Application[], incoming: IncomingApplication[]) {
   const candidates = new Map(existing.map((app) => [app.id, app]));
   const inserts = new Map<string, IncomingApplication>();
-  const updates = new Map<string, ApplicationChanges>();
   let addedCount = 0;
   let duplicateCount = 0;
   let skippedCount = 0;
@@ -14,33 +12,22 @@ export function buildExtensionImportPlan(existing: Application[], incoming: Inco
   for (const input of incoming) {
     const app = { ...input, statusSource: 'extension' as const };
     const decision = getImportDecision([...candidates.values()], app);
-    if (decision.type === 'skip') {
+    if (decision.type === 'skip' || (decision.type === 'update' && !inserts.has(decision.target.id))) {
       skippedCount += 1;
       continue;
     }
     if (decision.type === 'update') {
       const merged = mergeImportedApplication(decision.target, app);
       candidates.set(merged.id, merged);
-      if (inserts.has(merged.id)) {
-        // 아직 DB에 없는 항목: 임시 ID로 update하지 않고 삽입할 내용을 교체한다.
-        inserts.set(merged.id, {
-          ...inserts.get(merged.id)!,
-          company: merged.company,
-          position: merged.position,
-          status: merged.status,
-          appliedAt: merged.appliedAt,
-          externalId: merged.externalId,
-        });
-      } else {
-        updates.set(merged.id, {
-          company: merged.company,
-          position: merged.position,
-          appliedAt: merged.appliedAt,
-          externalId: merged.externalId,
-          // 직접 정한 상태는 SQL UPDATE 필드에서도 제외한다.
-          ...(!hasManualStatus(decision.target) && { status: merged.status, statusSource: 'extension' as const }),
-        });
-      }
+      // DB에 아직 없는 항목끼리만 최신 수집 결과를 합친다.
+      inserts.set(merged.id, {
+        ...inserts.get(merged.id)!,
+        company: merged.company,
+        position: merged.position,
+        status: merged.status,
+        appliedAt: merged.appliedAt,
+        externalId: merged.externalId,
+      });
       continue;
     }
     const id = crypto.randomUUID();
@@ -52,7 +39,6 @@ export function buildExtensionImportPlan(existing: Application[], incoming: Inco
 
   return {
     toInsert: [...inserts.values()],
-    toUpdate: [...updates].map(([id, changes]) => ({ id, changes })),
     addedCount, duplicateCount, skippedCount,
   };
 }
