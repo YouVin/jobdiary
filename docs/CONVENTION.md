@@ -12,7 +12,8 @@ fix/[이슈명]   ← 버그 수정
 
 기본 작업 흐름:
 ```
-dev 에서 개발 → 기능 완성 → main 으로 머지 → 자동 배포
+기능별 이슈 → dev 기반 작업 브랜치 → 코드·관련 docs 갱신 → 검증 → dev 대상 PR
+배포 시: dev → main PR → 검사 확인 → 병합 → 배포 확인
 ```
 
 ### 커밋 메시지 규칙
@@ -91,7 +92,7 @@ components/board/KanbanBoard.tsx    ← 칸반 관련
 components/diary/DiaryEntry.tsx     ← 일기 관련
 components/common/Header.tsx        ← 공통
 store/applicationStore.ts           ← Zustand 스토어
-lib/storage.ts                      ← localStorage 헬퍼
+lib/applicationsApi.ts               ← Supabase 지원 내역 API
 utils/format.ts                     ← 순수 변환 함수
 types/application.ts                ← 타입 정의
 ```
@@ -129,7 +130,8 @@ interface ApplicationStore {
 const applications = useApplicationStore((s) => s.applications);
 ```
 
-- localStorage 동기화는 스토어 내부에서 처리
+- 지원 내역 영속 저장은 스토어에서 `lib/applicationsApi.ts`를 통해 처리
+- 화면 검색·필터처럼 페이지 안에서만 사용하는 상태는 React 로컬 상태로 관리
 - 컴포넌트는 스토어 액션만 호출
 
 ---
@@ -142,15 +144,14 @@ const applications = useApplicationStore((s) => s.applications);
 // 3. 저장
 
 // 왜(why)를 설명
-// localStorage는 문자열만 저장 가능해서 JSON 직렬화
-localStorage.setItem('applications', JSON.stringify(apps));
+// 필터에 가려진 지원도 중복 판별에는 포함한다.
+const duplicateIds = getDuplicateApplicationIds(applications);
 ```
 
 ---
 
-## 7. 데이터 저장 규칙 (1단계)
-```typescript
-// 모든 저장은 lib/storage.ts 헬퍼 경유
-// localStorage 키: 'jobdiary:applications'
-// 직접 localStorage 호출 금지, 헬퍼 함수만 사용
-```
+## 7. 데이터 저장 규칙 (현재)
+
+지원 내역은 `applicationStore.ts` → `lib/applicationsApi.ts` → Supabase 순서로 접근한다.
+`lib/storage.ts`는 이전 localStorage 구현이며 새 지원 내역 기능에서 사용하지 않는다.
+DB 변경·적용 이력은 [SUPABASE.md](SUPABASE.md), 가져오기 보존 규칙은 [INTEGRATION.md](INTEGRATION.md)를 따른다.
