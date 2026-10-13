@@ -40,6 +40,7 @@ interface ApplicationRow {
   position: string;
   platform: Application['platform'];
   status: Application['status'];
+  status_source: Application['statusSource'];
   applied_at: string;
   updated_at: string;
   created_at: string;
@@ -58,6 +59,7 @@ function rowToApplication(row: ApplicationRow): Application {
     position: row.position,
     platform: row.platform,
     status: row.status,
+    statusSource: row.status_source ?? (row.status === 'applied' ? 'extension' : 'manual'),
     appliedAt: row.applied_at,
     updatedAt: row.updated_at,
     memo: row.memo ?? undefined,
@@ -76,6 +78,7 @@ function applicationToInsertRow(app: Omit<Application, 'id' | 'updatedAt'>, user
     position: app.position,
     platform: app.platform,
     status: app.status,
+    status_source: app.statusSource ?? 'manual',
     applied_at: app.appliedAt,
     updated_at: new Date().toISOString(),
     memo: app.memo ?? null,
@@ -102,6 +105,9 @@ function changesToUpdateRow(changes: ApplicationChanges) {
   }
   if (changes.status !== undefined) {
     row.status = changes.status;
+    row.status_source = changes.statusSource ?? 'manual';
+  } else if (changes.statusSource !== undefined) {
+    row.status_source = changes.statusSource;
   }
   if (changes.appliedAt !== undefined) {
     row.applied_at = changes.appliedAt;
