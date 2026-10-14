@@ -1,5 +1,5 @@
-import { Status } from '@/types/application';
 import { STATUS_INFO } from '@/constants/status';
+import { Status } from '@/types/application';
 
 interface ColumnHeaderProps {
   status: Status;
@@ -21,10 +21,10 @@ export function ColumnHeader({ status, count }: ColumnHeaderProps) {
   const { label } = STATUS_INFO[status];
 
   return (
-    <div className="flex items-center gap-1.5">
-      <span className={`h-1.75 w-1.75 rounded-full ${STATUS_DOT_CLASS[status]}`} />
-      <span className="text-[12px] font-medium text-text-primary">{label}</span>
-      <span className="text-[11px] font-normal text-text-muted">{count}</span>
+    <div className="flex items-center gap-2">
+      <span className={`h-2 w-2 rounded-full ${STATUS_DOT_CLASS[status]}`} />
+      <span className="text-label font-medium text-text-primary">{label}</span>
+      <span className="text-caption font-normal text-text-muted">{count}</span>
     </div>
   );
 }

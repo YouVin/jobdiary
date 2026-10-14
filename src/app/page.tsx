@@ -1,6 +1,6 @@
-import { Header } from "@/components/header/Header";
-import { DashboardClient } from "@/components/dashboard/DashboardClient";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { DashboardClient } from "@/components/dashboard/DashboardClient";
+import { Header } from "@/components/header/Header";
 
 export default function Home() {
   return (

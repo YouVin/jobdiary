@@ -1,5 +1,5 @@
-import { LoginForm } from '@/components/auth/LoginForm';
 import { AuthVisualPanel } from '@/components/auth/AuthVisualPanel';
+import { LoginForm } from '@/components/auth/LoginForm';
 
 // 모바일(기본): 세로로 쌓임 — 비주얼(축약 헤더)이 위, 폼이 아래(DOM 순서 그대로).
 // 데스크탑(md~): 가로 2단 — order-last로 비주얼을 오른쪽으로 보낸다. 폼(LoginForm)은 하나뿐이고

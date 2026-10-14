@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -11,11 +10,12 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { Application, Status } from '@/types/application';
-import { STATUS_ORDER } from '@/constants/status';
-import { Column } from '@/components/board/Column';
+import { useMemo, useState } from 'react';
 import { ApplicationCardContent } from '@/components/board/ApplicationCardContent';
+import { Column } from '@/components/board/Column';
+import { STATUS_ORDER } from '@/constants/status';
 import { useApplicationStore } from '@/store/applicationStore';
+import { Application, Status } from '@/types/application';
 import { getDuplicateApplicationIds } from '@/utils/duplicateDetection';
 
 interface KanbanBoardProps {
@@ -95,7 +95,7 @@ export function KanbanBoard({ applications, visibleApplications = applications }
         {activeApplication && (
           <div
             style={{ width: activeWidth }}
-            className="rotate-2 cursor-grabbing rounded-lg border-[0.5px] border-card-border bg-white p-2.5 shadow-xl"
+            className="rotate-2 cursor-grabbing rounded-lg border border-card-border bg-card p-3 shadow-float"
           >
             <ApplicationCardContent application={activeApplication} isDuplicate={duplicateIds.has(activeApplication.id)} />
           </div>

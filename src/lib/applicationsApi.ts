@@ -1,6 +1,6 @@
-import type { PostgrestError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { Application } from '@/types/application';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 type ApiError = PostgrestError | Error;
 

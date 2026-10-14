@@ -1,5 +1,5 @@
-import type { AuthChangeEvent, AuthError, Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import type { AuthChangeEvent, AuthError, Session, User } from '@supabase/supabase-js';
 
 export interface AuthResult {
   user: User | null;

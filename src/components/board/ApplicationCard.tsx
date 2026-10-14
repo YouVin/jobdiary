@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { clsx } from 'clsx';
 import { useDraggable } from '@dnd-kit/core';
-import { Application } from '@/types/application';
+import { clsx } from 'clsx';
+import { useState } from 'react';
 import { ApplicationCardContent } from '@/components/board/ApplicationCardContent';
 import { EditApplicationModal } from '@/components/modal/EditApplicationModal';
+import { Application } from '@/types/application';
 
 interface ApplicationCardProps {
   application: Application;
@@ -33,7 +33,7 @@ export function ApplicationCard({ application, isDuplicate = false }: Applicatio
         {...attributes}
         {...listeners}
         className={clsx(
-          'touch-manipulation cursor-pointer rounded-lg border-[0.5px] border-card-border bg-white p-2.5 shadow-sm transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+          'touch-manipulation cursor-pointer rounded-lg border border-card-border bg-card p-3 shadow-card transition hover:shadow-float focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
           isDragging && 'opacity-40',
         )}
       >

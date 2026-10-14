@@ -1,14 +1,7 @@
 import type { Config } from "tailwindcss";
 
-// 간격(spacing) 가이드 — Tailwind v4 기본 spacing 스케일(어떤 숫자든 0.25rem 단위로 동작)로 충분해
-// 별도 토큰을 추가하지 않는다. 대신 이 프로젝트에서 실제로 자주 쓰는 값을 용도별로 정리해둔다
-// ("여백이 주인공" 원칙 — 장식보다 넉넉한 여백으로 위계를 만든다. 아래보다 촘촘하게 쓰지 않는다):
-//   - 카드/섹션 내부 패딩: p-5(20px) ~ p-6(24px) — 모달·카드·계정 섹션에서 이미 표준으로 쓰임
-//   - 폼 필드 사이 간격: gap-3(12px)
-//   - 버튼 안 아이콘-텍스트 간격: gap-1.5(6px)
-//   - 카드 사이/섹션 사이 간격: gap-2(8px) ~ gap-4(16px)
-//   - 인라인 에러/보조문구와 필드 사이: mt-1(4px) ~ mt-1.5(6px)
-//   - 큰 블록(헤더 로고, 페이지 상단) 사이: mt-5(20px) ~ mt-6(24px), py-8(32px) ~ py-10(40px)
+// 디자인 규칙: docs/DESIGN_SYSTEM.md. 간격·크기는 정수 Tailwind 단위(1 = 4px)를 사용한다.
+// 카드 p-3, 폼 gap-3, 버튼 아이콘 gap-2, 보조문구 mt-1, 섹션 p-5 ~ p-6.
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
@@ -17,18 +10,20 @@ const config: Config = {
       // 토큰으로 정리한 것. text-heading-xl처럼 쓰면 font-size/line-height/font-weight가 함께 적용된다.
       // line-height는 한글 가독성을 고려해 정함(작은 글자일수록 상대적으로 더 넉넉하게).
       fontSize: {
-        "heading-xl": ["28px", { lineHeight: "1.4", fontWeight: "600" }], // 페이지 제목
-        "heading-lg": ["22px", { lineHeight: "1.4", fontWeight: "500" }], // 섹션 제목
-        "heading-md": ["18px", { lineHeight: "1.5", fontWeight: "500" }], // 카드/모달 제목
-        body: ["14px", { lineHeight: "1.6", fontWeight: "400" }], // 기본 본문
-        "card-company": ["13px", { lineHeight: "1.5", fontWeight: "500" }], // 지원 카드의 회사명
-        label: ["12px", { lineHeight: "1.5", fontWeight: "500" }], // 폼 라벨, 보조 문구
-        caption: ["11px", { lineHeight: "1.5", fontWeight: "400" }], // 카드 내 캡션(날짜 등)
-        badge: ["10px", { lineHeight: "1.4", fontWeight: "500" }], // 플랫폼/상태 뱃지
+        "heading-xl": ["28px", { lineHeight: "40px", fontWeight: "600" }], // 페이지 제목
+        "heading-lg": ["22px", { lineHeight: "32px", fontWeight: "500" }], // 섹션 제목
+        "heading-md": ["18px", { lineHeight: "28px", fontWeight: "500" }], // 카드/모달 제목
+        body: ["14px", { lineHeight: "20px", fontWeight: "400" }], // 기본 본문
+        small: ["13px", { lineHeight: "20px", fontWeight: "400" }], // 보조 본문
+        "card-company": ["13px", { lineHeight: "20px", fontWeight: "500" }], // 지원 카드의 회사명
+        label: ["12px", { lineHeight: "16px", fontWeight: "500" }], // 폼 라벨, 보조 문구
+        caption: ["11px", { lineHeight: "16px", fontWeight: "400" }], // 카드 내 캡션(날짜 등)
+        badge: ["10px", { lineHeight: "12px", fontWeight: "500" }], // 플랫폼/상태 뱃지
+        "illustration-xs": ["6px", { lineHeight: "8px" }], // aria-hidden 목업 전용
+        "illustration-sm": ["8px", { lineHeight: "12px" }], // aria-hidden 목업 전용
       },
       // 모서리 — 기존 rounded-lg(8px, 버튼·입력)/rounded-md(6px)는 Tailwind 기본값 그대로 쓰고,
-      // 카드·모달처럼 더 큰 반경이 필요한 곳에 이름 있는 토큰을 추가한다(기존 코드의
-      // rounded-[14px]/rounded-[10px] 관례를 정리한 것 — 기존 사용처를 바꾸진 않았다).
+      // 카드·모달은 rounded-card, 칸반 컬럼은 rounded-section으로 통일한다.
       borderRadius: {
         card: "14px", // 카드, 모달
         section: "10px", // 칸반 컬럼 등 카드보다 한 단계 낮은 큰 반경
@@ -64,7 +59,6 @@ const config: Config = {
           saramin: { bg: "#F4F4F5", text: "#3F3F46" },
           wanted: { bg: "#EEF2FF", text: "#3730A3" },
           jobkorea: { bg: "#FEF2F2", text: "#991B1B" },
-          google: { blue: "#4285F4", green: "#34A853", yellow: "#FBBC05", red: "#EA4335" },
         },
         text: {
           primary: "#18181B",
@@ -74,6 +68,8 @@ const config: Config = {
         page: "#FAFAFA",
         column: "#F2F2F4",
         card: "#FFFFFF",
+        "on-brand": "#FFFFFF",
+        overlay: "#000000",
         "card-border": "#DEDEE2",
         "border-strong": "#A1A1AA",
       },

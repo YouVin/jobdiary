@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn, updatePassword } from '@/lib/auth';
-import { useAuthStore } from '@/store/authStore';
-import { getConfirmPasswordError, getPasswordError } from '@/utils/authValidation';
-import { hasPasswordIdentity } from '@/utils/authIdentity';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
-import { fieldErrorClassName, labelClassName, passwordInputClassName } from '@/components/auth/authFormStyles';
+import { buttonClassName } from '@/components/common/buttonStyles';
+import { fieldErrorClassName, labelClassName, passwordInputClassName } from '@/components/common/formStyles';
+import { signIn, updatePassword } from '@/lib/auth';
+import { useAuthStore } from '@/store/authStore';
+import { hasPasswordIdentity } from '@/utils/authIdentity';
+import { getConfirmPasswordError, getPasswordError } from '@/utils/authValidation';
 
 // 비밀번호 변경 전 현재 비밀번호를 재확인한다 — 세션이 탈취/방치된 상태에서 그대로 비밀번호가
 // 바뀌는 것을 막기 위함이다 (docs/AUTH.md §6.5.2, §6.5.5).
@@ -40,9 +41,9 @@ export function ChangePasswordSection() {
 
   if (!canChangePassword) {
     return (
-      <section className="rounded-[14px] border border-card-border bg-card p-5">
-        <h2 className="text-[15px] font-semibold text-text-primary">비밀번호 변경</h2>
-        <p className="mt-2 text-[13px] text-text-secondary">소셜 로그인 계정은 비밀번호 변경이 없습니다.</p>
+      <section className="rounded-card border border-card-border bg-card p-5">
+        <h2 className="text-body font-semibold text-text-primary">비밀번호 변경</h2>
+        <p className="mt-2 text-small text-text-secondary">소셜 로그인 계정은 비밀번호 변경이 없습니다.</p>
       </section>
     );
   }
@@ -93,8 +94,8 @@ export function ChangePasswordSection() {
   };
 
   return (
-    <section className="rounded-[14px] border border-card-border bg-card p-5">
-      <h2 className="text-[15px] font-semibold text-text-primary">비밀번호 변경</h2>
+    <section className="rounded-card border border-card-border bg-card p-5">
+      <h2 className="text-body font-semibold text-text-primary">비밀번호 변경</h2>
 
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3" noValidate>
         <div>
@@ -188,16 +189,16 @@ export function ChangePasswordSection() {
         </div>
 
         {errorMessage && (
-          <p role="alert" className="text-[12px] text-status-rejected">
+          <p role="alert" className="text-label text-status-rejected">
             {errorMessage}
           </p>
         )}
-        {successMessage && <p className="text-[12px] text-status-offer">{successMessage}</p>}
+        {successMessage && <p className="text-label text-status-offer">{successMessage}</p>}
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="mt-1 self-start rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonClassName('primary', 'mt-1 self-start')}
         >
           {isSubmitting ? '변경 중...' : '비밀번호 변경'}
         </button>
