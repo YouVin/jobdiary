@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useApplicationStore } from '@/store/applicationStore';
 import { useExtensionImport } from '@/hooks/useExtensionImport';
 import { STATUS_ORDER } from '@/constants/status';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
+import { ApplicationFilters } from '@/components/dashboard/ApplicationFilters';
+import { DEFAULT_APPLICATION_FILTERS, filterApplications } from '@/utils/applicationFilters';
 
 const noopSubscribe = () => () => {};
 
@@ -16,6 +18,8 @@ export function DashboardClient() {
     () => false,
   );
   const applications = useApplicationStore((state) => state.applications);
+  const [filters, setFilters] = useState(DEFAULT_APPLICATION_FILTERS);
+  const visibleApplications = useMemo(() => filterApplications(applications, filters), [applications, filters]);
   const isLoading = useApplicationStore((state) => state.isLoading);
   const error = useApplicationStore((state) => state.error);
   const loadApplications = useApplicationStore((state) => state.loadApplications);
@@ -98,7 +102,20 @@ export function DashboardClient() {
           </button>
         </div>
       )}
-      <KanbanBoard applications={applications} />
+      <ApplicationFilters
+        filters={filters}
+        onChange={setFilters}
+        visibleCount={visibleApplications.length}
+        totalCount={applications.length}
+      />
+      {!error && visibleApplications.length === 0 && (
+        <p className="mb-4 rounded-section bg-column p-4 text-body text-text-secondary">
+          {applications.length === 0
+            ? '아직 지원 내역이 없습니다. 지원추가 또는 익스텐션에서 가져오기로 시작해보세요.'
+            : '조건에 맞는 지원 내역이 없습니다. 검색어나 필터를 변경해보세요.'}
+        </p>
+      )}
+      <KanbanBoard applications={applications} visibleApplications={visibleApplications} />
     </>
   );
 }

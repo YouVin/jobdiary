@@ -20,9 +20,10 @@ import { getDuplicateApplicationIds } from '@/utils/duplicateDetection';
 
 interface KanbanBoardProps {
   applications: Application[];
+  visibleApplications?: Application[];
 }
 
-export function KanbanBoard({ applications }: KanbanBoardProps) {
+export function KanbanBoard({ applications, visibleApplications = applications }: KanbanBoardProps) {
   const updateStatus = useApplicationStore((state) => state.updateStatus);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeWidth, setActiveWidth] = useState<number | undefined>(undefined);
@@ -84,7 +85,7 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
           STATUS_ORDER에 상태를 추가/삭제하면 이 값도 함께 맞춰야 함. */}
       <div className="grid grid-cols-1 gap-2 md:grid-cols-3 lg:grid-cols-7">
         {STATUS_ORDER.map((status) => {
-          const columnApplications = applications.filter((application) => application.status === status);
+          const columnApplications = visibleApplications.filter((application) => application.status === status);
 
           return <Column key={status} status={status} applications={columnApplications} duplicateIds={duplicateIds} />;
         })}
