@@ -13,7 +13,8 @@
 |---|---|---|
 | 개발 순서·현황 | [ROADMAP](ROADMAP.md), [CONVENTION](CONVENTION.md) | `package.json`, `.github/workflows/ci.yml` |
 | 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `src/app/page.tsx`, `src/components/dashboard/`, `src/components/board/` |
-| 검색·필터 (#73) | `docs/DASHBOARD.md` (기능 브랜치에서 추가) | `src/utils/applicationFilters.ts`, `src/components/dashboard/ApplicationFilters.tsx` |
+| 검색·필터 (#73) | [DASHBOARD](DASHBOARD.md) | `src/utils/applicationFilters.ts`, `src/components/dashboard/ApplicationFilters.tsx` |
+| 헤더 로고·홈 이동 (#79) | [TECH_DESIGN](TECH_DESIGN.md) | `src/components/header/Header.tsx` |
 | 가져오기·중복 판별 | [INTEGRATION](INTEGRATION.md) | `src/hooks/useExtensionImport.ts`, `src/utils/extensionImportPlan.ts`, `src/utils/duplicateDetection.ts` |
 | 저장·DB | [SUPABASE](SUPABASE.md) | `src/lib/applicationsApi.ts`, `src/store/applicationStore.ts`, `supabase/` |
 | 로그인·계정 | [AUTH](AUTH.md) | `src/lib/auth.ts`, `src/components/auth/`, `src/components/account/` |
