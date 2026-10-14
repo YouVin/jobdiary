@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 
 interface AuthGuardProps {
@@ -34,7 +34,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   // loading / unauthenticated(리다이렉트 중) / recovering(리다이렉트 중) — 보드 내용이 잠깐이라도 보이지 않게
   return (
     <div className="flex min-h-full flex-1 items-center justify-center bg-page">
-      <p className="text-[14px] text-text-muted">로딩 중...</p>
+      <p className="text-body text-text-muted">로딩 중...</p>
     </div>
   );
 }

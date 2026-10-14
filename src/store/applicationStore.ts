@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { saveApplications } from '@/lib/storage';
+import { withApplicationLock } from '@/lib/applicationLock';
 import {
   ApplicationChanges,
   deleteApplication,
@@ -8,9 +8,9 @@ import {
   insertApplications,
   updateApplication as apiUpdateApplication,
 } from '@/lib/applicationsApi';
+import { saveApplications } from '@/lib/storage';
 import { Application, Status } from '@/types/application';
 import { buildExtensionImportPlan } from '@/utils/extensionImportPlan';
-import { withApplicationLock } from '@/lib/applicationLock';
 
 // addApplicationsFromExtension 처리 결과 요약 (UI 안내 문구용, 예: "4건 중 2건 추가, 1건 중복")
 export interface ImportSummary {

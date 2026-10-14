@@ -22,7 +22,7 @@
 이미 저장된 지원은 재수집으로 갱신하지 않는다. 상세 규칙은 [INTEGRATION](INTEGRATION.md).
 
 화면의 변경 요청은 applicationStore.ts → lib/applicationsApi.ts → Supabase로 전달한다.
-lib/storage.ts는 이전 localStorage 구현이며 현재 지원 내역 저장 경로가 아니다.
+lib/storage.ts는 이전 localStorage 구현이며 현재 지원 내역 저장 경로가 아니다. 다만 로그아웃 시 이전 저장값을 비우는 saveApplications([]) 호출은 남아 있다.
 인증과 DB 정책·적용 이력은 각각 [AUTH](AUTH.md), [SUPABASE](SUPABASE.md)를 참고한다.
 
 ## 데이터와 상태
@@ -53,5 +53,5 @@ lib/storage.ts는 이전 localStorage 구현이며 현재 지원 내역 저장 �
 카드 클릭 시 지원 정보 편집 모달을 연다. 면접일 입력과 카드 날짜 표시를 지원한다.
 일기 작성·상세 통계·공유·다크 모드는 계획이며 현재 구현으로 간주하지 않는다.
 
-색·타이포·모서리·그림자는 tailwind.config.ts, 토큰 적용 규칙은 [WORKING_AGREEMENT](WORKING_AGREEMENT.md)를 따른다.
+색·타이포·모서리·그림자는 tailwind.config.ts, 토큰·정수 간격·SVG 적용 규칙은 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)을 따른다. 폼·버튼 스타일은 src/components/common에서 공유한다.
 새 기능 진입점과 검증 명령은 [문서 인덱스](README.md)에 추가한다.

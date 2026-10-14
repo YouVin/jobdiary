@@ -38,6 +38,8 @@
 
 모든 UI는 확정된 디자인 시스템을 따른다. 임의의 색/크기 사용 금지.
 
+상세 기준은 [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md). 간격·크기는 정수 Tailwind 단위만 사용하고 소수 클래스(`h-4.5`, `gap-1.5` 등)를 추가하지 않는다. SVG는 `public/icons/` 파일과 공통 `Icon`으로 관리한다.
+
 ### 색상 — tailwind.config.ts 토큰만 사용
 ```
 brand: #4F46E5 / hover #4338CA / tint #EEF2FF / text #3730A3
@@ -52,7 +54,7 @@ platform: saramin(#F4F4F5/#3F3F46) / wanted(#EEF2FF/#3730A3) / jobkorea(#FEF2F2/
 ```
 heading/xl  28 · 600      heading/lg  22 · 500
 heading/md  18 · 500      body        14 · 400
-card/company 13 · 500     label       12 · 500
+small        13 · 400     card/company 13 · 500     label 12 · 500
 caption     11 · 400      badge       10 · 500
 ```
 

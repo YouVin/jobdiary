@@ -1,5 +1,5 @@
-import type { Application } from '@/types/application';
 import { getImportDecision, IncomingApplication, mergeImportedApplication } from '@/utils/duplicateDetection';
+import type { Application } from '@/types/application';
 
 // 기존 지원은 조회만 하고 절대 갱신하지 않는다. 이번 배치의 신규 지원만 한 번 삽입한다.
 export function buildExtensionImportPlan(existing: Application[], incoming: IncomingApplication[]) {

@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { buttonClassName } from '@/components/common/buttonStyles';
+import { inputClassName, labelClassName } from '@/components/common/formStyles';
 import { deleteAccount, signOut } from '@/lib/auth';
 import { useApplicationStore } from '@/store/applicationStore';
 
@@ -51,14 +53,14 @@ export function DeleteAccountSection() {
   };
 
   return (
-    <section className="rounded-[14px] border border-status-rejected/30 bg-status-rejected/5 p-5">
-      <h2 className="text-[15px] font-semibold text-status-rejected">회원 탈퇴</h2>
-      <p className="mt-2 text-[13px] text-text-secondary">
+    <section className="rounded-card border border-status-rejected/30 bg-status-rejected/5 p-5">
+      <h2 className="text-body font-semibold text-status-rejected">회원 탈퇴</h2>
+      <p className="mt-2 text-small text-text-secondary">
         탈퇴하면 계정과 모든 지원 내역이 영구적으로 삭제되며, 이 작업은 되돌릴 수 없습니다.
       </p>
 
       <div className="mt-4">
-        <label htmlFor="deleteConfirm" className="mb-1 block text-[12px] font-medium text-text-secondary">
+        <label htmlFor="deleteConfirm" className={labelClassName}>
           계속하려면 <span className="font-semibold text-status-rejected">{CONFIRM_PHRASE}</span>를 입력하세요
         </label>
         <input
@@ -66,13 +68,13 @@ export function DeleteAccountSection() {
           type="text"
           value={confirmText}
           onChange={(event) => setConfirmText(event.target.value)}
-          className="w-full rounded-lg border border-border-strong px-3 py-2 text-[14px] text-text-primary focus:border-status-rejected focus:outline-none"
+          className={inputClassName}
           aria-required="true"
         />
       </div>
 
       {errorMessage && (
-        <p role="alert" className="mt-2 text-[12px] text-status-rejected">
+        <p role="alert" className="mt-2 text-label text-status-rejected">
           {errorMessage}
         </p>
       )}
@@ -81,7 +83,7 @@ export function DeleteAccountSection() {
         type="button"
         onClick={handleDelete}
         disabled={!canSubmit || isSubmitting}
-        className="mt-4 rounded-lg bg-status-rejected px-4 py-2 text-[14px] font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        className={buttonClassName('danger', 'mt-4')}
       >
         {isSubmitting ? '탈퇴 처리 중...' : '회원 탈퇴'}
       </button>

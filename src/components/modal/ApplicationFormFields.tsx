@@ -1,3 +1,5 @@
+import { useId } from 'react';
+import { inputClassName, labelClassName } from '@/components/common/formStyles';
 import { PLATFORM_INFO } from '@/constants/platform';
 import { STATUS_INFO, STATUS_ORDER } from '@/constants/status';
 import { Platform, Status } from '@/types/application';
@@ -11,10 +13,6 @@ const STATUS_OPTIONS = STATUS_ORDER.map((status) => ({
   value: status,
   label: STATUS_INFO[status].label,
 }));
-
-export const inputClassName =
-  'w-full rounded-lg border border-border-strong px-3 py-2 text-[14px] text-text-primary focus:border-brand focus:outline-none';
-export const labelClassName = 'mb-1 block text-[12px] font-medium text-text-secondary';
 
 interface ApplicationFormFieldsProps {
   company: string;
@@ -45,11 +43,13 @@ export function ApplicationFormFields({
   interviewDate,
   onInterviewDateChange,
 }: ApplicationFormFieldsProps) {
+  const fieldId = useId();
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <label className={labelClassName}>회사명 *</label>
+        <label htmlFor={`${fieldId}-company`} className={labelClassName}>회사명 *</label>
         <input
+          id={`${fieldId}-company`}
           type="text"
           value={company}
           onChange={(event) => onCompanyChange(event.target.value)}
@@ -59,8 +59,9 @@ export function ApplicationFormFields({
       </div>
 
       <div>
-        <label className={labelClassName}>공고명</label>
+        <label htmlFor={`${fieldId}-position`} className={labelClassName}>공고명</label>
         <input
+          id={`${fieldId}-position`}
           type="text"
           value={position}
           onChange={(event) => onPositionChange(event.target.value)}
@@ -71,8 +72,9 @@ export function ApplicationFormFields({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={labelClassName}>플랫폼</label>
+          <label htmlFor={`${fieldId}-platform`} className={labelClassName}>플랫폼</label>
           <select
+            id={`${fieldId}-platform`}
             value={platform}
             onChange={(event) => onPlatformChange(event.target.value as Platform)}
             className={inputClassName}
@@ -86,8 +88,9 @@ export function ApplicationFormFields({
         </div>
 
         <div>
-          <label className={labelClassName}>상태</label>
+          <label htmlFor={`${fieldId}-status`} className={labelClassName}>상태</label>
           <select
+            id={`${fieldId}-status`}
             value={status}
             onChange={(event) => onStatusChange(event.target.value as Status)}
             className={inputClassName}
@@ -102,8 +105,9 @@ export function ApplicationFormFields({
       </div>
 
       <div>
-        <label className={labelClassName}>지원일</label>
+        <label htmlFor={`${fieldId}-appliedAt`} className={labelClassName}>지원일</label>
         <input
+          id={`${fieldId}-appliedAt`}
           type="date"
           value={appliedAt}
           onChange={(event) => onAppliedAtChange(event.target.value)}
@@ -113,8 +117,9 @@ export function ApplicationFormFields({
 
       {onInterviewDateChange && (
         <div>
-          <label className={labelClassName}>면접일</label>
+          <label htmlFor={`${fieldId}-interviewDate`} className={labelClassName}>면접일</label>
           <input
+            id={`${fieldId}-interviewDate`}
             type="date"
             value={interviewDate ?? ''}
             onChange={(event) => onInterviewDateChange(event.target.value)}

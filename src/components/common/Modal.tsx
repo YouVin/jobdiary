@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { Icon } from '@/components/common/Icon';
 
 interface ModalProps {
   isOpen: boolean;
@@ -39,34 +40,23 @@ export function Modal({ isOpen, onClose, title, children, closeDisabled = false 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/50 px-4"
       onClick={handleRequestClose}
     >
       <div
-        className="w-full max-w-105 rounded-[14px] bg-card p-5 shadow-lg"
+        className="w-full max-w-105 rounded-card bg-card p-5 shadow-float"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-[18px] font-medium text-text-primary">{title}</h2>
+          <h2 className="text-heading-md font-medium text-text-primary">{title}</h2>
           <button
             type="button"
             onClick={handleRequestClose}
             disabled={closeDisabled}
             aria-label="닫기"
-            className="flex h-6 w-6 items-center justify-center rounded text-text-secondary transition-colors hover:bg-column disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-6 w-6 items-center justify-center rounded text-text-secondary transition-colors hover:bg-column disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
-            <svg
-              className="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
+            <Icon name="close" className="h-4 w-4" />
           </button>
         </div>
 

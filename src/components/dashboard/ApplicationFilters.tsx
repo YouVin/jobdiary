@@ -1,8 +1,10 @@
 'use client';
 
+import { buttonClassName } from '@/components/common/buttonStyles';
+import { inputClassName } from '@/components/common/formStyles';
 import { PLATFORM_INFO } from '@/constants/platform';
-import type { Platform } from '@/types/application';
 import { DEFAULT_APPLICATION_FILTERS, type ApplicationFilters as Filters } from '@/utils/applicationFilters';
+import type { Platform } from '@/types/application';
 
 interface ApplicationFiltersProps {
   filters: Filters;
@@ -12,7 +14,6 @@ interface ApplicationFiltersProps {
 }
 
 const platforms = Object.keys(PLATFORM_INFO) as Platform[];
-const fieldClassName = 'rounded-lg border border-card-border bg-card px-3 py-2 text-body text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
 
 export function ApplicationFilters({ filters, onChange, visibleCount, totalCount }: ApplicationFiltersProps) {
   const hasFilters = filters.query !== '' || filters.platform !== 'all' || filters.hideClosed;
@@ -27,7 +28,7 @@ export function ApplicationFilters({ filters, onChange, visibleCount, totalCount
             value={filters.query}
             onChange={(event) => onChange({ ...filters, query: event.target.value })}
             placeholder="회사명 또는 공고명 입력"
-            className={fieldClassName}
+            className={inputClassName}
           />
         </label>
         <label className="flex flex-col gap-1 text-label text-text-secondary">
@@ -35,7 +36,7 @@ export function ApplicationFilters({ filters, onChange, visibleCount, totalCount
           <select
             value={filters.platform}
             onChange={(event) => onChange({ ...filters, platform: event.target.value as Filters['platform'] })}
-            className={fieldClassName}
+            className={inputClassName}
           >
             <option value="all">전체 플랫폼</option>
             {platforms.map((platform) => <option key={platform} value={platform}>{PLATFORM_INFO[platform].label}</option>)}
@@ -55,7 +56,7 @@ export function ApplicationFilters({ filters, onChange, visibleCount, totalCount
           type="button"
           disabled={!hasFilters}
           onClick={() => onChange({ ...DEFAULT_APPLICATION_FILTERS })}
-          className={`${fieldClassName} hover:bg-page disabled:cursor-not-allowed disabled:opacity-50`}
+          className={buttonClassName('secondary')}
         >
           필터 초기화
         </button>

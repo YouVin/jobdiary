@@ -1,6 +1,6 @@
-import { Header } from '@/components/header/Header';
 import { AccountClient } from '@/components/account/AccountClient';
 import { AuthGuard } from '@/components/auth/AuthGuard';
+import { Header } from '@/components/header/Header';
 
 export default function AccountPage() {
   return (

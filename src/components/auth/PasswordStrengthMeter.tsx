@@ -21,7 +21,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
   const info = PASSWORD_STRENGTH_INFO[strength];
 
   return (
-    <div className="mt-1.5">
+    <div className="mt-2">
       <div className="flex gap-1">
         {[0, 1, 2].map((segmentIndex) => (
           <div
@@ -30,7 +30,7 @@ export function PasswordStrengthMeter({ password }: PasswordStrengthMeterProps) 
           />
         ))}
       </div>
-      <p className={clsx('mt-1 text-[11px] font-medium', info.textClassName)}>비밀번호 강도: {info.label}</p>
+      <p className={clsx('mt-1 text-caption font-medium', info.textClassName)}>비밀번호 강도: {info.label}</p>
     </div>
   );
 }

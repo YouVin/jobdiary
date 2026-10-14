@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { buttonClassName } from '@/components/common/buttonStyles';
 import { Modal } from '@/components/common/Modal';
 import { ApplicationFormFields } from '@/components/modal/ApplicationFormFields';
 import { useApplicationStore } from '@/store/applicationStore';
@@ -94,14 +95,14 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
         onAppliedAtChange={setAppliedAt}
       />
 
-      {error && <p className="mt-3 text-[12px] text-status-rejected">{error}</p>}
+      {error && <p className="mt-3 text-label text-status-rejected">{error}</p>}
 
       <div className="mt-5 flex justify-end gap-2">
         <button
           type="button"
           onClick={handleClose}
           disabled={isSubmitting}
-          className="rounded-lg border border-border-strong px-4 py-2 text-[14px] font-medium text-text-secondary transition-colors hover:bg-column disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonClassName('secondary')}
         >
           취소
         </button>
@@ -109,7 +110,7 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
           type="button"
           onClick={handleSave}
           disabled={!company.trim() || isSubmitting}
-          className="rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonClassName('primary')}
         >
           {isSubmitting ? '저장 중...' : '저장'}
         </button>

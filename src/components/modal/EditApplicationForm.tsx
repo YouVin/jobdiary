@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { buttonClassName } from '@/components/common/buttonStyles';
 import { ApplicationFormFields } from '@/components/modal/ApplicationFormFields';
 import { useApplicationStore } from '@/store/applicationStore';
 import { Application, Platform, Status } from '@/types/application';
@@ -99,18 +100,14 @@ export function EditApplicationForm({
         onInterviewDateChange={setInterviewDate}
       />
 
-      {error && <p className="mt-3 text-[12px] text-status-rejected">{error}</p>}
+      {error && <p className="mt-3 text-label text-status-rejected">{error}</p>}
 
       <div className="mt-5 flex items-center justify-between gap-2">
         <button
           type="button"
           onClick={handleDelete}
           disabled={isSubmitting}
-          className={
-            isConfirmingDelete
-              ? 'rounded-lg bg-status-rejected px-4 py-2 text-[14px] font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50'
-              : 'rounded-lg border border-status-rejected px-4 py-2 text-[14px] font-medium text-status-rejected transition-colors hover:bg-status-rejected/10 disabled:cursor-not-allowed disabled:opacity-50'
-          }
+          className={buttonClassName(isConfirmingDelete ? 'danger' : 'dangerOutline')}
         >
           {isConfirmingDelete ? '정말 삭제할까요?' : '삭제'}
         </button>
@@ -120,7 +117,7 @@ export function EditApplicationForm({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-lg border border-border-strong px-4 py-2 text-[14px] font-medium text-text-secondary transition-colors hover:bg-column disabled:cursor-not-allowed disabled:opacity-50"
+            className={buttonClassName('secondary')}
           >
             취소
           </button>
@@ -128,7 +125,7 @@ export function EditApplicationForm({
             type="button"
             onClick={handleSave}
             disabled={!company.trim() || isSubmitting}
-            className="rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className={buttonClassName('primary')}
           >
             {isSubmitting ? '저장 중...' : '저장'}
           </button>
