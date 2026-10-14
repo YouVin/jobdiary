@@ -11,6 +11,8 @@
 
 | 작업 | 문서 | 코드 진입점 |
 |---|---|---|
+| UI 스타일·SVG 규칙 (#81) | [DESIGN_SYSTEM](DESIGN_SYSTEM.md) | `tailwind.config.ts`, `src/components/common/`, `public/icons/` |
+| 미사용 후보 조사 (#81) | [UNUSED_AUDIT](UNUSED_AUDIT.md) | 소스·자산·직접 의존성 참조 근거 |
 | 개발 순서·현황 | [ROADMAP](ROADMAP.md), [CONVENTION](CONVENTION.md) | `package.json`, `.github/workflows/ci.yml` |
 | 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `src/app/page.tsx`, `src/components/dashboard/`, `src/components/board/` |
 | 검색·필터 (#73) | [DASHBOARD](DASHBOARD.md) | `src/utils/applicationFilters.ts`, `src/components/dashboard/ApplicationFilters.tsx` |
