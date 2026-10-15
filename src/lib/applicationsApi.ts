@@ -83,7 +83,7 @@ function applicationToInsertRow(app: Omit<Application, 'id' | 'updatedAt'>, user
     position: app.position,
     platform: app.platform,
     status: autoRejected ? 'rejected' : app.status,
-    status_source: autoRejected ? 'deadline' : (app.statusSource ?? 'manual'),
+    status_source: autoRejected ? 'deadline' : (app.statusSource ?? 'created'),
     applied_at: app.appliedAt,
     updated_at: new Date().toISOString(),
     memo: app.memo ?? null,
@@ -178,6 +178,7 @@ export async function rejectExpiredApplications(today = getTodayInKorea()): Prom
       .update({ status: 'rejected', status_source: 'deadline', updated_at: new Date().toISOString() })
       .eq('user_id', userId)
       .eq('status', 'applied')
+      .in('status_source', ['extension', 'created'])
       .lt('deadline_at', today)
       .select();
 

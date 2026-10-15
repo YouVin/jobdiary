@@ -17,8 +17,12 @@ export function getTodayInKorea(now = new Date()): string {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
-export function shouldAutoReject(application: Pick<Application, 'status' | 'deadlineAt'>, today = getTodayInKorea()): boolean {
+export function shouldAutoReject(
+  application: Pick<Application, 'status' | 'deadlineAt' | 'statusSource'>,
+  today = getTodayInKorea(),
+): boolean {
   return application.status === 'applied' &&
+    (application.statusSource === undefined || application.statusSource === 'extension' || application.statusSource === 'created') &&
     !!application.deadlineAt &&
     isValidDateOnly(application.deadlineAt) &&
     application.deadlineAt < today;

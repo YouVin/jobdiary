@@ -16,7 +16,7 @@ function normalizeText(value: string): string {
 
 export function hasManualStatus(application: Application): boolean {
   // 기존 데이터에 변경 주체가 없다면 진행/종료 상태를 보수적으로 보호한다.
-  return application.statusSource === 'manual' || application.statusSource === 'deadline' ||
+  return application.statusSource === 'manual' || application.statusSource === 'deadline' || application.statusSource === 'created' ||
     (application.statusSource === undefined && application.status !== 'applied');
 }
 

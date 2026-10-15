@@ -43,12 +43,17 @@ export function EditApplicationForm({
 
     onSubmittingChange(true);
     try {
-      const autoRejected = shouldAutoReject({ status, deadlineAt: deadlineAt || undefined });
+      const statusChanged = status !== application.status;
+      const autoRejected = !statusChanged && shouldAutoReject({
+        status,
+        deadlineAt: deadlineAt || undefined,
+        statusSource: application.statusSource,
+      });
       const succeeded = await updateApplication(application.id, {
         company: company.trim(),
         position: position.trim(),
         platform,
-        status: autoRejected ? 'rejected' : (status !== application.status ? status : undefined),
+        status: autoRejected ? 'rejected' : (statusChanged ? status : undefined),
         statusSource: autoRejected ? 'deadline' : undefined,
         appliedAt: new Date(appliedAt).toISOString(),
         deadlineAt: deadlineAt || null,

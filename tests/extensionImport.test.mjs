@@ -137,6 +137,8 @@ test('마감일이 지난 지원완료만 로드 시 자동 탈락하고 상시�
     saved({ id: 'today', deadlineAt: '2026-10-15' }),
     saved({ id: 'always-open', deadlineAt: undefined }),
     saved({ id: 'screening', status: 'screening', deadlineAt: '2026-10-01' }),
+    saved({ id: 'manually-moved', statusSource: 'manual', deadlineAt: '2026-10-01' }),
+    saved({ id: 'created', statusSource: 'created', deadlineAt: '2026-10-01' }),
   ];
   const { store, getRows } = createStore(initial);
   await store.getState().loadApplications();
@@ -145,6 +147,8 @@ test('마감일이 지난 지원완료만 로드 시 자동 탈락하고 상시�
   assert.equal(getRows().find((row) => row.id === 'today').status, 'applied');
   assert.equal(getRows().find((row) => row.id === 'always-open').status, 'applied');
   assert.equal(getRows().find((row) => row.id === 'screening').status, 'screening');
+  assert.equal(getRows().find((row) => row.id === 'manually-moved').status, 'applied');
+  assert.equal(getRows().find((row) => row.id === 'created').status, 'rejected');
 });
 
 test('빈 스토어에서 자동 가져오기해도 DB의 기존 지원을 재삽입하지 않는다', async () => {
@@ -227,6 +231,7 @@ test('자동 탈락 갱신은 사용자·현재 상태·마감일을 DB에서 �
   const query = {
     update(value) { write = value; return this; },
     eq(column, value) { filters.push(['eq', column, value]); return this; },
+    in(column, values) { filters.push(['in', column, values]); return this; },
     lt(column, value) { filters.push(['lt', column, value]); return this; },
     async select() { return { data: [], error: null }; },
   };
@@ -244,6 +249,7 @@ test('자동 탈락 갱신은 사용자·현재 상태·마감일을 DB에서 �
   assert.deepEqual(filters, [
     ['eq', 'user_id', 'user-1'],
     ['eq', 'status', 'applied'],
+    ['in', 'status_source', ['extension', 'created']],
     ['lt', 'deadline_at', '2026-10-15'],
   ]);
 });
@@ -267,4 +273,8 @@ test('지난 마감일로 새 지원을 저장하면 처음부터 자동 탈락 
   assert.equal(write.deadline_at, '2020-01-01');
   assert.equal(write.status, 'rejected');
   assert.equal(write.status_source, 'deadline');
+  const future = await insertApplication(incoming({ deadlineAt: '2099-01-01' }));
+  assert.equal(future.error, null);
+  assert.equal(write.status, 'applied');
+  assert.equal(write.status_source, 'created');
 });
