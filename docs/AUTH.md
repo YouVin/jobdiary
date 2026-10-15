@@ -1,15 +1,15 @@
 # 인증 설계 (AUTH)
 
-> 현재 이메일+비밀번호 인증 위에 실무급 기능을 단계적으로 얹기 위한 설계 문서. 기존 구조 — `authStore`의 3상태(`loading`/`authenticated`/`unauthenticated`), 리다이렉트 소유권(단일 `useEffect`), `?import=1` 등 쿼리 신호 보존 — 은 유지한다는 전제로 설계한다. 이 문서는 설계만 다룬다. 구현은 6번 Phase 계획에 따라 별도로 진행한다.
+> 인증 기능의 설계 이력과 동작 규칙을 기록한 문서. 현재 구현은 `src/store/authStore.ts`, `src/components/auth/`, `src/app/(protected)/`을 기준으로 확인한다. 화면 렌더링 경계는 [RENDERING](RENDERING.md)을 참고한다.
 
 ---
 
 ## 1. 현재 상태 (되는 것)
 
 - **인증 방식**: 이메일+비밀번호. Supabase Auth 기본 기능만 사용. Confirm email이 켜져 있어 회원가입 직후엔 세션이 없다(메일 인증 전까지 로그인 불가).
-- **상태 관리**: [`src/store/authStore.ts`](../src/store/authStore.ts)의 `authStore`가 `status: 'loading' | 'authenticated' | 'unauthenticated'`와 `session`을 보관한다. `setSession(session)` 한 곳에서 `session` 유무로 `status`까지 함께 확정한다 — 상태가 어긋날 여지가 없다.
+- **상태 관리**: [`src/store/authStore.ts`](../src/store/authStore.ts)의 `authStore`가 `status: 'loading' | 'authenticated' | 'unauthenticated' | 'recovering'`과 `session`을 보관한다. `setSession(session)`은 일반 세션 상태를 확정하고, 복구 상태에서는 `setRecovering()`과 `completeRecovery()`가 상태 전환을 담당한다.
 - **세션 부트스트랩/구독**: [`AuthProvider`](../src/components/auth/AuthProvider.tsx)가 루트 레이아웃에서 한 번만 마운트된다. 마운트 시 `getSession()`으로 새로고침 후 세션을 복원하고, `onAuthStateChange`로 이후 로그인/로그아웃 등 변화를 실시간 반영한다.
-- **라우트 가드**: [`AuthGuard`](../src/components/auth/AuthGuard.tsx)는 `status==='unauthenticated'`면 `/login`으로 리다이렉트(이때 현재 쿼리를 그대로 붙여 보존), `status==='authenticated'`면 `children`(보드)을 렌더링, `loading`이면 로딩 화면만 보여준다. 지금은 "인증이 필요한 페이지"만 감싸고, `/login` 자체는 가드로 감싸져 있지 않다 — 로그인 상태로 `/login`에 들어왔을 때 보드로 돌려보내는 처리는 `LoginForm` 내부의 `useEffect`가 담당한다.
+- **라우트 가드**: [`AuthGuard`](../src/components/auth/AuthGuard.tsx)는 [`(protected)` 레이아웃](../src/app/(protected)/layout.tsx)에서 `/`와 `/account`를 함께 감싼다. `status==='unauthenticated'`면 현재 쿼리를 보존해 `/login`으로, `status==='recovering'`이면 `/update-password`로 이동한다. `status==='authenticated'`면 자식을 렌더링하고, `loading`이면 로딩 화면만 보여준다. `/login`은 가드를 거치지 않으며 로그인 상태에서 홈으로 돌려보내는 처리는 `LoginForm` 내부의 `useEffect`가 담당한다. 이 가드는 브라우저 UI 제어이며 서버 측 접근 제어가 아니다. 렌더링 경계는 [RENDERING](RENDERING.md)을 참고한다.
 - **로그인/회원가입 폼**: [`LoginForm`](../src/components/auth/LoginForm.tsx) 하나가 탭 토글로 로그인·회원가입을 겸한다.
   - 이메일 정규식(`EMAIL_PATTERN`)과 비밀번호 최소 6자(`MIN_PASSWORD_LENGTH`) 검증 — **제출 시점에만** 검증한다(필드별 실시간/blur 검증은 없음).
   - Supabase 에러 메시지를 한글로 매핑하는 `getFriendlyErrorMessage` — 원문 문자열의 `includes()` 매칭으로 4가지 케이스만 다루고, 나머지는 공용 문구("요청 처리 중 문제가 발생했습니다...")로 뭉뚱그린다.
