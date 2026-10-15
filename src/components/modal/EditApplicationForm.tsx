@@ -6,6 +6,7 @@ import { ApplicationFormFields } from '@/components/modal/ApplicationFormFields'
 import { useApplicationStore } from '@/store/applicationStore';
 import { Application, Platform, Status } from '@/types/application';
 import { toDateInputValue } from '@/utils/format';
+import { shouldAutoReject } from '@/utils/applicationDeadline';
 
 interface EditApplicationFormProps {
   application: Application;
@@ -29,6 +30,7 @@ export function EditApplicationForm({
   const [platform, setPlatform] = useState<Platform>(application.platform);
   const [status, setStatus] = useState<Status>(application.status);
   const [appliedAt, setAppliedAt] = useState(() => toDateInputValue(application.appliedAt));
+  const [deadlineAt, setDeadlineAt] = useState(application.deadlineAt ?? '');
   const [interviewDate, setInterviewDate] = useState(() =>
     application.interviewDate ? toDateInputValue(application.interviewDate) : '',
   );
@@ -41,12 +43,15 @@ export function EditApplicationForm({
 
     onSubmittingChange(true);
     try {
+      const autoRejected = shouldAutoReject({ status, deadlineAt: deadlineAt || undefined });
       const succeeded = await updateApplication(application.id, {
         company: company.trim(),
         position: position.trim(),
         platform,
-        status: status !== application.status ? status : undefined,
+        status: autoRejected ? 'rejected' : (status !== application.status ? status : undefined),
+        statusSource: autoRejected ? 'deadline' : undefined,
         appliedAt: new Date(appliedAt).toISOString(),
+        deadlineAt: deadlineAt || null,
         // 비운 경우 undefined(변경 안 함)가 아니라 null(명시적으로 비움)을 보내야 DB에도 반영된다.
         interviewDate: interviewDate ? new Date(interviewDate).toISOString() : null,
       });
@@ -96,6 +101,8 @@ export function EditApplicationForm({
         onStatusChange={setStatus}
         appliedAt={appliedAt}
         onAppliedAtChange={setAppliedAt}
+        deadlineAt={deadlineAt}
+        onDeadlineAtChange={setDeadlineAt}
         interviewDate={interviewDate}
         onInterviewDateChange={setInterviewDate}
       />

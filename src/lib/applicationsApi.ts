@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Application } from '@/types/application';
+import { getTodayInKorea, shouldAutoReject } from '@/utils/applicationDeadline';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 type ApiError = PostgrestError | Error;
@@ -21,11 +22,12 @@ export interface DeleteResult {
 // update 시 필드별 의미: undefined = 변경 안 함(요청에서 제외), null = 명시적으로 비움(DB에 null 저장).
 // company/position 등 필수 필드는 애초에 비울 수 없으므로 null을 허용하지 않는다.
 export type ApplicationChanges = Partial<
-  Omit<Application, 'id' | 'updatedAt' | 'memo' | 'diary' | 'interviewDate' | 'url' | 'externalId'>
+  Omit<Application, 'id' | 'updatedAt' | 'memo' | 'diary' | 'interviewDate' | 'deadlineAt' | 'url' | 'externalId'>
 > & {
   memo?: string | null;
   diary?: Application['diary'] | null;
   interviewDate?: string | null;
+  deadlineAt?: string | null;
   url?: string | null;
   externalId?: string | null;
 };
@@ -47,6 +49,7 @@ interface ApplicationRow {
   memo: string | null;
   diary: Application['diary'] | null;
   interview_date: string | null;
+  deadline_at: string | null;
   url: string | null;
   external_id: string | null;
 }
@@ -65,6 +68,7 @@ function rowToApplication(row: ApplicationRow): Application {
     memo: row.memo ?? undefined,
     diary: row.diary ?? undefined,
     interviewDate: row.interview_date ?? undefined,
+    deadlineAt: row.deadline_at ?? undefined,
     url: row.url ?? undefined,
     externalId: row.external_id ?? undefined,
   };
@@ -72,18 +76,20 @@ function rowToApplication(row: ApplicationRow): Application {
 
 // 새 지원건(camelCase) + userId → insert용 행(snake_case). id/created_at은 DB가 채운다.
 function applicationToInsertRow(app: Omit<Application, 'id' | 'updatedAt'>, userId: string) {
+  const autoRejected = shouldAutoReject(app);
   return {
     user_id: userId,
     company: app.company,
     position: app.position,
     platform: app.platform,
-    status: app.status,
-    status_source: app.statusSource ?? 'manual',
+    status: autoRejected ? 'rejected' : app.status,
+    status_source: autoRejected ? 'deadline' : (app.statusSource ?? 'manual'),
     applied_at: app.appliedAt,
     updated_at: new Date().toISOString(),
     memo: app.memo ?? null,
     diary: app.diary ?? null,
     interview_date: app.interviewDate ?? null,
+    deadline_at: app.deadlineAt ?? null,
     url: app.url ?? null,
     external_id: app.externalId ?? null,
   };
@@ -121,6 +127,9 @@ function changesToUpdateRow(changes: ApplicationChanges) {
   if (changes.interviewDate !== undefined) {
     row.interview_date = changes.interviewDate ?? null;
   }
+  if (changes.deadlineAt !== undefined) {
+    row.deadline_at = changes.deadlineAt ?? null;
+  }
   if (changes.url !== undefined) {
     row.url = changes.url ?? null;
   }
@@ -154,6 +163,25 @@ export async function fetchApplications(): Promise<ApplicationsResult> {
       return { applications: [], error };
     }
 
+    return { applications: (data as ApplicationRow[]).map(rowToApplication), error: null };
+  } catch (error) {
+    return { applications: [], error: error as Error };
+  }
+}
+
+// 조건을 DB에서 함께 검사한다. 다른 탭에서 진행 상태를 바꿨다면 해당 행은 갱신되지 않는다.
+export async function rejectExpiredApplications(today = getTodayInKorea()): Promise<ApplicationsResult> {
+  try {
+    const userId = await getCurrentUserId();
+    const { data, error } = await supabase
+      .from(TABLE_NAME)
+      .update({ status: 'rejected', status_source: 'deadline', updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('status', 'applied')
+      .lt('deadline_at', today)
+      .select();
+
+    if (error) return { applications: [], error };
     return { applications: (data as ApplicationRow[]).map(rowToApplication), error: null };
   } catch (error) {
     return { applications: [], error: error as Error };

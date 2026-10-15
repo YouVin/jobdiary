@@ -2,6 +2,7 @@ import { JOBDIARY_COLLECT_MESSAGE_TYPE } from '@/constants/extension';
 import { PLATFORM_INFO } from '@/constants/platform';
 import { STATUS_INFO } from '@/constants/status';
 import { Application } from '@/types/application';
+import { isValidDateOnly } from '@/utils/applicationDeadline';
 
 // 웹앱 → 익스텐션 요청 메시지 (docs/INTEGRATION.md §6.4, pull 방식)
 export interface JobdiaryCollectRequest {
@@ -35,7 +36,9 @@ function isValidCollectItem(item: unknown): item is CollectItem {
     typeof candidate.appliedAt === 'string' &&
     candidate.appliedAt.trim() !== '' &&
     Number.isFinite(Date.parse(candidate.appliedAt)) &&
-    (candidate.externalId === undefined || typeof candidate.externalId === 'string')
+    (candidate.externalId === undefined || typeof candidate.externalId === 'string') &&
+    (candidate.deadlineAt === undefined ||
+      (typeof candidate.deadlineAt === 'string' && isValidDateOnly(candidate.deadlineAt)))
   );
 }
 
@@ -52,6 +55,9 @@ function toApplicationInput(item: CollectItem): CollectItem {
 
   if (item.externalId !== undefined) {
     input.externalId = item.externalId.trim() || undefined;
+  }
+  if (item.deadlineAt !== undefined) {
+    input.deadlineAt = item.deadlineAt;
   }
 
   return input;

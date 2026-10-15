@@ -15,7 +15,7 @@
 ## 2. 저장 형식 (Application)
 
 - 웹앱은 `src/types/application.ts`의 `Application` 타입으로 저장한다.
-- 익스텐션이 채워 보내는 필드: `company`, `position`, `platform`, `status`, `appliedAt`, `externalId`
+- 익스텐션이 채워 보내는 필드: `company`, `position`, `platform`, `status`, `appliedAt`, `externalId`. `deadlineAt`은 확인된 경우에만 선택적으로 보낼 수 있다 (`YYYY-MM-DD`). 현재 익스텐션의 마감일 수집은 후속 작업이다. 익스텐션 원본의 `viewed`는 웹앱 수신 시 현재 저장하지 않는다.
 - 웹앱이 자동 생성하는 필드: `id`(`crypto.randomUUID`), `updatedAt`(현재시각 ISO) — `addApplication` 액션이 처리
 - 즉 익스텐션은 `Omit<Application, 'id' | 'updatedAt'>` 형태로 전달하면 된다.
 
@@ -68,7 +68,7 @@
 
 ### 상태의 출처
 
-- DB `status_source`, 앱 `statusSource`: `extension | manual`.
+- DB `status_source`, 앱 `statusSource`: `extension | manual | deadline`. `deadline`은 마감일 기준 자동 탈락 분류를 뜻한다 ([DEADLINE](DEADLINE.md)).
 - 익스텐션 신규 저장은 `extension`, 수동 추가/드래그/편집의 상태 변경은 `manual`로 저장한다.
 - 편집 폼에서 회사명 등만 수정하고 상태를 바꾸지 않았다면 출처는 바뀌지 않는다.
 - 출처는 웹앱만 관리한다. 익스텐션 응답에 `statusSource`가 섞여 와도 버린다.

@@ -16,7 +16,7 @@ function normalizeText(value: string): string {
 
 export function hasManualStatus(application: Application): boolean {
   // 기존 데이터에 변경 주체가 없다면 진행/종료 상태를 보수적으로 보호한다.
-  return application.statusSource === 'manual' ||
+  return application.statusSource === 'manual' || application.statusSource === 'deadline' ||
     (application.statusSource === undefined && application.status !== 'applied');
 }
 
@@ -27,6 +27,7 @@ export function mergeImportedApplication(existing: Application, incoming: Incomi
     position: normalizeText(incoming.position),
     status: hasManualStatus(existing) ? existing.status : incoming.status,
     appliedAt: incoming.appliedAt,
+    deadlineAt: incoming.deadlineAt ?? existing.deadlineAt,
     externalId: incoming.externalId?.trim() || existing.externalId,
   };
 }
@@ -52,7 +53,8 @@ function isSameContent(existing: Application, incoming: IncomingApplication): bo
     existing.position === merged.position &&
     existing.externalId === merged.externalId &&
     existing.status === merged.status &&
-    toDateInputValue(existing.appliedAt) === toDateInputValue(merged.appliedAt)
+    toDateInputValue(existing.appliedAt) === toDateInputValue(merged.appliedAt) &&
+    existing.deadlineAt === merged.deadlineAt
   );
 }
 

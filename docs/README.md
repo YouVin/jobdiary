@@ -17,6 +17,7 @@
 | 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `src/app/(protected)/`, `src/components/dashboard/`, `src/components/board/` |
 | Server/Client 렌더링 (#83) | [RENDERING](RENDERING.md) | `src/app/(protected)/layout.tsx`, `src/components/auth/AuthGuard.tsx` |
 | 검색·필터 (#73) | [DASHBOARD](DASHBOARD.md) | `src/utils/applicationFilters.ts`, `src/components/dashboard/ApplicationFilters.tsx` |
+| 공고 마감일·자동 탈락 (#85) | [DEADLINE](DEADLINE.md) | `src/utils/applicationDeadline.ts`, `src/lib/applicationsApi.ts`, `supabase/migrations/` |
 | 헤더 로고·홈 이동 (#79) | [TECH_DESIGN](TECH_DESIGN.md) | `src/components/header/Header.tsx` |
 | 가져오기·중복 판별 | [INTEGRATION](INTEGRATION.md) | `src/hooks/useExtensionImport.ts`, `src/utils/extensionImportPlan.ts`, `src/utils/duplicateDetection.ts` |
 | 저장·DB | [SUPABASE](SUPABASE.md) | `src/lib/applicationsApi.ts`, `src/store/applicationStore.ts`, `supabase/` |
