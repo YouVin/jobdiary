@@ -39,7 +39,9 @@ lib/storage.ts는 이전 localStorage 구현이며 현재 지원 내역 저장 �
 
 | 화면/역할 | 위치 |
 |---|---|
-| 대시보드 서버 페이지 | src/app/page.tsx |
+| 보호 페이지 공통 서버 레이아웃 | src/app/(protected)/layout.tsx |
+| 대시보드 서버 페이지 | src/app/(protected)/page.tsx |
+| 계정 서버 페이지 | src/app/(protected)/account/page.tsx |
 | 로딩·오류·가져오기 | src/components/dashboard/DashboardClient.tsx |
 | 칸반·드래그 | src/components/board/ |
 | 지원 추가·편집·삭제 | src/components/modal/ |
@@ -50,6 +52,7 @@ lib/storage.ts는 이전 localStorage 구현이며 현재 지원 내역 저장 �
 
 현재 보드는 1열(모바일), 3열(태블릿), 7열(데스크톱) 그리드다.
 대시보드와 계정 페이지의 공통 헤더에서 로고·서비스명 전체를 누르면 홈(`/`)으로 이동한다 (#79). Next.js Link를 사용하며 키보드 포커스와 Enter 이동을 지원한다.
+두 페이지의 공통 셸과 Server/Client 경계는 [RENDERING](RENDERING.md)에 정리한다 (#83).
 카드 클릭 시 지원 정보 편집 모달을 연다. 면접일 입력과 카드 날짜 표시를 지원한다.
 일기 작성·상세 통계·공유·다크 모드는 계획이며 현재 구현으로 간주하지 않는다.
 

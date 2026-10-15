@@ -14,7 +14,8 @@
 | UI 스타일·SVG 규칙 (#81) | [DESIGN_SYSTEM](DESIGN_SYSTEM.md) | `tailwind.config.ts`, `src/components/common/`, `public/icons/` |
 | 미사용 후보 조사 (#81) | [UNUSED_AUDIT](UNUSED_AUDIT.md) | 소스·자산·직접 의존성 참조 근거 |
 | 개발 순서·현황 | [ROADMAP](ROADMAP.md), [CONVENTION](CONVENTION.md) | `package.json`, `.github/workflows/ci.yml` |
-| 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `src/app/page.tsx`, `src/components/dashboard/`, `src/components/board/` |
+| 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `src/app/(protected)/`, `src/components/dashboard/`, `src/components/board/` |
+| Server/Client 렌더링 (#83) | [RENDERING](RENDERING.md) | `src/app/(protected)/layout.tsx`, `src/components/auth/AuthGuard.tsx` |
 | 검색·필터 (#73) | [DASHBOARD](DASHBOARD.md) | `src/utils/applicationFilters.ts`, `src/components/dashboard/ApplicationFilters.tsx` |
 | 헤더 로고·홈 이동 (#79) | [TECH_DESIGN](TECH_DESIGN.md) | `src/components/header/Header.tsx` |
 | 가져오기·중복 판별 | [INTEGRATION](INTEGRATION.md) | `src/hooks/useExtensionImport.ts`, `src/utils/extensionImportPlan.ts`, `src/utils/duplicateDetection.ts` |
