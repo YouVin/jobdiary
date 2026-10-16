@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { Fragment, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
+import { useApplicationStore } from '@/store/applicationStore';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -16,6 +17,9 @@ interface AuthGuardProps {
 export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   const status = useAuthStore((state) => state.status);
+  const userId = useAuthStore((state) => state.session?.user.id);
+  const applicationUserId = useApplicationStore((state) => state.userId);
+  const sessionVersion = useApplicationStore((state) => state.sessionVersion);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -27,8 +31,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
   }, [status, router]);
 
-  if (status === 'authenticated') {
-    return <>{children}</>;
+  if (status === 'authenticated' && userId === applicationUserId) {
+    // 계정 변경 때 헤더 모달·필터·익스텐션 알림 등 내부 화면 상태도 새로 만든다.
+    return <Fragment key={sessionVersion}>{children}</Fragment>;
   }
 
   // loading / unauthenticated(리다이렉트 중) / recovering(리다이렉트 중) — 보드 내용이 잠깐이라도 보이지 않게
