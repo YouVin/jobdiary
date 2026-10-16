@@ -11,6 +11,8 @@
 
 근거: [Next.js 릴리즈](https://github.com/vercel/next.js/releases/tag/v16.4.2), [braces 보안 공지](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
 
-## 배포 보류
+## 릴리즈 판단 (#96·#97)
 
-릴리즈 PR #87은 Draft다. 의존성 수정만으로 배포하지 않고 계정 전환 데이터 격리(#90), 오래된 편집창의 수동 상태 덮어쓰기, 빈 지원일 검증, 약관·개인정보 안내, 운영 DB와 저장소의 마이그레이션 이력 차이를 함께 확인한다. 각 수정은 dev 대상 PR로 검토하고, main 병합은 별도로 진행한다.
+계정 격리(#90), 편집 충돌(#93), 날짜 검증(#94)을 dev에 병합했다. #96·#97에서 정책 페이지·동의 확인을 추가하고 마이그레이션 이력 3건을 원격과 맞췄다. 브라우저 검증과 제한은 [RELEASE_CHECK](RELEASE_CHECK.md)에 기록한다. 사용자가 후속 검증과 main 병합까지 승인했으며, CI 통과를 확인한 커밋만 병합한다.
+
+2026-10-17 Supabase 조직 `jobdiary`는 Free 플랜이다. [유출 비밀번호 보호](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)는 Pro 이상에서만 제공되어 활성화하지 못한다. RLS·역할 권한 점검은 통과했고 Advisor에는 이 경고 1건만 남는다. 무료 운영의 잔여 위험으로 공개 추적하며 유료 전환 시 활성화한다. 비밀번호 유출 검사가 적용된 것으로 주장하지 않는다. 유료 플랜 자동 전환이나 기존 비밀번호 일괄 변경은 하지 않았다.
