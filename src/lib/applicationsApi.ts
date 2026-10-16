@@ -252,16 +252,25 @@ export async function updateApplication(
   id: string,
   changes: ApplicationChanges,
   context?: ApplicationRequestContext,
+  expectedUpdatedAt?: string,
 ): Promise<ApplicationResult> {
   try {
     const userId = await getCurrentUserId(context);
-    const { data, error } = await supabase
+    let query = supabase
       .from(TABLE_NAME)
       .update(changesToUpdateRow(changes))
       .eq('id', id)
-      .eq('user_id', userId)
-      .select()
-      .single();
+      .eq('user_id', userId);
+    // 편집창을 열 때의 버전이 같은 행만 갱신해 다른 탭의 수동 변경을 보호한다.
+    if (expectedUpdatedAt !== undefined) query = query.eq('updated_at', expectedUpdatedAt);
+    const { data, error } = await query.select().single();
+
+    if (expectedUpdatedAt !== undefined && (error?.code === 'PGRST116' || (!error && !data))) {
+      return {
+        application: null,
+        error: new Error('지원 내역이 다른 곳에서 변경되었거나 삭제됐습니다. 페이지를 새로고침한 뒤 다시 수정해주세요.'),
+      };
+    }
 
     if (error) {
       return { application: null, error };

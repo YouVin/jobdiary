@@ -92,7 +92,7 @@ for (const method of ['addApplication', 'updateApplication', 'removeApplication'
       const response = deferred();
       const apiName = { addApplication: 'insertApplication', updateApplication: 'updateApplication', removeApplication: 'deleteApplication' }[method];
       const { store, auth } = fixture({ [apiName]: async (...args) => {
-        assert.equal(args.at(-1).userId, 'A');
+        assert.equal(args[method === 'updateApplication' ? 2 : 1].userId, 'A');
         started.resolve();
         return response.promise;
       } });

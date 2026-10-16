@@ -6,6 +6,7 @@ import { Modal } from '@/components/common/Modal';
 import { ApplicationFormFields } from '@/components/modal/ApplicationFormFields';
 import { useApplicationStore } from '@/store/applicationStore';
 import { Platform, Status } from '@/types/application';
+import { getApplicationDateError } from '@/utils/applicationFormValidation';
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
   const [appliedAt, setAppliedAt] = useState(getTodayDateString);
   const [deadlineAt, setDeadlineAt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // 저장 후 다음 입력을 위해 폼 초기화
   const resetForm = () => {
@@ -42,12 +44,17 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
     setStatus('applied');
     setAppliedAt(getTodayDateString());
     setDeadlineAt('');
+    setValidationError(null);
   };
 
   const handleSave = async () => {
     if (!company.trim()) {
       return;
     }
+
+    const dateError = getApplicationDateError({ appliedAt, deadlineAt });
+    setValidationError(dateError);
+    if (dateError) return;
 
     setIsSubmitting(true);
     try {
@@ -100,7 +107,9 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
         onDeadlineAtChange={setDeadlineAt}
       />
 
-      {error && <p className="mt-3 text-label text-status-rejected">{error}</p>}
+      {(validationError || error) && (
+        <p role="alert" className="mt-3 text-label text-status-rejected">{validationError || error}</p>
+      )}
 
       <div className="mt-5 flex justify-end gap-2">
         <button
