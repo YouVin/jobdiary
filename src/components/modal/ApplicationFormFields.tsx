@@ -109,10 +109,11 @@ export function ApplicationFormFields({
       </div>
 
       <div>
-        <label htmlFor={`${fieldId}-appliedAt`} className={labelClassName}>지원일</label>
+        <label htmlFor={`${fieldId}-appliedAt`} className={labelClassName}>지원일 *</label>
         <input
           id={`${fieldId}-appliedAt`}
           type="date"
+          required
           value={appliedAt}
           onChange={(event) => onAppliedAtChange(event.target.value)}
           className={inputClassName}

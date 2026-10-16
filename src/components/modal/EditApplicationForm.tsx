@@ -7,6 +7,7 @@ import { useApplicationStore } from '@/store/applicationStore';
 import { Application, Platform, Status } from '@/types/application';
 import { toDateInputValue } from '@/utils/format';
 import { shouldAutoReject } from '@/utils/applicationDeadline';
+import { getApplicationDateError } from '@/utils/applicationFormValidation';
 
 interface EditApplicationFormProps {
   application: Application;
@@ -38,11 +39,16 @@ export function EditApplicationForm({
     application.interviewDate ? toDateInputValue(application.interviewDate) : '',
   );
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleSave = async () => {
     if (!company.trim()) {
       return;
     }
+
+    const dateError = getApplicationDateError({ appliedAt, deadlineAt, interviewDate });
+    setValidationError(dateError);
+    if (dateError) return;
 
     onSubmittingChange(true);
     try {
@@ -115,7 +121,9 @@ export function EditApplicationForm({
         onInterviewDateChange={setInterviewDate}
       />
 
-      {error && <p className="mt-3 text-label text-status-rejected">{error}</p>}
+      {(validationError || error) && (
+        <p role="alert" className="mt-3 text-label text-status-rejected">{validationError || error}</p>
+      )}
 
       <div className="mt-5 flex items-center justify-between gap-2">
         <button
