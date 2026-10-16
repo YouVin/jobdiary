@@ -31,7 +31,7 @@ interface ApplicationState {
   loadApplications: () => Promise<void>;
   addApplication: (app: Omit<Application, 'id' | 'updatedAt'>) => Promise<boolean>;
   addApplicationsFromExtension: (apps: Omit<Application, 'id' | 'updatedAt'>[]) => Promise<ImportSummary>;
-  updateApplication: (id: string, updates: ApplicationChanges) => Promise<boolean>;
+  updateApplication: (id: string, updates: ApplicationChanges, expectedUpdatedAt?: string) => Promise<boolean>;
   updateStatus: (id: string, status: Status) => Promise<boolean>;
   removeApplication: (id: string) => Promise<boolean>;
   resetApplications: () => void;
@@ -144,10 +144,10 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
   }, canceledImport),
 
   // 수정: 서버 반영에 성공했을 때만 로컬 state 갱신
-  updateApplication: (id, updates) => withApplicationSession(async (context) => {
+  updateApplication: (id, updates, expectedUpdatedAt) => withApplicationSession(async (context) => {
     set({ error: null });
     try {
-      const { application, error } = await apiUpdateApplication(id, updates, context);
+      const { application, error } = await apiUpdateApplication(id, updates, context, expectedUpdatedAt);
       if (!context.isCurrent()) return false;
 
       if (error || !application) {

@@ -25,6 +25,9 @@ export function EditApplicationForm({
   const removeApplication = useApplicationStore((state) => state.removeApplication);
   const error = useApplicationStore((state) => state.error);
 
+  // 폼을 연 뒤 props가 갱신돼도 입력값의 기준 버전은 바꾸지 않는다.
+  const [initialApplication] = useState(application);
+
   const [company, setCompany] = useState(application.company);
   const [position, setPosition] = useState(application.position);
   const [platform, setPlatform] = useState<Platform>(application.platform);
@@ -43,11 +46,11 @@ export function EditApplicationForm({
 
     onSubmittingChange(true);
     try {
-      const statusChanged = status !== application.status;
+      const statusChanged = status !== initialApplication.status;
       const autoRejected = !statusChanged && shouldAutoReject({
         status,
         deadlineAt: deadlineAt || undefined,
-        statusSource: application.statusSource,
+        statusSource: initialApplication.statusSource,
       });
       const succeeded = await updateApplication(application.id, {
         company: company.trim(),
@@ -59,7 +62,7 @@ export function EditApplicationForm({
         deadlineAt: deadlineAt || null,
         // 비운 경우 undefined(변경 안 함)가 아니라 null(명시적으로 비움)을 보내야 DB에도 반영된다.
         interviewDate: interviewDate ? new Date(interviewDate).toISOString() : null,
-      });
+      }, initialApplication.updatedAt);
 
       // 실패 시 에러는 store.error에 남아 아래에 표시되고, 모달은 닫지 않는다.
       if (!succeeded) {
