@@ -128,7 +128,9 @@ function createStore(initial = [], fetchError = null) {
     },
   };
   const source = createSourceLoader({ '@/lib/applicationsApi': api, '@/lib/storage': { saveApplications() {} } });
-  return { store: source('@/store/applicationStore').useApplicationStore, calls, getRows: () => rows };
+  const store = source('@/store/applicationStore').useApplicationStore;
+  store.getState().setUser('user-1');
+  return { store, calls, getRows: () => rows };
 }
 
 test('마감일이 지난 지원완료만 로드 시 자동 탈락하고 상시·진행 중 지원은 유지한다', async () => {
@@ -214,7 +216,10 @@ test('API는 상태 변경 주체를 DB에 저장하고 읽어 온다', async ()
     update(value) { write = value; return this; }, eq() { return this; }, select() { return this; },
     async single() { return { data: { ...row, ...write }, error: null }; },
   };
-  const source = createSourceLoader({ '@/lib/supabase': { supabase: { from: () => query } } });
+  const source = createSourceLoader({ '@/lib/supabase': { supabase: {
+    auth: { async getUser() { return { data: { user: { id: 'user-1' } }, error: null }; } },
+    from: () => query,
+  } } });
   const { updateApplication } = source('@/lib/applicationsApi');
   const result = await updateApplication('saved-1', { status: 'rejected' });
   assert.equal(write.status_source, 'manual');

@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { Application } from '@/types/application';
 import { getTodayInKorea, shouldAutoReject } from '@/utils/applicationDeadline';
 import type { PostgrestError } from '@supabase/supabase-js';
+import type { ApplicationRequestContext } from '@/lib/applicationRequestContext';
 
 type ApiError = PostgrestError | Error;
 
@@ -142,11 +143,18 @@ function changesToUpdateRow(changes: ApplicationChanges) {
 
 // 현재 로그인 사용자의 id. 세션이 없으면 던진다.
 // 실제로는 AuthGuard가 비로그인 접근을 막지만, 이 모듈만 놓고 봐도 안전하도록 방어적으로 확인한다.
-async function getCurrentUserId(): Promise<string> {
+async function getCurrentUserId(context?: ApplicationRequestContext): Promise<string> {
+  if (context && !context.isCurrent()) {
+    throw new Error('계정이 변경되어 요청을 취소했습니다.');
+  }
   const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {
     throw new Error('로그인된 사용자가 없어 요청을 처리할 수 없습니다.');
+  }
+
+  if (context && (!context.isCurrent() || context.userId !== data.user.id)) {
+    throw new Error('계정이 변경되어 요청을 취소했습니다.');
   }
 
   return data.user.id;
@@ -154,9 +162,9 @@ async function getCurrentUserId(): Promise<string> {
 
 // 현재 로그인 사용자의 지원 내역 전체 조회.
 // RLS가 본인 것만 반환하지만, user_id 필터도 명시적으로 걸어 의도를 코드로도 드러낸다.
-export async function fetchApplications(): Promise<ApplicationsResult> {
+export async function fetchApplications(context?: ApplicationRequestContext): Promise<ApplicationsResult> {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId(context);
     const { data, error } = await supabase.from(TABLE_NAME).select('*').eq('user_id', userId);
 
     if (error) {
@@ -170,9 +178,12 @@ export async function fetchApplications(): Promise<ApplicationsResult> {
 }
 
 // 조건을 DB에서 함께 검사한다. 다른 탭에서 진행 상태를 바꿨다면 해당 행은 갱신되지 않는다.
-export async function rejectExpiredApplications(today = getTodayInKorea()): Promise<ApplicationsResult> {
+export async function rejectExpiredApplications(
+  today = getTodayInKorea(),
+  context?: ApplicationRequestContext,
+): Promise<ApplicationsResult> {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId(context);
     const { data, error } = await supabase
       .from(TABLE_NAME)
       .update({ status: 'rejected', status_source: 'deadline', updated_at: new Date().toISOString() })
@@ -190,9 +201,12 @@ export async function rejectExpiredApplications(today = getTodayInKorea()): Prom
 }
 
 // 지원건 1건 추가. user_id는 호출자가 지정할 수 없고 현재 세션에서만 가져와 채운다.
-export async function insertApplication(app: Omit<Application, 'id' | 'updatedAt'>): Promise<ApplicationResult> {
+export async function insertApplication(
+  app: Omit<Application, 'id' | 'updatedAt'>,
+  context?: ApplicationRequestContext,
+): Promise<ApplicationResult> {
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId(context);
     const { data, error } = await supabase
       .from(TABLE_NAME)
       .insert(applicationToInsertRow(app, userId))
@@ -212,13 +226,14 @@ export async function insertApplication(app: Omit<Application, 'id' | 'updatedAt
 // 여러 건 일괄 추가 (익스텐션 대량 수집용). user_id는 마찬가지로 현재 세션 기준.
 export async function insertApplications(
   apps: Omit<Application, 'id' | 'updatedAt'>[],
+  context?: ApplicationRequestContext,
 ): Promise<ApplicationsResult> {
   if (apps.length === 0) {
     return { applications: [], error: null };
   }
 
   try {
-    const userId = await getCurrentUserId();
+    const userId = await getCurrentUserId(context);
     const rows = apps.map((app) => applicationToInsertRow(app, userId));
     const { data, error } = await supabase.from(TABLE_NAME).insert(rows).select();
 
@@ -233,12 +248,18 @@ export async function insertApplications(
 }
 
 // 지원건 1건 수정. 어떤 행을 고칠 수 있는지는 RLS(본인 것만)가 최종적으로 보장한다.
-export async function updateApplication(id: string, changes: ApplicationChanges): Promise<ApplicationResult> {
+export async function updateApplication(
+  id: string,
+  changes: ApplicationChanges,
+  context?: ApplicationRequestContext,
+): Promise<ApplicationResult> {
   try {
+    const userId = await getCurrentUserId(context);
     const { data, error } = await supabase
       .from(TABLE_NAME)
       .update(changesToUpdateRow(changes))
       .eq('id', id)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -254,9 +275,10 @@ export async function updateApplication(id: string, changes: ApplicationChanges)
 
 // 지원건 1건 삭제. RLS나 잘못된 id로 실제 삭제된 행이 0개면 에러로 취급한다
 // (.delete()만 쓰면 매칭된 행이 없어도 error: null이 와서 삭제 성공과 구분이 안 됨).
-export async function deleteApplication(id: string): Promise<DeleteResult> {
+export async function deleteApplication(id: string, context?: ApplicationRequestContext): Promise<DeleteResult> {
   try {
-    const { data, error } = await supabase.from(TABLE_NAME).delete().eq('id', id).select();
+    const userId = await getCurrentUserId(context);
+    const { data, error } = await supabase.from(TABLE_NAME).delete().eq('id', id).eq('user_id', userId).select();
 
     if (error) {
       return { error };

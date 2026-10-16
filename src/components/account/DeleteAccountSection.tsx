@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { buttonClassName } from '@/components/common/buttonStyles';
 import { inputClassName, labelClassName } from '@/components/common/formStyles';
 import { deleteAccount, signOut } from '@/lib/auth';
-import { useApplicationStore } from '@/store/applicationStore';
+import { captureApplicationSession, useApplicationStore } from '@/store/applicationStore';
+import { useAuthStore } from '@/store/authStore';
 
 const CONFIRM_PHRASE = '탈퇴합니다';
 
@@ -26,10 +27,14 @@ export function DeleteAccountSection() {
       return;
     }
 
+    const context = captureApplicationSession();
+    if (!context) return;
+
     setErrorMessage(null);
     setIsSubmitting(true);
 
     const { error } = await deleteAccount();
+    if (!context.isCurrent()) return;
 
     if (error) {
       console.error('[delete-account] 실패:', error);
@@ -49,6 +54,8 @@ export function DeleteAccountSection() {
     } catch (signOutError) {
       console.error('[delete-account] 탈퇴 후 signOut 실패(무시하고 진행):', signOutError);
     }
+    const currentUserId = useAuthStore.getState().session?.user.id;
+    if (currentUserId && currentUserId !== context.userId) return;
     router.replace('/login?accountDeleted=1');
   };
 

@@ -7,6 +7,7 @@ import { buttonClassName } from '@/components/common/buttonStyles';
 import { fieldErrorClassName, labelClassName, passwordInputClassName } from '@/components/common/formStyles';
 import { signIn, updatePassword } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
+import { captureApplicationSession } from '@/store/applicationStore';
 import { hasPasswordIdentity } from '@/utils/authIdentity';
 import { getConfirmPasswordError, getPasswordError } from '@/utils/authValidation';
 
@@ -60,9 +61,13 @@ export function ChangePasswordSection() {
       return;
     }
 
+    const context = captureApplicationSession();
+    if (!context) return;
+
     setIsSubmitting(true);
     try {
       const { error: reauthError } = await signIn(email, currentPassword);
+      if (!context.isCurrent()) return;
 
       if (reauthError) {
         console.error('[change-password] 재확인 실패:', reauthError);
@@ -71,6 +76,7 @@ export function ChangePasswordSection() {
       }
 
       const { error: updateError } = await updatePassword(newPassword);
+      if (!context.isCurrent()) return;
 
       if (updateError) {
         console.error('[change-password] 변경 실패:', updateError);

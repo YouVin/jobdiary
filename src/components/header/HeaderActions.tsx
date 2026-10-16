@@ -6,7 +6,7 @@ import { buttonClassName } from '@/components/common/buttonStyles';
 import { Icon } from '@/components/common/Icon';
 import { AddApplicationModal } from '@/components/modal/AddApplicationModal';
 import { signOut } from '@/lib/auth';
-import { useApplicationStore } from '@/store/applicationStore';
+import { captureApplicationSession, useApplicationStore } from '@/store/applicationStore';
 
 export function HeaderActions() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -16,6 +16,7 @@ export function HeaderActions() {
   // 로그아웃: signOut이 성공했을 때만 로컬 데이터를 비운다.
   // 실패한 채로 먼저 비우면 세션은 남아있는데 데이터만 사라지는 손실이 생긴다.
   const handleLogout = async () => {
+    const context = captureApplicationSession();
     setLogoutError(null);
     const { error } = await signOut();
 
@@ -25,7 +26,8 @@ export function HeaderActions() {
       return;
     }
 
-    resetApplications();
+    // 보통 인증 이벤트에서 이미 비운다. 늦은 로그아웃 응답으로 새 계정을 초기화하지 않는다.
+    if (context?.isCurrent()) resetApplications();
   };
 
   return (
