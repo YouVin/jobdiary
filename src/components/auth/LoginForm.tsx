@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { PolicyLinks } from '@/components/auth/PolicyLinks';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
 import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
@@ -373,7 +374,7 @@ export function LoginForm() {
                 aria-invalid={termsTouched && !agreedToTerms}
               />
               <label htmlFor="terms" className="text-label text-text-secondary">
-                이용약관 및 개인정보처리방침(준비 중)에 동의합니다.
+                <PolicyLinks />을 확인하고 이용약관에 동의합니다.
               </label>
             </div>
             {termsTouched && !agreedToTerms && (
@@ -427,6 +428,9 @@ export function LoginForm() {
         }}
         onError={(message) => setAuthError({ message, kind: 'other' })}
       />
+      <p className="mt-3 text-label text-text-secondary">
+        Google로 계속하면 로그인에 필요한 이메일·프로필을 전달받습니다. 신규 계정은 로그인 후 약관 확인을 마쳐야 지원 내역을 이용할 수 있습니다. <PolicyLinks />
+      </p>
     </div>
   );
 }

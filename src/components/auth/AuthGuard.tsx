@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { Fragment, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useApplicationStore } from '@/store/applicationStore';
+import { ConsentGate } from '@/components/auth/ConsentGate';
+import { hasCurrentConsent } from '@/lib/legal';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -18,6 +20,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const router = useRouter();
   const status = useAuthStore((state) => state.status);
   const userId = useAuthStore((state) => state.session?.user.id);
+  const consented = useAuthStore((state) => hasCurrentConsent(state.session?.user.user_metadata));
   const applicationUserId = useApplicationStore((state) => state.userId);
   const sessionVersion = useApplicationStore((state) => state.sessionVersion);
 
@@ -33,7 +36,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if (status === 'authenticated' && userId === applicationUserId) {
     // 계정 변경 때 헤더 모달·필터·익스텐션 알림 등 내부 화면 상태도 새로 만든다.
-    return <Fragment key={sessionVersion}>{children}</Fragment>;
+    return <Fragment key={sessionVersion}>{consented ? children : <ConsentGate />}</Fragment>;
   }
 
   // loading / unauthenticated(리다이렉트 중) / recovering(리다이렉트 중) — 보드 내용이 잠깐이라도 보이지 않게

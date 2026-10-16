@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { consentMetadata } from '@/lib/legal';
 import type { AuthChangeEvent, AuthError, Session, User } from '@supabase/supabase-js';
 
 export interface AuthResult {
@@ -7,9 +8,9 @@ export interface AuthResult {
   error: AuthError | null;
 }
 
-// 회원가입 (Confirm email이 꺼져 있어서 성공하면 바로 로그인 상태가 됨)
+// 회원가입: 이메일 인증 설정에 따라 세션 없이 확인 메일만 발송될 수 있다.
 export async function signUp(email: string, password: string): Promise<AuthResult> {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: consentMetadata() } });
   return { user: data.user, session: data.session, error };
 }
 
