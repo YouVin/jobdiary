@@ -5,6 +5,7 @@ import { createSourceLoader } from './loadSource.mjs';
 const load = createSourceLoader();
 const { buildExtensionImportPlan: plan } = load('@/utils/extensionImportPlan');
 const { sanitizeCollectResponse } = load('@/lib/extensionImport');
+const { shouldAutoReject } = load('@/utils/applicationDeadline');
 const incoming = (changes = {}) => ({
   company: '회사', position: '개발자', platform: 'jobkorea', status: 'applied',
   appliedAt: '2026-09-30T00:00:00.000Z', externalId: 'submission-1', ...changes,
@@ -89,12 +90,23 @@ test('다른 플랫폼 지원은 별도 건으로 남긴다', () => {
 
 test('잘못된 날짜는 저장 전에 거부한다', () => {
   assert.equal(sanitizeCollectResponse({ ok: true, applications: [incoming({ appliedAt: '날짜 아님' })] }), null);
+  assert.equal(sanitizeCollectResponse({ ok: true, applications: [incoming({ deadlineAt: '2026-02-30' })] }), null);
+  const result = sanitizeCollectResponse({ ok: true, applications: [incoming({ deadlineAt: '2026-10-14' })] });
+  assert.equal(result.applications[0].deadlineAt, '2026-10-14');
 });
 
 function createStore(initial = [], fetchError = null) {
   let rows = structuredClone(initial);
   const calls = { inserts: 0, updates: 0, fetches: 0 };
   const api = {
+    async rejectExpiredApplications() {
+      const changed = rows.filter((row) => shouldAutoReject(row, '2026-10-15'));
+      for (const row of changed) {
+        row.status = 'rejected';
+        row.statusSource = 'deadline';
+      }
+      return { applications: structuredClone(changed), error: null };
+    },
     async fetchApplications() {
       calls.fetches++;
       await new Promise((resolve) => setImmediate(resolve));
@@ -118,6 +130,26 @@ function createStore(initial = [], fetchError = null) {
   const source = createSourceLoader({ '@/lib/applicationsApi': api, '@/lib/storage': { saveApplications() {} } });
   return { store: source('@/store/applicationStore').useApplicationStore, calls, getRows: () => rows };
 }
+
+test('마감일이 지난 지원완료만 로드 시 자동 탈락하고 상시·진행 중 지원은 유지한다', async () => {
+  const initial = [
+    saved({ id: 'expired', deadlineAt: '2026-10-14' }),
+    saved({ id: 'today', deadlineAt: '2026-10-15' }),
+    saved({ id: 'always-open', deadlineAt: undefined }),
+    saved({ id: 'screening', status: 'screening', deadlineAt: '2026-10-01' }),
+    saved({ id: 'manually-moved', statusSource: 'manual', deadlineAt: '2026-10-01' }),
+    saved({ id: 'created', statusSource: 'created', deadlineAt: '2026-10-01' }),
+  ];
+  const { store, getRows } = createStore(initial);
+  await store.getState().loadApplications();
+  assert.equal(getRows().find((row) => row.id === 'expired').status, 'rejected');
+  assert.equal(getRows().find((row) => row.id === 'expired').statusSource, 'deadline');
+  assert.equal(getRows().find((row) => row.id === 'today').status, 'applied');
+  assert.equal(getRows().find((row) => row.id === 'always-open').status, 'applied');
+  assert.equal(getRows().find((row) => row.id === 'screening').status, 'screening');
+  assert.equal(getRows().find((row) => row.id === 'manually-moved').status, 'applied');
+  assert.equal(getRows().find((row) => row.id === 'created').status, 'rejected');
+});
 
 test('빈 스토어에서 자동 가져오기해도 DB의 기존 지원을 재삽입하지 않는다', async () => {
   const { store, calls } = createStore([saved()]);
@@ -191,4 +223,58 @@ test('API는 상태 변경 주체를 DB에 저장하고 읽어 온다', async ()
   assert.equal(write.status_source, 'extension');
   await updateApplication('saved-1', { company: '새 이름' });
   assert.equal(Object.hasOwn(write, 'status_source'), false);
+});
+
+test('자동 탈락 갱신은 사용자·현재 상태·마감일을 DB에서 함께 제한한다', async () => {
+  const filters = [];
+  let write;
+  const query = {
+    update(value) { write = value; return this; },
+    eq(column, value) { filters.push(['eq', column, value]); return this; },
+    in(column, values) { filters.push(['in', column, values]); return this; },
+    lt(column, value) { filters.push(['lt', column, value]); return this; },
+    async select() { return { data: [], error: null }; },
+  };
+  const source = createSourceLoader({
+    '@/lib/supabase': { supabase: {
+      auth: { async getUser() { return { data: { user: { id: 'user-1' } }, error: null }; } },
+      from: () => query,
+    } },
+  });
+  const { rejectExpiredApplications } = source('@/lib/applicationsApi');
+  const result = await rejectExpiredApplications('2026-10-15');
+  assert.equal(result.error, null);
+  assert.equal(write.status, 'rejected');
+  assert.equal(write.status_source, 'deadline');
+  assert.deepEqual(filters, [
+    ['eq', 'user_id', 'user-1'],
+    ['eq', 'status', 'applied'],
+    ['in', 'status_source', ['extension', 'created']],
+    ['lt', 'deadline_at', '2026-10-15'],
+  ]);
+});
+
+test('지난 마감일로 새 지원을 저장하면 처음부터 자동 탈락 출처를 기록한다', async () => {
+  let write;
+  const query = {
+    insert(value) { write = value; return this; },
+    select() { return this; },
+    async single() { return { data: { id: 'new-1', ...write }, error: null }; },
+  };
+  const source = createSourceLoader({
+    '@/lib/supabase': { supabase: {
+      auth: { async getUser() { return { data: { user: { id: 'user-1' } }, error: null }; } },
+      from: () => query,
+    } },
+  });
+  const { insertApplication } = source('@/lib/applicationsApi');
+  const result = await insertApplication(incoming({ deadlineAt: '2020-01-01' }));
+  assert.equal(result.error, null);
+  assert.equal(write.deadline_at, '2020-01-01');
+  assert.equal(write.status, 'rejected');
+  assert.equal(write.status_source, 'deadline');
+  const future = await insertApplication(incoming({ deadlineAt: '2099-01-01' }));
+  assert.equal(future.error, null);
+  assert.equal(write.status, 'applied');
+  assert.equal(write.status_source, 'created');
 });

@@ -6,6 +6,7 @@ import {
   fetchApplications,
   insertApplication,
   insertApplications,
+  rejectExpiredApplications,
   updateApplication as apiUpdateApplication,
 } from '@/lib/applicationsApi';
 import { saveApplications } from '@/lib/storage';
@@ -42,6 +43,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
   // Supabase에서 현재 사용자의 지원 내역 전체 조회
   loadApplications: () => withApplicationLock(async () => {
     set({ isLoading: true, error: null });
+    const deadlineResult = await rejectExpiredApplications();
     const { applications, error } = await fetchApplications();
 
     if (error) {
@@ -49,7 +51,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       return;
     }
 
-    set({ applications, isLoading: false });
+    set({ applications, isLoading: false, error: deadlineResult.error?.message ?? null });
   }),
 
   // 추가: 서버 저장에 성공했을 때만 로컬 state에 반영

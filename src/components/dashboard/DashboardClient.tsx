@@ -8,6 +8,7 @@ import { STATUS_ORDER } from '@/constants/status';
 import { useExtensionImport } from '@/hooks/useExtensionImport';
 import { useApplicationStore } from '@/store/applicationStore';
 import { DEFAULT_APPLICATION_FILTERS, filterApplications } from '@/utils/applicationFilters';
+import { getTodayInKorea } from '@/utils/applicationDeadline';
 
 const noopSubscribe = () => () => {};
 
@@ -30,6 +31,23 @@ export function DashboardClient() {
   // AuthGuard가 로그인 상태에서만 이 컴포넌트를 마운트시키므로, 마운트 시 바로 조회한다.
   useEffect(() => {
     loadApplications();
+  }, [loadApplications]);
+
+  useEffect(() => {
+    let loadedDay = getTodayInKorea();
+    const refreshOnNewDay = () => {
+      if (document.visibilityState !== 'visible') return;
+      const today = getTodayInKorea();
+      if (today === loadedDay) return;
+      loadedDay = today;
+      void loadApplications();
+    };
+    document.addEventListener('visibilitychange', refreshOnNewDay);
+    const timer = window.setInterval(refreshOnNewDay, 60_000);
+    return () => {
+      document.removeEventListener('visibilitychange', refreshOnNewDay);
+      window.clearInterval(timer);
+    };
   }, [loadApplications]);
 
   // 익스텐션이 "취준일기 열기"로 붙인 ?import=1 신호를 감지하면 자동으로 가져오기를 실행한다.

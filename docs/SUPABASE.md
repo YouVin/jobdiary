@@ -28,8 +28,9 @@
 | `position` | `position` | `text` | not null | Postgres 예약어는 아니지만 문자열 함수 `POSITION()`과 이름이 겹친다. 실제 적용 시 `job_position`처럼 바꿀지 팀 판단 필요 |
 | `platform` | `platform` | `text` | not null | 아래 "platform/status 타입" 참고 |
 | `status` | `status` | `text` | not null | 아래 "platform/status 타입" 참고 |
-| `statusSource` | `status_source` | `text` | not null, `default 'extension'`, CHECK | `extension` / `manual`. 수동 상태는 재수집 시 보호 |
+| `statusSource` | `status_source` | `text` | not null, `default 'extension'`, CHECK | `extension` / `created` / `manual` / `deadline`. 직접 추가·수동 이동·마감일 자동 상태는 재수집 시 보호 |
 | `appliedAt` | `applied_at` | `timestamptz` | not null | INTEGRATION.md §4대로 자정 기준 날짜만 저장 |
+| `deadlineAt` | `deadline_at` | `date` | null 허용 | 선택적 공고 마감일. 자동 분류는 [DEADLINE](DEADLINE.md) 참고 |
 | `updatedAt` | `updated_at` | `timestamptz` | not null, `default now()` | |
 | — | `created_at` | `timestamptz` | not null, `default now()` | ★신규. TS 타입엔 없던 필드 — DB가 자동으로 채우는 메타데이터로 두고, 앱 로직은 당장 안 씀. 필요해지면 `Application`에 `createdAt?`을 추가 |
 | `memo` | `memo` | `text` | null 허용 | |

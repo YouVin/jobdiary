@@ -31,6 +31,7 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
   const [platform, setPlatform] = useState<Platform>('saramin');
   const [status, setStatus] = useState<Status>('applied');
   const [appliedAt, setAppliedAt] = useState(getTodayDateString);
+  const [deadlineAt, setDeadlineAt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 저장 후 다음 입력을 위해 폼 초기화
@@ -40,6 +41,7 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
     setPlatform('saramin');
     setStatus('applied');
     setAppliedAt(getTodayDateString());
+    setDeadlineAt('');
   };
 
   const handleSave = async () => {
@@ -55,6 +57,7 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
         platform,
         status,
         appliedAt: new Date(appliedAt).toISOString(),
+        deadlineAt: deadlineAt || undefined,
       });
 
       // 실패 시 에러는 store.error에 남아 아래에 표시되고, 모달은 닫지 않는다.
@@ -93,6 +96,8 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
         onStatusChange={setStatus}
         appliedAt={appliedAt}
         onAppliedAtChange={setAppliedAt}
+        deadlineAt={deadlineAt}
+        onDeadlineAtChange={setDeadlineAt}
       />
 
       {error && <p className="mt-3 text-label text-status-rejected">{error}</p>}

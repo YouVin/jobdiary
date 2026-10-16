@@ -9,7 +9,7 @@ interface ApplicationCardContentProps {
 }
 
 export function ApplicationCardContent({ application, isDuplicate = false }: ApplicationCardContentProps) {
-  const { company, position, platform, appliedAt, diary, interviewDate } = application;
+  const { company, position, platform, appliedAt, diary, interviewDate, deadlineAt, statusSource } = application;
   const hasDiary = diary !== undefined && diary.length > 0;
 
   return (
@@ -41,6 +41,13 @@ export function ApplicationCardContent({ application, isDuplicate = false }: App
           <Icon name="calendar" className="h-3 w-3" />
           {formatDate(interviewDate)}
         </div>
+      )}
+
+      {deadlineAt && (
+        <p className="mt-2 text-caption text-text-muted">공고 마감 {formatDate(deadlineAt)}</p>
+      )}
+      {statusSource === 'deadline' && (
+        <p className="mt-1 text-caption text-status-rejected">마감일 기준 자동 탈락</p>
       )}
     </>
   );
