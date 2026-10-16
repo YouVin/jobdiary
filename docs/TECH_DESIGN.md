@@ -6,7 +6,7 @@
 
 | 역할 | 기술 |
 |---|---|
-| 웹앱 | Next.js 16.2.9 App Router, React 19, TypeScript |
+| 웹앱 | Next.js 16.4.2 App Router, React 19, TypeScript |
 | 스타일 | Tailwind CSS 4, tailwind.config.ts 디자인 토큰, Pretendard |
 | 상태 | Zustand 지원 내역 스토어, React 화면 상태 |
 | 드래그 | @dnd-kit/core, @dnd-kit/sortable |
