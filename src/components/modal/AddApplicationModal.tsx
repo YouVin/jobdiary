@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { buttonClassName } from '@/components/common/buttonStyles';
 import { Modal } from '@/components/common/Modal';
 import { ApplicationFormFields } from '@/components/modal/ApplicationFormFields';
 import { useApplicationStore } from '@/store/applicationStore';
 import { Platform, Status } from '@/types/application';
+import { getApplicationDateError } from '@/utils/applicationFormValidation';
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -30,7 +32,9 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
   const [platform, setPlatform] = useState<Platform>('saramin');
   const [status, setStatus] = useState<Status>('applied');
   const [appliedAt, setAppliedAt] = useState(getTodayDateString);
+  const [deadlineAt, setDeadlineAt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   // 저장 후 다음 입력을 위해 폼 초기화
   const resetForm = () => {
@@ -39,12 +43,18 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
     setPlatform('saramin');
     setStatus('applied');
     setAppliedAt(getTodayDateString());
+    setDeadlineAt('');
+    setValidationError(null);
   };
 
   const handleSave = async () => {
     if (!company.trim()) {
       return;
     }
+
+    const dateError = getApplicationDateError({ appliedAt, deadlineAt });
+    setValidationError(dateError);
+    if (dateError) return;
 
     setIsSubmitting(true);
     try {
@@ -54,6 +64,7 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
         platform,
         status,
         appliedAt: new Date(appliedAt).toISOString(),
+        deadlineAt: deadlineAt || undefined,
       });
 
       // 실패 시 에러는 store.error에 남아 아래에 표시되고, 모달은 닫지 않는다.
@@ -92,16 +103,20 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
         onStatusChange={setStatus}
         appliedAt={appliedAt}
         onAppliedAtChange={setAppliedAt}
+        deadlineAt={deadlineAt}
+        onDeadlineAtChange={setDeadlineAt}
       />
 
-      {error && <p className="mt-3 text-[12px] text-status-rejected">{error}</p>}
+      {(validationError || error) && (
+        <p role="alert" className="mt-3 text-label text-status-rejected">{validationError || error}</p>
+      )}
 
       <div className="mt-5 flex justify-end gap-2">
         <button
           type="button"
           onClick={handleClose}
           disabled={isSubmitting}
-          className="rounded-lg border border-border-strong px-4 py-2 text-[14px] font-medium text-text-secondary transition-colors hover:bg-column disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonClassName('secondary')}
         >
           취소
         </button>
@@ -109,7 +124,7 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
           type="button"
           onClick={handleSave}
           disabled={!company.trim() || isSubmitting}
-          className="rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonClassName('primary')}
         >
           {isSubmitting ? '저장 중...' : '저장'}
         </button>

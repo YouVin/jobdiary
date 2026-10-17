@@ -1,22 +1,44 @@
 # 인증 설계 (AUTH)
 
-> 현재 이메일+비밀번호 인증 위에 실무급 기능을 단계적으로 얹기 위한 설계 문서. 기존 구조 — `authStore`의 3상태(`loading`/`authenticated`/`unauthenticated`), 리다이렉트 소유권(단일 `useEffect`), `?import=1` 등 쿼리 신호 보존 — 은 유지한다는 전제로 설계한다. 이 문서는 설계만 다룬다. 구현은 6번 Phase 계획에 따라 별도로 진행한다.
+> 인증 기능의 설계 이력과 동작 규칙을 기록한 문서. 현재 구현은 `src/store/authStore.ts`, `src/components/auth/`, `src/app/(protected)/`을 기준으로 확인한다. 화면 렌더링 경계는 [RENDERING](RENDERING.md)을 참고한다.
 
 ---
+
+## 릴리즈 현재 동작 (#97, 2026-10-17)
+
+- `/terms`, `/privacy`는 로그인 없이 읽는 Server Component 페이지다. 운영자 황유빈과 문의 이메일, 실제 처리 항목·목적·위탁·삭제·자동 분류의 한계를 안내한다.
+- 이메일 가입은 명시적인 체크 후 `terms_version`, `privacy_version`, `consented_at`을 사용자 메타데이터에 저장한다.
+- 로그인 모드의 Google 버튼은 기존/신규 계정을 구분할 수 없다. 버튼 아래에 인증 정보 처리·정책 링크를 먼저 안내하고, 인증 후 `AuthGuard`에서 현재 버전 동의가 없으면 `ConsentGate`만 렌더링한다. 지원 목록 조회·가져오기는 동의 후 마운트된다. 기존 계정도 기록이 없으면 한 번 확인한다.
+- 동의 저장은 `getUser`로 현재 계정을 확인하고, 저장 실패 시 화면을 유지한다. 계정 전환 후 늦게 온 결과는 무시한다. 미동의 상태에서도 로그아웃과 이메일 탈퇴 요청을 제공한다.
+- 이 메타데이터는 사용자가 변경할 수 있는 **UI 확인 기록**이다. RLS/권한 판단이나 위변조 방지 동의 감사 원장으로 취급하지 않는다. 별도 감사 원장이 필요한 서비스로 확대할 때 서버 기록을 추가한다.
+- 아래 상세 Phase는 설계 이력이다. 정책 문서가 준비 중이라는 과거 계획은 위 구현으로 대체됐다. 실제 법률 검토를 받은 것으로 표시하지 않는다.
 
 ## 1. 현재 상태 (되는 것)
 
 - **인증 방식**: 이메일+비밀번호. Supabase Auth 기본 기능만 사용. Confirm email이 켜져 있어 회원가입 직후엔 세션이 없다(메일 인증 전까지 로그인 불가).
-- **상태 관리**: [`src/store/authStore.ts`](../src/store/authStore.ts)의 `authStore`가 `status: 'loading' | 'authenticated' | 'unauthenticated'`와 `session`을 보관한다. `setSession(session)` 한 곳에서 `session` 유무로 `status`까지 함께 확정한다 — 상태가 어긋날 여지가 없다.
+- **상태 관리**: [`src/store/authStore.ts`](../src/store/authStore.ts)의 `authStore`가 `status: 'loading' | 'authenticated' | 'unauthenticated' | 'recovering'`과 `session`을 보관한다. `setSession(session)`은 일반 세션 상태를 확정하고, 복구 상태에서는 `setRecovering()`과 `completeRecovery()`가 상태 전환을 담당한다.
 - **세션 부트스트랩/구독**: [`AuthProvider`](../src/components/auth/AuthProvider.tsx)가 루트 레이아웃에서 한 번만 마운트된다. 마운트 시 `getSession()`으로 새로고침 후 세션을 복원하고, `onAuthStateChange`로 이후 로그인/로그아웃 등 변화를 실시간 반영한다.
-- **라우트 가드**: [`AuthGuard`](../src/components/auth/AuthGuard.tsx)는 `status==='unauthenticated'`면 `/login`으로 리다이렉트(이때 현재 쿼리를 그대로 붙여 보존), `status==='authenticated'`면 `children`(보드)을 렌더링, `loading`이면 로딩 화면만 보여준다. 지금은 "인증이 필요한 페이지"만 감싸고, `/login` 자체는 가드로 감싸져 있지 않다 — 로그인 상태로 `/login`에 들어왔을 때 보드로 돌려보내는 처리는 `LoginForm` 내부의 `useEffect`가 담당한다.
+- **라우트 가드**: [`AuthGuard`](../src/components/auth/AuthGuard.tsx)는 [`(protected)` 레이아웃](../src/app/(protected)/layout.tsx)에서 `/`와 `/account`를 함께 감싼다. `status==='unauthenticated'`면 현재 쿼리를 보존해 `/login`으로, `status==='recovering'`이면 `/update-password`로 이동한다. `status==='authenticated'`면 자식을 렌더링하고, `loading`이면 로딩 화면만 보여준다. `/login`은 가드를 거치지 않으며 로그인 상태에서 홈으로 돌려보내는 처리는 `LoginForm` 내부의 `useEffect`가 담당한다. 이 가드는 브라우저 UI 제어이며 서버 측 접근 제어가 아니다. 렌더링 경계는 [RENDERING](RENDERING.md)을 참고한다.
 - **로그인/회원가입 폼**: [`LoginForm`](../src/components/auth/LoginForm.tsx) 하나가 탭 토글로 로그인·회원가입을 겸한다.
   - 이메일 정규식(`EMAIL_PATTERN`)과 비밀번호 최소 6자(`MIN_PASSWORD_LENGTH`) 검증 — **제출 시점에만** 검증한다(필드별 실시간/blur 검증은 없음).
   - Supabase 에러 메시지를 한글로 매핑하는 `getFriendlyErrorMessage` — 원문 문자열의 `includes()` 매칭으로 4가지 케이스만 다루고, 나머지는 공용 문구("요청 처리 중 문제가 발생했습니다...")로 뭉뚱그린다.
   - `isSubmitting`으로 제출 중 버튼을 비활성화하고 "처리 중..." 문구를 보여준다.
   - 회원가입 성공 후에도 세션이 없으면(이메일 확인 대기 상태) 리다이렉트하지 않고 "확인 메일을 발송했습니다..." 안내만 표시한다.
   - **리다이렉트 소유권은 단 하나의 `useEffect`**(`status==='authenticated'`를 구독)가 갖는다. `redirectToBoard()`가 `/login`에 붙어있던 쿼리(예: 익스텐션이 붙이는 `?import=1`)를 읽어 그대로 `/`에 이어 붙인다 — 로그인 폼의 다른 어떤 코드 경로도 직접 리다이렉트하지 않는다(중복 리다이렉트 방지, 이전 CodeRabbit 라운드에서 확정된 패턴).
-- **로그아웃**: `HeaderActions`가 `signOut()`을 호출하고, 성공했을 때만 로컬 지원 목록을 초기화한다(`resetApplications`) — 실패한 채로 먼저 비우면 세션은 남았는데 데이터만 사라지는 손실이 생기기 때문.
+- **로그아웃**: `HeaderActions`가 `signOut()`을 호출하고, 인증 이벤트가 `authStore.setSession(null)`로 전달될 때 지원 목록을 초기화한다. 다른 탭의 로그아웃도 같은 경로를 사용한다. 실패 시 현재 세션의 목록을 임의로 지우지 않는다.
+
+### 계정 전환과 지연 응답 보호 (#90, 2026-10-17)
+
+- `authStore`는 인증 상태를 공개하기 전에 지원 저장소의 `setUser`를 동기 호출한다. 계정 변경·로그아웃·복구 세션 진입 시 지원 목록, 로딩, 오류를 비우고 `sessionVersion`을 증가시킨다. 같은 계정의 토큰 갱신에는 유지한다.
+- 지원 조회·추가·수정·삭제·가져오기는 잠금을 기다리기 전에 계정 ID와 저장소 세대를 캡처한다. 대기 종료와 각 비동기 응답 뒤에 확인하고, 일치하지 않으면 다음 요청과 상태 반영을 중단한다. A → 로그아웃 → A도 이전 작업을 재사용하지 않는다.
+- API는 `getUser()`로 확인한 사용자와 요청 시작 계정이 같은지 검증한다. 조회·수정·삭제에는 해당 `user_id` 필터, 삽입에는 해당 `user_id` 값을 사용한다. 최종 권한 경계는 운영 DB의 본인 데이터 RLS다. 이미 서버에 전송된 요청을 로그아웃이 롤백하는 것은 아니다.
+- `AuthGuard`는 인증 계정과 지원 저장소 계정이 일치할 때만 표시하고 세대가 바뀌면 내부 화면을 다시 마운트한다. 이전 계정의 모달·입력값·검색·익스텐션 알림이 다음 계정으로 넘어가지 않게 한다.
+- 익스텐션 응답 대기 중 계정이 바뀌면 수집 결과를 저장하지 않는다. 비밀번호 변경 재확인 뒤에도 같은 세대인지 확인한 후 다음 변경 요청을 진행한다.
+- 인증 초기 복원은 더 최신의 인증 이벤트가 도착하거나 구독이 해제되면 무시한다. 복구 중인 같은 계정의 토큰 갱신은 복구 상태를 유지하되, 로그아웃과 다른 계정 로그인은 정상 반영한다.
+- 회귀 검증: `tests/accountIsolation.test.mjs`에서 가짜 계정과 지연 응답으로 실행한다. 실제 계정으로 브라우저 로그인·다중 탭을 수행한 검증과는 구분한다.
+
+### 외부 설정과 클라이언트 초기화
+
 - **Supabase 프로젝트 설정 현황**: 이메일 provider 활성화, Confirm email 켜짐, Site URL = Vercel 배포 도메인.
 - **클라이언트 초기화**: [`src/lib/supabase.ts`](../src/lib/supabase.ts)는 지연 초기화(Proxy) 패턴을 쓴다 — 실제 속성에 접근하는 시점에만 클라이언트를 만들어서, 빌드/prerender 시점에 환경변수가 없어도 안전하다. `flowType`/`detectSessionInUrl` 같은 옵션은 명시적으로 설정하지 않아 supabase-js 기본값(브라우저에서 URL의 세션 정보를 자동 감지)에 의존하고 있다 — 비밀번호 재설정·OAuth를 붙일 때 이 기본값이 그대로 맞는지 재검토가 필요하다(§5).
 

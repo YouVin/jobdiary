@@ -22,8 +22,9 @@ export interface Application {
   position: string; // 공고명
   platform: Platform; // 어느 사이트
   status: Status; // 현재 상태
-  statusSource?: 'extension' | 'manual'; // 직접 변경한 상태는 재수집 시 유지
+  statusSource?: 'extension' | 'created' | 'manual' | 'deadline'; // 수동 이동과 자동 분류를 구분
   appliedAt: string; // 지원일 (ISO)
+  deadlineAt?: string; // 공고 마감일 (YYYY-MM-DD). 없으면 상시/미확인
   updatedAt: string;
   memo?: string;
   diary?: DiaryEntry[]; // 일기 목록

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { buttonClassName } from '@/components/common/buttonStyles';
+import { fieldErrorClassName, inputClassName, labelClassName } from '@/components/common/formStyles';
 import { resetPasswordForEmail } from '@/lib/auth';
 import { getEmailError } from '@/utils/authValidation';
-import { fieldErrorClassName, inputClassName, labelClassName } from '@/components/auth/authFormStyles';
 
 // /reset-password 폼 — 이메일을 받아 재설정 링크를 요청한다 (docs/AUTH.md §6.3.1, §6.3.4)
 export function ResetPasswordForm() {
@@ -40,12 +41,12 @@ export function ResetPasswordForm() {
 
   if (isSubmitted) {
     return (
-      <div className="w-full max-w-105 rounded-[14px] bg-card p-6 text-center shadow-lg">
-        <p className="text-[14px] text-text-primary">입력하신 이메일로 재설정 링크를 보냈습니다.</p>
-        <p className="mt-1 text-[12px] text-text-muted">가입된 이메일이 맞다면 잠시 후 메일함을 확인해주세요.</p>
+      <div className="w-full max-w-105 rounded-card bg-card p-6 text-center shadow-float">
+        <p className="text-body text-text-primary">입력하신 이메일로 재설정 링크를 보냈습니다.</p>
+        <p className="mt-1 text-label text-text-muted">가입된 이메일이 맞다면 잠시 후 메일함을 확인해주세요.</p>
         <Link
           href="/login"
-          className="mt-5 inline-block rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover"
+          className={buttonClassName('primary', 'mt-5')}
         >
           로그인으로 돌아가기
         </Link>
@@ -54,9 +55,9 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-105 rounded-[14px] bg-card p-6 shadow-lg">
-      <h1 className="mb-1 text-[16px] font-semibold text-text-primary">비밀번호 재설정</h1>
-      <p className="mb-5 text-[12px] text-text-secondary">가입하신 이메일을 입력하면 재설정 링크를 보내드립니다.</p>
+    <div className="w-full max-w-105 rounded-card bg-card p-6 shadow-float">
+      <h1 className="mb-1 text-heading-md text-text-primary">비밀번호 재설정</h1>
+      <p className="mb-5 text-label text-text-secondary">가입하신 이메일을 입력하면 재설정 링크를 보내드립니다.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         <div>
@@ -85,12 +86,12 @@ export function ResetPasswordForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonClassName('primary', 'mt-2')}
         >
           {isSubmitting ? '처리 중...' : '재설정 링크 보내기'}
         </button>
 
-        <Link href="/login" className="text-center text-[12px] font-medium text-brand hover:underline">
+        <Link href="/login" className="text-center text-label font-medium text-brand hover:underline">
           로그인으로 돌아가기
         </Link>
       </form>

@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
+import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
+import { buttonClassName } from '@/components/common/buttonStyles';
+import { fieldErrorClassName, labelClassName, passwordInputClassName } from '@/components/common/formStyles';
 import { signOut, updatePassword } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 import { getConfirmPasswordError, getPasswordError } from '@/utils/authValidation';
-import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
-import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
-import { fieldErrorClassName, labelClassName, passwordInputClassName } from '@/components/auth/authFormStyles';
 
 // /update-password 폼 — 페이지 자체가 authStore.status를 직접 구독해 가드한다 (docs/AUTH.md §6.3.2, §6.3.4).
 // AuthGuard로 감싸지 않는다: AuthGuard의 "인증됨=허용" 규칙과 이 페이지의 "recovering만 허용" 규칙이 반대다.
@@ -64,8 +65,8 @@ export function UpdatePasswordForm() {
 
   if (status === 'loading') {
     return (
-      <div className="w-full max-w-105 rounded-[14px] bg-card p-6 shadow-lg">
-        <p className="text-center text-[14px] text-text-muted">확인 중...</p>
+      <div className="w-full max-w-105 rounded-card bg-card p-6 shadow-float">
+        <p className="text-center text-body text-text-muted">확인 중...</p>
       </div>
     );
   }
@@ -74,12 +75,12 @@ export function UpdatePasswordForm() {
   // 링크 만료·재사용, 직접 접근, 새로고침으로 인한 recovering 유실 등이 모두 여기로 모인다 (docs/AUTH.md §6.3.6).
   if (status !== 'recovering') {
     return (
-      <div className="w-full max-w-105 rounded-[14px] bg-card p-6 text-center shadow-lg">
-        <p className="text-[14px] text-text-primary">유효하지 않거나 만료된 링크입니다.</p>
-        <p className="mt-1 text-[12px] text-text-muted">비밀번호 재설정을 다시 요청해주세요.</p>
+      <div className="w-full max-w-105 rounded-card bg-card p-6 text-center shadow-float">
+        <p className="text-body text-text-primary">유효하지 않거나 만료된 링크입니다.</p>
+        <p className="mt-1 text-label text-text-muted">비밀번호 재설정을 다시 요청해주세요.</p>
         <Link
           href="/reset-password"
-          className="mt-5 inline-block rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover"
+          className={buttonClassName('primary', 'mt-5')}
         >
           재설정 다시 요청하기
         </Link>
@@ -88,9 +89,9 @@ export function UpdatePasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-105 rounded-[14px] bg-card p-6 shadow-lg">
-      <h1 className="mb-1 text-[16px] font-semibold text-text-primary">새 비밀번호 설정</h1>
-      <p className="mb-5 text-[12px] text-text-secondary">새로 사용할 비밀번호를 입력해주세요.</p>
+    <div className="w-full max-w-105 rounded-card bg-card p-6 shadow-float">
+      <h1 className="mb-1 text-heading-md text-text-primary">새 비밀번호 설정</h1>
+      <p className="mb-5 text-label text-text-secondary">새로 사용할 비밀번호를 입력해주세요.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         <div>
@@ -155,7 +156,7 @@ export function UpdatePasswordForm() {
         </div>
 
         {errorMessage && (
-          <p role="alert" className="text-[12px] text-status-rejected">
+          <p role="alert" className="text-label text-status-rejected">
             {errorMessage}
           </p>
         )}
@@ -163,7 +164,7 @@ export function UpdatePasswordForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonClassName('primary', 'mt-2')}
         >
           {isSubmitting ? '처리 중...' : '비밀번호 변경'}
         </button>

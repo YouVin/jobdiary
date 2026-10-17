@@ -5,19 +5,11 @@
    여기 @theme inline은 그 토큰들과 별개로, next/font가 만드는 --font-pretendard 같은 런타임
    CSS 변수를 Tailwind가 쓸 수 있는 이름으로 연결하는 배선(wiring) 용도로만 좁게 쓴다 — 새 색/폰트
    토큰을 추가할 때는 여기가 아니라 tailwind.config.ts의 theme.extend에 넣는다. */
-:root {
-  --background: #fafafa;
-  --foreground: #18181b;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-pretendard);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  @apply bg-page text-text-primary;
   font-family: var(--font-sans);
 }

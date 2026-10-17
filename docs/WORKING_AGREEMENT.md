@@ -2,6 +2,8 @@
 
 취준일기 개발 시 **항상** 지키는 규칙. 즉흥적 판단이 아니라 이 문서를 기준으로 작업한다.
 
+작업 시작점은 [문서 인덱스](README.md). 관련 문서의 필요한 절과 코드만 읽고, 구현과 다른 설명은 해당 작업에서 함께 수정한다.
+
 ---
 
 ## 1. 커밋 원칙 (Atomic and Focused Commits)
@@ -36,6 +38,8 @@
 
 모든 UI는 확정된 디자인 시스템을 따른다. 임의의 색/크기 사용 금지.
 
+상세 기준은 [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md). 간격·크기는 정수 Tailwind 단위만 사용하고 소수 클래스(`h-4.5`, `gap-1.5` 등)를 추가하지 않는다. SVG는 `public/icons/` 파일과 공통 `Icon`으로 관리한다.
+
 ### 색상 — tailwind.config.ts 토큰만 사용
 ```
 brand: #4F46E5 / hover #4338CA / tint #EEF2FF / text #3730A3
@@ -50,7 +54,7 @@ platform: saramin(#F4F4F5/#3F3F46) / wanted(#EEF2FF/#3730A3) / jobkorea(#FEF2F2/
 ```
 heading/xl  28 · 600      heading/lg  22 · 500
 heading/md  18 · 500      body        14 · 400
-card/company 13 · 500     label       12 · 500
+small        13 · 400     card/company 13 · 500     label 12 · 500
 caption     11 · 400      badge       10 · 500
 ```
 
@@ -61,7 +65,7 @@ Tablet   768~1023px  md:
 Desktop  1024px~     lg:
 ```
 모든 컴포넌트는 세 화면을 고려한다.
-예) `grid-cols-1 md:grid-cols-3 lg:grid-cols-5`
+예) 현재 칸반은 `grid-cols-1 md:grid-cols-3 lg:grid-cols-7`
 
 ---
 
@@ -73,7 +77,7 @@ Desktop  1024px~     lg:
 - 단계 주석 한국어로
 - Server/Client 컴포넌트 분리 (표시용 Server, 상태/이벤트 Client)
 - 클라이언트 상태 Zustand, 조건부 클래스 clsx
-- localStorage 접근은 lib/storage.ts 헬퍼만 경유
+- 지원 내역 저장은 `applicationStore.ts` → `lib/applicationsApi.ts` → Supabase 경유. `lib/storage.ts`는 이전 localStorage 구현이다.
 
 ---
 
@@ -93,18 +97,18 @@ chore/[내용]  설정/문서/잡일
 ## 5. 작업 흐름 (한 사이클)
 
 ```
-1. GitHub 이슈 생성 (템플릿 사용, 라벨 + 마일스톤)
+1. 기능별 GitHub 이슈 생성 (템플릿 사용, 적절한 기존 라벨·마일스톤이 있으면 연결)
 2. 이슈 작업 브랜치 생성 (컨벤션에 맞게)
-3. 개발 (이 규칙 문서 전부 준수)
+3. 관련 docs부터 확인 → 개발 → 구현과 어긋난 문서 동시 갱신
 4. Atomic 커밋 (작업 단위로 분리, 하나의 논리)
 5. push → PR 생성 (base: dev, "Closes #N")
-6. 병합 → 이슈 자동 종료
+6. 검증 후 병합 → 이슈 종료 확인 (자동 종료는 기본 브랜치 설정에 따라 달라짐)
 7. 다음 이슈
 ```
 
 ---
 
-## 6. Claude(PM/개발) 행동 지침
+## 6. 개발 에이전트 행동 지침
 
 - 개발 지시나 코드 생성 시 위 모든 규칙을 자동으로 적용한다.
 - 색상/타이포/간격은 디자인 시스템 값을 정확히 사용한다.

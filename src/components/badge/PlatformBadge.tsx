@@ -1,5 +1,5 @@
-import { Platform } from '@/types/application';
 import { PLATFORM_INFO } from '@/constants/platform';
+import { Platform } from '@/types/application';
 
 interface PlatformBadgeProps {
   platform: Platform;
@@ -18,7 +18,7 @@ export function PlatformBadge({ platform }: PlatformBadgeProps) {
 
   return (
     <span
-      className={`inline-flex items-center rounded px-1.5 py-[1px] text-[10px] font-medium leading-none ${PLATFORM_BADGE_CLASS[platform]}`}
+      className={`inline-flex items-center rounded px-2 py-1 text-badge font-medium leading-none ${PLATFORM_BADGE_CLASS[platform]}`}
     >
       {label}
     </span>

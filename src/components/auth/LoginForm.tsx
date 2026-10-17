@@ -1,18 +1,20 @@
 'use client';
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { clsx } from 'clsx';
-import { signIn, signUp } from '@/lib/auth';
-import { useAuthStore } from '@/store/authStore';
-import { getConfirmPasswordError, getEmailError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { PolicyLinks } from '@/components/auth/PolicyLinks';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
 import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
-import { fieldErrorClassName, inputClassName, labelClassName, passwordInputClassName } from '@/components/auth/authFormStyles';
+import { buttonClassName } from '@/components/common/buttonStyles';
+import { fieldErrorClassName, inputClassName, labelClassName, passwordInputClassName } from '@/components/common/formStyles';
 import { useOneTimeQueryMessage } from '@/hooks/useOneTimeQueryMessage';
+import { signIn, signUp } from '@/lib/auth';
+import { useAuthStore } from '@/store/authStore';
+import { getConfirmPasswordError, getEmailError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
 
 type Mode = 'signin' | 'signup';
 
@@ -224,7 +226,7 @@ export function LoginForm() {
     <div className="w-full max-w-105">
       {/* 데스크탑 전용 로고 — 모바일에서는 비주얼 영역(AuthVisualPanel) 상단 로고가 이 역할을 한다 */}
       <div className="mb-6 hidden items-center gap-2 md:flex">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-body font-bold text-on-brand">
           J
         </div>
         <span className="text-heading-md text-text-primary">취준일기</span>
@@ -242,8 +244,8 @@ export function LoginForm() {
           type="button"
           onClick={() => handleModeChange('signin')}
           className={clsx(
-            'flex-1 rounded-md py-2 text-[14px] font-medium transition-colors',
-            !isSignUp ? 'bg-card text-text-primary shadow-sm' : 'text-text-secondary',
+            'flex-1 rounded-md py-2 text-body font-medium transition-colors',
+            !isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary',
           )}
         >
           로그인
@@ -252,8 +254,8 @@ export function LoginForm() {
           type="button"
           onClick={() => handleModeChange('signup')}
           className={clsx(
-            'flex-1 rounded-md py-2 text-[14px] font-medium transition-colors',
-            isSignUp ? 'bg-card text-text-primary shadow-sm' : 'text-text-secondary',
+            'flex-1 rounded-md py-2 text-body font-medium transition-colors',
+            isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary',
           )}
         >
           회원가입
@@ -316,7 +318,7 @@ export function LoginForm() {
           {isSignUp && password && <PasswordStrengthMeter password={password} />}
 
           {!isSignUp && (
-            <div className="mt-1.5 text-right">
+            <div className="mt-2 text-right">
               <Link href="/reset-password" className="text-label text-brand hover:underline">
                 비밀번호를 잊으셨나요?
               </Link>
@@ -367,12 +369,12 @@ export function LoginForm() {
                   setAgreedToTerms(event.target.checked);
                   setTermsTouched(true);
                 }}
-                className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-brand"
+                className="mt-1 h-4 w-4 shrink-0 accent-brand"
                 aria-required="true"
                 aria-invalid={termsTouched && !agreedToTerms}
               />
               <label htmlFor="terms" className="text-label text-text-secondary">
-                이용약관 및 개인정보처리방침(준비 중)에 동의합니다.
+                <PolicyLinks />을 확인하고 이용약관에 동의합니다.
               </label>
             </div>
             {termsTouched && !agreedToTerms && (
@@ -386,7 +388,7 @@ export function LoginForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="mt-2 rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonClassName('primary', 'mt-2')}
         >
           {isSubmitting ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
         </button>
@@ -407,7 +409,7 @@ export function LoginForm() {
 
       <div className="my-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-card-border" />
-        <span className="text-[12px] text-text-muted">또는</span>
+        <span className="text-label text-text-muted">또는</span>
         <div className="h-px flex-1 bg-card-border" />
       </div>
 
@@ -426,6 +428,9 @@ export function LoginForm() {
         }}
         onError={(message) => setAuthError({ message, kind: 'other' })}
       />
+      <p className="mt-3 text-label text-text-secondary">
+        Google로 계속하면 로그인에 필요한 이메일·프로필을 전달받습니다. 신규 계정은 로그인 후 약관 확인을 마쳐야 지원 내역을 이용할 수 있습니다. <PolicyLinks />
+      </p>
     </div>
   );
 }

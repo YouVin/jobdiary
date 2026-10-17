@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import {
   DndContext,
   DragEndEvent,
@@ -11,18 +10,20 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { Application, Status } from '@/types/application';
-import { STATUS_ORDER } from '@/constants/status';
-import { Column } from '@/components/board/Column';
+import { useMemo, useState } from 'react';
 import { ApplicationCardContent } from '@/components/board/ApplicationCardContent';
+import { Column } from '@/components/board/Column';
+import { STATUS_ORDER } from '@/constants/status';
 import { useApplicationStore } from '@/store/applicationStore';
+import { Application, Status } from '@/types/application';
 import { getDuplicateApplicationIds } from '@/utils/duplicateDetection';
 
 interface KanbanBoardProps {
   applications: Application[];
+  visibleApplications?: Application[];
 }
 
-export function KanbanBoard({ applications }: KanbanBoardProps) {
+export function KanbanBoard({ applications, visibleApplications = applications }: KanbanBoardProps) {
   const updateStatus = useApplicationStore((state) => state.updateStatus);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeWidth, setActiveWidth] = useState<number | undefined>(undefined);
@@ -84,7 +85,7 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
           STATUS_ORDER에 상태를 추가/삭제하면 이 값도 함께 맞춰야 함. */}
       <div className="grid grid-cols-1 gap-2 md:grid-cols-3 lg:grid-cols-7">
         {STATUS_ORDER.map((status) => {
-          const columnApplications = applications.filter((application) => application.status === status);
+          const columnApplications = visibleApplications.filter((application) => application.status === status);
 
           return <Column key={status} status={status} applications={columnApplications} duplicateIds={duplicateIds} />;
         })}
@@ -94,7 +95,7 @@ export function KanbanBoard({ applications }: KanbanBoardProps) {
         {activeApplication && (
           <div
             style={{ width: activeWidth }}
-            className="rotate-2 cursor-grabbing rounded-lg border-[0.5px] border-card-border bg-white p-2.5 shadow-xl"
+            className="rotate-2 cursor-grabbing rounded-lg border border-card-border bg-card p-3 shadow-float"
           >
             <ApplicationCardContent application={activeApplication} isDuplicate={duplicateIds.has(activeApplication.id)} />
           </div>

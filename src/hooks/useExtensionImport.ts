@@ -3,7 +3,7 @@
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { JOBDIARY_EXTENSION_ID } from '@/constants/extension';
 import { JOBDIARY_COLLECT_REQUEST, sanitizeCollectResponse } from '@/lib/extensionImport';
-import { ImportSummary, useApplicationStore } from '@/store/applicationStore';
+import { captureApplicationSession, ImportSummary, useApplicationStore } from '@/store/applicationStore';
 import { useAuthStore } from '@/store/authStore';
 
 // 익스텐션이 설치되지 않았거나 chrome.runtime을 쓸 수 없는 환경(일반 브라우저, SSR, 빌드)에서는
@@ -43,6 +43,9 @@ export function useExtensionImport() {
       return;
     }
 
+    const context = captureApplicationSession();
+    if (!context) return;
+
     setIsRequesting(true);
     try {
       const response = await new Promise<unknown>((resolve, reject) => {
@@ -54,6 +57,9 @@ export function useExtensionImport() {
           resolve(result);
         });
       });
+
+      // 익스텐션 응답을 기다리는 동안 계정이 바뀌면 수집 데이터도 폐기한다.
+      if (!context.isCurrent()) return;
 
       const result = sanitizeCollectResponse(response);
 
@@ -68,11 +74,13 @@ export function useExtensionImport() {
       }
 
       const summary = await addApplicationsFromExtension(result.applications);
+      if (!context.isCurrent()) return;
       setImportSummary(summary);
     } catch (error) {
+      if (!context.isCurrent()) return;
       setImportSummary(failedSummary((error as Error).message || '익스텐션과 통신하지 못했습니다.'));
     } finally {
-      setIsRequesting(false);
+      if (context.isCurrent()) setIsRequesting(false);
     }
   }, [addApplicationsFromExtension]);
 

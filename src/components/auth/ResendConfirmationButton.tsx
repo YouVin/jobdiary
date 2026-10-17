@@ -36,11 +36,11 @@ export function ResendConfirmationButton({ email }: ResendConfirmationButtonProp
         type="button"
         onClick={handleResend}
         disabled={isResending}
-        className="text-[12px] font-medium text-brand hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+        className="text-label font-medium text-brand hover:underline disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         {isResending ? '재전송 중...' : '확인 메일 재전송'}
       </button>
-      {resendMessage && <p className="mt-1 text-[12px] text-status-offer">{resendMessage}</p>}
+      {resendMessage && <p className="mt-1 text-label text-status-offer">{resendMessage}</p>}
     </div>
   );
 }

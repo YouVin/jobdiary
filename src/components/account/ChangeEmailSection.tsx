@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { buttonClassName } from '@/components/common/buttonStyles';
+import { fieldErrorClassName, inputClassName, labelClassName } from '@/components/common/formStyles';
 import { updateEmail } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 import { getEmailError } from '@/utils/authValidation';
-import { fieldErrorClassName, inputClassName, labelClassName } from '@/components/auth/authFormStyles';
 
 // 이메일 변경 — 제출해도 즉시 바뀌지 않고, 새 이메일로 온 확인 메일을 열어야 실제로 반영된다
 // (docs/AUTH.md §6.5.3). 확인 전까지는 authStore의 session.user.email도 그대로다.
@@ -52,9 +53,9 @@ export function ChangeEmailSection() {
   };
 
   return (
-    <section className="rounded-[14px] border border-card-border bg-card p-5">
-      <h2 className="text-[15px] font-semibold text-text-primary">이메일 변경</h2>
-      <p className="mt-1 text-[12px] text-text-secondary">현재 이메일: {currentEmail}</p>
+    <section className="rounded-card border border-card-border bg-card p-5">
+      <h2 className="text-body font-semibold text-text-primary">이메일 변경</h2>
+      <p className="mt-1 text-label text-text-secondary">현재 이메일: {currentEmail}</p>
 
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3" noValidate>
         <div>
@@ -81,16 +82,16 @@ export function ChangeEmailSection() {
         </div>
 
         {errorMessage && (
-          <p role="alert" className="text-[12px] text-status-rejected">
+          <p role="alert" className="text-label text-status-rejected">
             {errorMessage}
           </p>
         )}
-        {successMessage && <p className="text-[12px] text-status-offer">{successMessage}</p>}
+        {successMessage && <p className="text-label text-status-offer">{successMessage}</p>}
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="mt-1 self-start rounded-lg bg-brand px-4 py-2 text-[14px] font-medium text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className={buttonClassName('primary', 'mt-1 self-start')}
         >
           {isSubmitting ? '요청 중...' : '이메일 변경'}
         </button>
