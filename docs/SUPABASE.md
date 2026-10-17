@@ -108,12 +108,12 @@ npx supabase@2.120.0 db query --linked --file supabase/checks/application_status
 
 ## 4. 저장 로직 전환 (현재 → Supabase)
 
-### 현재 구조
+### 현재 구조 (#99 정리 반영)
 
-- [`src/lib/storage.ts`](../src/lib/storage.ts): `getApplications()` / `saveApplications(apps)` — `localStorage`에서 전체 배열을 통째로 읽고 쓴다. 동기 함수.
-- [`src/store/applicationStore.ts`](../src/store/applicationStore.ts): `addApplication`, `updateApplication`, `updateStatus`, `removeApplication`, `addApplicationsFromExtension` 전부 로컬 state를 수정한 뒤 `saveApplications`로 **전체 배열을 매번 다시 저장**한다.
+- [`src/store/applicationStore.ts`](../src/store/applicationStore.ts)의 조회·추가·수정·삭제·가져오기는 `lib/applicationsApi.ts`를 통해 Supabase에 저장한다.
+- [`src/lib/storage.ts`](../src/lib/storage.ts)는 `saveApplications([])`로 계정 변경·로그아웃 시 이전 localStorage 값을 비우는 용도로만 사용한다. 호출이 없던 `getApplications()`는 #99에서 제거했다. 지원 내역을 localStorage에서 읽거나 매 변경마다 전체 저장하지 않는다.
 
-### 전환 후 방향
+### Supabase 전환 설계 이력
 
 Supabase는 원격 DB라 모든 호출이 네트워크 I/O — 동기 함수가 비동기(`async`/`await`)로 바뀌고, "전체 재저장" 대신 **건별 SQL 조작**(insert/update/delete one row)으로 바뀐다.
 
