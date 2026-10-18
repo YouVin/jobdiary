@@ -73,6 +73,48 @@ async function scenario(name, run) {
 }
 
 try {
+  await scenario('빈 필드는 포커스 이탈만으로 오류를 표시하지 않음', async ({ page, calls }) => {
+    await page.getByLabel('이메일', { exact: true }).focus();
+    await page.getByLabel('비밀번호', { exact: true }).focus();
+    await page.getByRole('heading', { name: '다시 오셨네요', exact: true }).click();
+    assert.equal(await page.locator('#email-error').count(), 0);
+    assert.equal(await page.locator('#password-error').count(), 0);
+    await page.getByRole('button', { name: '로그인', exact: true }).last().click();
+    await page.getByText('이메일을 입력해주세요.', { exact: true }).waitFor();
+    await page.getByText('비밀번호를 입력해주세요.', { exact: true }).waitFor();
+    assert.equal(calls.email.length, 0);
+  });
+  await scenario('400ms 입력 정지 후 상세 안내, 수정 즉시 해제, 서버 요청 없음', async ({ page, calls }) => {
+    await page.clock.install();
+    await page.clock.pauseAt(new Date(Date.now() + 1000));
+    const email = page.getByLabel('이메일', { exact: true });
+    await email.fill('name');
+    await page.clock.runFor(399);
+    assert.equal(await page.locator('#email-error').count(), 0);
+    await page.clock.runFor(1);
+    await page.getByText('이메일에 @를 포함해주세요. 예: name@example.com', { exact: true }).waitFor();
+    await email.fill('name@');
+    assert.equal(await page.locator('#email-error').count(), 0);
+    await page.clock.runFor(400);
+    await page.getByText('@ 뒤에 도메인을 입력해주세요. 예: gmail.com', { exact: true }).waitFor();
+    await email.fill('name@example.com');
+    assert.equal(await page.locator('#email-error').count(), 0);
+    assert.equal(await email.getAttribute('aria-invalid'), 'false');
+    assert.equal(calls.email.length, 0);
+    assert.equal(calls.google.length, 0);
+  });
+  await scenario('입력 후 blur 즉시 검사, 모드 변경 시 지연 검사 초기화', async ({ page }) => {
+    await page.clock.install();
+    await page.clock.pauseAt(new Date(Date.now() + 1000));
+    const email = page.getByLabel('이메일', { exact: true });
+    await email.fill('name@');
+    await page.getByLabel('비밀번호', { exact: true }).focus();
+    await page.getByText('@ 뒤에 도메인을 입력해주세요. 예: gmail.com', { exact: true }).waitFor();
+    await email.fill('name');
+    await page.getByRole('button', { name: '회원가입', exact: true }).first().click();
+    await page.clock.runFor(500);
+    assert.equal(await page.locator('#email-error').count(), 0);
+  });
   await scenario('가입 탭에서도 Google 시작 전 중복 약관 체크 없음', async ({ page, google, calls }) => {
     await page.getByRole('button', { name: '회원가입', exact: true }).first().click();
     await google().click();

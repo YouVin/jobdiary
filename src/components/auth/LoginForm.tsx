@@ -12,6 +12,7 @@ import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationBu
 import { buttonClassName } from '@/components/common/buttonStyles';
 import { fieldErrorClassName, inputClassName, labelClassName, passwordInputClassName } from '@/components/common/formStyles';
 import { useOneTimeQueryMessage } from '@/hooks/useOneTimeQueryMessage';
+import { useFieldValidation } from '@/hooks/useFieldValidation';
 import { signIn, signUp } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 import { getConfirmPasswordError, getEmailError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
@@ -91,10 +92,7 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // blur(필드를 벗어남) 시점부터 해당 필드의 인라인 에러를 보여주기 위한 플래그
-  const [emailTouched, setEmailTouched] = useState(false);
-  const [passwordTouched, setPasswordTouched] = useState(false);
-  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
+  // 약관은 체크·제출 시 확인하며 텍스트 입력은 아래 지연 검증 훅으로 안내한다.
   const [termsTouched, setTermsTouched] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,6 +112,9 @@ export function LoginForm() {
   const emailError = getEmailError(email);
   const passwordError = getPasswordError(password);
   const confirmPasswordError = isSignUp ? getConfirmPasswordError(password, confirmPassword) : null;
+  const emailFeedback = useFieldValidation(email, emailError);
+  const passwordFeedback = useFieldValidation(password, passwordError);
+  const confirmationFeedback = useFieldValidation(confirmPassword, confirmPasswordError);
 
   // /login에 붙은 쿼리(예: 익스텐션이 붙인 ?import=1)를 보존한 채 보드로 돌아간다.
   const redirectToBoard = useCallback(() => {
@@ -167,9 +168,9 @@ export function LoginForm() {
     setConfirmPassword('');
     setAgreedToTerms(false);
     setShowConfirmPassword(false);
-    setEmailTouched(false);
-    setPasswordTouched(false);
-    setConfirmPasswordTouched(false);
+    emailFeedback.reset();
+    passwordFeedback.reset();
+    confirmationFeedback.reset();
     setTermsTouched(false);
   };
 
@@ -180,10 +181,10 @@ export function LoginForm() {
     setInfoMessage(null);
 
     // 제출을 시도하면 아직 blur하지 않은 필드의 인라인 에러도 바로 보이게 한다.
-    setEmailTouched(true);
-    setPasswordTouched(true);
+    emailFeedback.validate();
+    passwordFeedback.validate();
     if (isSignUp) {
-      setConfirmPasswordTouched(true);
+      confirmationFeedback.validate();
       setTermsTouched(true);
     }
 
@@ -286,16 +287,17 @@ export function LoginForm() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              onBlur={() => setEmailTouched(true)}
+              onBlur={emailFeedback.onBlur}
               placeholder="you@example.com"
               className={inputClassName}
               autoComplete="email"
               aria-required="true"
-              aria-invalid={emailTouched && !!emailError}
+              aria-invalid={!!emailFeedback.error}
+              aria-describedby={emailFeedback.error ? 'email-error' : undefined}
             />
-            {emailTouched && emailError && (
-              <p role="alert" className={fieldErrorClassName}>
-                {emailError}
+            {emailFeedback.error && (
+              <p id="email-error" role="status" className={fieldErrorClassName}>
+                {emailFeedback.error}
               </p>
             )}
           </div>
@@ -310,12 +312,13 @@ export function LoginForm() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                onBlur={() => setPasswordTouched(true)}
+                onBlur={passwordFeedback.onBlur}
                 placeholder="6자 이상"
                 className={passwordInputClassName}
                 autoComplete={isSignUp ? 'new-password' : 'current-password'}
                 aria-required="true"
-                aria-invalid={passwordTouched && !!passwordError}
+                aria-invalid={!!passwordFeedback.error}
+                aria-describedby={passwordFeedback.error ? 'password-error' : undefined}
               />
               <PasswordToggleButton
                 isVisible={showPassword}
@@ -323,9 +326,9 @@ export function LoginForm() {
                 fieldLabel="비밀번호"
               />
             </div>
-            {passwordTouched && passwordError && (
-              <p role="alert" className={fieldErrorClassName}>
-                {passwordError}
+            {passwordFeedback.error && (
+              <p id="password-error" role="status" className={fieldErrorClassName}>
+                {passwordFeedback.error}
               </p>
             )}
 
@@ -351,12 +354,13 @@ export function LoginForm() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
-                  onBlur={() => setConfirmPasswordTouched(true)}
+                  onBlur={confirmationFeedback.onBlur}
                   placeholder="비밀번호를 한 번 더 입력해주세요"
                   className={passwordInputClassName}
                   autoComplete="new-password"
                   aria-required="true"
-                  aria-invalid={confirmPasswordTouched && !!confirmPasswordError}
+                  aria-invalid={!!confirmationFeedback.error}
+                  aria-describedby={confirmationFeedback.error ? 'confirm-password-error' : undefined}
                 />
                 <PasswordToggleButton
                   isVisible={showConfirmPassword}
@@ -364,9 +368,9 @@ export function LoginForm() {
                   fieldLabel="비밀번호 확인"
                 />
               </div>
-              {confirmPasswordTouched && confirmPasswordError && (
-                <p role="alert" className={fieldErrorClassName}>
-                  {confirmPasswordError}
+              {confirmationFeedback.error && (
+                <p id="confirm-password-error" role="status" className={fieldErrorClassName}>
+                  {confirmationFeedback.error}
                 </p>
               )}
             </div>
@@ -436,6 +440,9 @@ export function LoginForm() {
           requestPending.current = true;
           setAuthError(null);
           setInfoMessage(null);
+          emailFeedback.reset();
+          passwordFeedback.reset();
+          confirmationFeedback.reset();
           // Google은 인증 후 ConsentGate에서 현재 계정의 동의 여부를 확인한다.
           return true;
         }}

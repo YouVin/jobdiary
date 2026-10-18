@@ -29,7 +29,7 @@
 - **세션 부트스트랩/구독**: [`AuthProvider`](../src/components/auth/AuthProvider.tsx)가 루트 레이아웃에서 한 번만 마운트된다. 마운트 시 `getSession()`으로 새로고침 후 세션을 복원하고, `onAuthStateChange`로 이후 로그인/로그아웃 등 변화를 실시간 반영한다.
 - **라우트 가드**: [`AuthGuard`](../src/components/auth/AuthGuard.tsx)는 [`(protected)` 레이아웃](../src/app/(protected)/layout.tsx)에서 `/`와 `/account`를 함께 감싼다. `status==='unauthenticated'`면 현재 쿼리를 보존해 `/login`으로, `status==='recovering'`이면 `/update-password`로 이동한다. `status==='authenticated'`면 자식을 렌더링하고, `loading`이면 로딩 화면만 보여준다. `/login`은 가드를 거치지 않으며 로그인 상태에서 홈으로 돌려보내는 처리는 `LoginForm` 내부의 `useEffect`가 담당한다. 이 가드는 브라우저 UI 제어이며 서버 측 접근 제어가 아니다. 렌더링 경계는 [RENDERING](RENDERING.md)을 참고한다.
 - **로그인/회원가입 폼**: [`LoginForm`](../src/components/auth/LoginForm.tsx) 하나가 탭 토글로 로그인·회원가입을 겸한다.
-  - 이메일 정규식(`EMAIL_PATTERN`)과 비밀번호 최소 6자(`MIN_PASSWORD_LENGTH`)를 검증하고 제출·blur 이후 필드별 오류를 표시한다. 가입에서는 비밀번호 확인과 약관 확인도 검사한다.
+  - 이메일 형식과 비밀번호 최소 6자(`MIN_PASSWORD_LENGTH`)를 로컬에서 검증한다. 입력 후 400ms 멈추거나 입력한 필드를 벗어나면 오류를 안내하고, 올바르게 수정하면 즉시 제거한다. 빈 칸은 포커스 이탈만으로 오류를 표시하지 않으며 제출 시 필수값을 즉시 확인한다. 가입에서는 비밀번호 확인과 약관 확인도 검사한다.
   - Supabase 에러 메시지를 한글로 매핑하는 `getFriendlyErrorMessage`는 인증 실패·중복·형식·이메일 미인증·요청 제한·네트워크 오류를 안내한다. 나머지는 공용 문구를 사용한다.
   - `isSubmitting`으로 제출 중 버튼을 비활성화하고 "처리 중..." 문구를 보여준다.
   - 회원가입 성공 후에도 세션이 없으면(이메일 확인 대기 상태) 리다이렉트하지 않고 "확인 메일을 발송했습니다..." 안내만 표시한다.
