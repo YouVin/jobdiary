@@ -276,34 +276,6 @@ export function LoginForm() {
         </button>
       </div>
 
-      <section aria-label="Google 인증">
-        <GoogleSignInButton
-          disabled={isBusy}
-          onPendingChange={handleOAuthPendingChange}
-          onStart={() => {
-            if (requestPending.current) return false;
-            requestPending.current = true;
-            setAuthError(null);
-            setInfoMessage(null);
-            emailFeedback.reset();
-            passwordFeedback.reset();
-            confirmationFeedback.reset();
-            // Google은 인증 후 ConsentGate에서 현재 계정의 동의 여부를 확인한다.
-            return true;
-          }}
-          onError={(message) => setAuthError({ message, kind: 'other' })}
-        />
-        <p className="mt-3 text-label text-text-secondary">
-          Google에서 이메일·프로필을 전달받습니다. 서비스 약관 확인은 인증 후 필요한 경우 한 번 진행합니다. <PolicyLinks />
-        </p>
-      </section>
-
-      <div className="my-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-card-border" />
-        <span className="text-label text-text-muted">또는 이메일로 {isSignUp ? '가입하기' : '로그인하기'}</span>
-        <div className="h-px flex-1 bg-card-border" />
-      </div>
-
       <form aria-label={isSignUp ? '이메일 회원가입' : '이메일 로그인'} onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         <fieldset disabled={isBusy} className="flex min-w-0 flex-col gap-3">
           <div>
@@ -454,6 +426,33 @@ export function LoginForm() {
         <p className="mt-3 text-label text-status-offer">{infoMessage ?? oneTimeMessage}</p>
       )}
 
+      <div className="my-4 flex items-center gap-3">
+        <div className="h-px flex-1 bg-card-border" />
+        <span className="text-label text-text-muted">또는</span>
+        <div className="h-px flex-1 bg-card-border" />
+      </div>
+
+      <section aria-label="Google 인증">
+        <GoogleSignInButton
+          disabled={isBusy}
+          onPendingChange={handleOAuthPendingChange}
+          onStart={() => {
+            if (requestPending.current) return false;
+            requestPending.current = true;
+            setAuthError(null);
+            setInfoMessage(null);
+            emailFeedback.reset();
+            passwordFeedback.reset();
+            confirmationFeedback.reset();
+            // Google은 인증 후 ConsentGate에서 현재 계정의 동의 여부를 확인한다.
+            return true;
+          }}
+          onError={(message) => setAuthError({ message, kind: 'other' })}
+        />
+        <p className="mt-3 text-label text-text-secondary">
+          Google에서 이메일·프로필을 전달받습니다. 서비스 약관 확인은 인증 후 필요한 경우 한 번 진행합니다. <PolicyLinks />
+        </p>
+      </section>
     </div>
   );
 }

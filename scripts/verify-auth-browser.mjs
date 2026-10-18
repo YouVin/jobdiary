@@ -121,7 +121,7 @@ try {
     assert.equal(await google().evaluate(element => element.closest('form') === null), true);
     const googleBox = await google().boundingBox();
     const emailFormBox = await page.getByRole('form', { name: '이메일 회원가입', exact: true }).boundingBox();
-    assert(googleBox.y + googleBox.height < emailFormBox.y, 'Google 영역은 이메일 가입 폼 위에 배치');
+    assert(emailFormBox.y + emailFormBox.height < googleBox.y, 'Google 영역은 이메일 가입 폼 아래에 배치');
     await google().click();
     await page.waitForURL('https://*.supabase.co/auth/v1/authorize**');
     assert.equal(calls.google.length, 1);
