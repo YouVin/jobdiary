@@ -3,7 +3,7 @@
 import { clsx } from 'clsx';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { PolicyLinks } from '@/components/auth/PolicyLinks';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
@@ -15,6 +15,7 @@ import { useOneTimeQueryMessage } from '@/hooks/useOneTimeQueryMessage';
 import { signIn, signUp } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 import { getConfirmPasswordError, getEmailError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
+import { getBoardRedirectPath } from '@/utils/authRedirect';
 
 type Mode = 'signin' | 'signup';
 
@@ -29,7 +30,7 @@ function getOAuthErrorSignal(): string | null {
   }
   const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
   new URLSearchParams(window.location.search).forEach((value, key) => params.set(key, value));
-  return params.get('error_description') || params.get('error');
+  return params.get('error_description') || params.get('error') || params.get('error_code');
 }
 
 // 로그인 실패 원인의 "종류" — 특정 종류일 때만 추가 UI(예: 인증 메일 재전송 버튼)를 보여주기 위해 구분한다.
@@ -97,6 +98,13 @@ export function LoginForm() {
   const [termsTouched, setTermsTouched] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOAuthPending, setIsOAuthPending] = useState(false);
+  const requestPending = useRef(false);
+  const isBusy = isSubmitting || isOAuthPending;
+  const handleOAuthPendingChange = useCallback((pending: boolean) => {
+    setIsOAuthPending(pending);
+    if (!pending) requestPending.current = false;
+  }, []);
   const [authError, setAuthError] = useState<FriendlyAuthError | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
@@ -109,8 +117,7 @@ export function LoginForm() {
 
   // /login에 붙은 쿼리(예: 익스텐션이 붙인 ?import=1)를 보존한 채 보드로 돌아간다.
   const redirectToBoard = useCallback(() => {
-    const search = typeof window !== 'undefined' ? window.location.search : '';
-    router.replace(`/${search}`);
+    router.replace(getBoardRedirectPath(window.location.href));
   }, [router]);
 
   // 이미 로그인된 상태로 /login에 들어오거나, 방금 로그인/회원가입에 성공하면 보드로 이동
@@ -152,6 +159,7 @@ export function LoginForm() {
   }, [oauthErrorSignal]);
 
   const handleModeChange = (nextMode: Mode) => {
+    if (requestPending.current) return;
     setMode(nextMode);
     setAuthError(null);
     setInfoMessage(null);
@@ -167,6 +175,7 @@ export function LoginForm() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (requestPending.current) return;
     setAuthError(null);
     setInfoMessage(null);
 
@@ -183,6 +192,7 @@ export function LoginForm() {
       return;
     }
 
+    requestPending.current = true;
     setIsSubmitting(true);
     try {
       const result = isSignUp ? await signUp(email, password) : await signIn(email, password);
@@ -209,6 +219,7 @@ export function LoginForm() {
       console.error(`[${mode}] 실패(예외):`, error);
       setAuthError(getFriendlyErrorMessage(error instanceof Error ? error.message : ''));
     } finally {
+      requestPending.current = false;
       setIsSubmitting(false);
     }
   };
@@ -243,6 +254,7 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => handleModeChange('signin')}
+          disabled={isBusy}
           className={clsx(
             'flex-1 rounded-md py-2 text-body font-medium transition-colors',
             !isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary',
@@ -253,6 +265,7 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => handleModeChange('signup')}
+          disabled={isBusy}
           className={clsx(
             'flex-1 rounded-md py-2 text-body font-medium transition-colors',
             isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary',
@@ -263,135 +276,137 @@ export function LoginForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
-        <div>
-          <label htmlFor="email" className={labelClassName}>
-            이메일
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            onBlur={() => setEmailTouched(true)}
-            placeholder="you@example.com"
-            className={inputClassName}
-            autoComplete="email"
-            aria-required="true"
-            aria-invalid={emailTouched && !!emailError}
-          />
-          {emailTouched && emailError && (
-            <p role="alert" className={fieldErrorClassName}>
-              {emailError}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="password" className={labelClassName}>
-            비밀번호
-          </label>
-          <div className="relative">
-            <input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              onBlur={() => setPasswordTouched(true)}
-              placeholder="6자 이상"
-              className={passwordInputClassName}
-              autoComplete={isSignUp ? 'new-password' : 'current-password'}
-              aria-required="true"
-              aria-invalid={passwordTouched && !!passwordError}
-            />
-            <PasswordToggleButton
-              isVisible={showPassword}
-              onToggle={() => setShowPassword((prev) => !prev)}
-              fieldLabel="비밀번호"
-            />
-          </div>
-          {passwordTouched && passwordError && (
-            <p role="alert" className={fieldErrorClassName}>
-              {passwordError}
-            </p>
-          )}
-
-          {isSignUp && password && <PasswordStrengthMeter password={password} />}
-
-          {!isSignUp && (
-            <div className="mt-2 text-right">
-              <Link href="/reset-password" className="text-label text-brand hover:underline">
-                비밀번호를 잊으셨나요?
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {isSignUp && (
+        <fieldset disabled={isBusy} className="flex min-w-0 flex-col gap-3">
           <div>
-            <label htmlFor="confirmPassword" className={labelClassName}>
-              비밀번호 확인
+            <label htmlFor="email" className={labelClassName}>
+              이메일
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              onBlur={() => setEmailTouched(true)}
+              placeholder="you@example.com"
+              className={inputClassName}
+              autoComplete="email"
+              aria-required="true"
+              aria-invalid={emailTouched && !!emailError}
+            />
+            {emailTouched && emailError && (
+              <p role="alert" className={fieldErrorClassName}>
+                {emailError}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="password" className={labelClassName}>
+              비밀번호
             </label>
             <div className="relative">
               <input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                onBlur={() => setConfirmPasswordTouched(true)}
-                placeholder="비밀번호를 한 번 더 입력해주세요"
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                onBlur={() => setPasswordTouched(true)}
+                placeholder="6자 이상"
                 className={passwordInputClassName}
-                autoComplete="new-password"
+                autoComplete={isSignUp ? 'new-password' : 'current-password'}
                 aria-required="true"
-                aria-invalid={confirmPasswordTouched && !!confirmPasswordError}
+                aria-invalid={passwordTouched && !!passwordError}
               />
               <PasswordToggleButton
-                isVisible={showConfirmPassword}
-                onToggle={() => setShowConfirmPassword((prev) => !prev)}
-                fieldLabel="비밀번호 확인"
+                isVisible={showPassword}
+                onToggle={() => setShowPassword((prev) => !prev)}
+                fieldLabel="비밀번호"
               />
             </div>
-            {confirmPasswordTouched && confirmPasswordError && (
+            {passwordTouched && passwordError && (
               <p role="alert" className={fieldErrorClassName}>
-                {confirmPasswordError}
+                {passwordError}
               </p>
             )}
-          </div>
-        )}
 
-        {isSignUp && (
-          <div>
-            <div className="flex items-start gap-2">
-              <input
-                id="terms"
-                type="checkbox"
-                checked={agreedToTerms}
-                onChange={(event) => {
-                  setAgreedToTerms(event.target.checked);
-                  setTermsTouched(true);
-                }}
-                className="mt-1 h-4 w-4 shrink-0 accent-brand"
-                aria-required="true"
-                aria-invalid={termsTouched && !agreedToTerms}
-              />
-              <label htmlFor="terms" className="text-label text-text-secondary">
-                <PolicyLinks />을 확인하고 이용약관에 동의합니다.
+            {isSignUp && password && <PasswordStrengthMeter password={password} />}
+
+            {!isSignUp && (
+              <div className="mt-2 text-right">
+                <Link href="/reset-password" className="text-label text-brand hover:underline">
+                  비밀번호를 잊으셨나요?
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {isSignUp && (
+            <div>
+              <label htmlFor="confirmPassword" className={labelClassName}>
+                비밀번호 확인
               </label>
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  onBlur={() => setConfirmPasswordTouched(true)}
+                  placeholder="비밀번호를 한 번 더 입력해주세요"
+                  className={passwordInputClassName}
+                  autoComplete="new-password"
+                  aria-required="true"
+                  aria-invalid={confirmPasswordTouched && !!confirmPasswordError}
+                />
+                <PasswordToggleButton
+                  isVisible={showConfirmPassword}
+                  onToggle={() => setShowConfirmPassword((prev) => !prev)}
+                  fieldLabel="비밀번호 확인"
+                />
+              </div>
+              {confirmPasswordTouched && confirmPasswordError && (
+                <p role="alert" className={fieldErrorClassName}>
+                  {confirmPasswordError}
+                </p>
+              )}
             </div>
-            {termsTouched && !agreedToTerms && (
-              <p role="alert" className={fieldErrorClassName}>
-                약관에 동의해야 회원가입할 수 있습니다.
-              </p>
-            )}
-          </div>
-        )}
+          )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={buttonClassName('primary', 'mt-2')}
-        >
-          {isSubmitting ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
-        </button>
+          {isSignUp && (
+            <div>
+              <div className="flex items-start gap-2">
+                <input
+                  id="terms"
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(event) => {
+                    setAgreedToTerms(event.target.checked);
+                    setTermsTouched(true);
+                  }}
+                  className="mt-1 h-4 w-4 shrink-0 accent-brand"
+                  aria-required="true"
+                  aria-invalid={termsTouched && !agreedToTerms}
+                />
+                <label htmlFor="terms" className="text-label text-text-secondary">
+                  <PolicyLinks />을 확인하고 이용약관에 동의합니다.
+                </label>
+              </div>
+              {termsTouched && !agreedToTerms && (
+                <p role="alert" className={fieldErrorClassName}>
+                  약관에 동의해야 회원가입할 수 있습니다.
+                </p>
+              )}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isBusy}
+            className={buttonClassName('primary', 'mt-2')}
+          >
+            {isSubmitting ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
+          </button>
+        </fieldset>
       </form>
 
       {/* 이메일/구글 공통 에러·안내 — 두 로그인 방식 모두 여기 하나로 표시한다 */}
@@ -414,16 +429,14 @@ export function LoginForm() {
       </div>
 
       <GoogleSignInButton
+        disabled={isBusy}
+        onPendingChange={handleOAuthPendingChange}
         onStart={() => {
+          if (requestPending.current) return false;
+          requestPending.current = true;
           setAuthError(null);
           setInfoMessage(null);
-
-          // 회원가입 모드에선 이메일 가입과 동일하게 약관 동의를 먼저 요구한다 — 구글이라고 우회할 순 없다.
-          if (isSignUp && !agreedToTerms) {
-            setTermsTouched(true);
-            return false;
-          }
-
+          // Google은 인증 후 ConsentGate에서 현재 계정의 동의 여부를 확인한다.
           return true;
         }}
         onError={(message) => setAuthError({ message, kind: 'other' })}
