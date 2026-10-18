@@ -6,11 +6,11 @@ import { LoginForm } from '@/components/auth/LoginForm';
 // 위치만 CSS로 바뀐다 — 로직/마크업을 두 벌 만들지 않는다.
 export default function LoginPage() {
   return (
-    <div className="flex min-h-full flex-1 flex-col md:flex-row">
+    <main aria-label="로그인 및 회원가입" className="flex min-h-full flex-1 flex-col md:flex-row">
       <AuthVisualPanel className="md:order-last" />
       <div className="flex flex-1 items-center justify-center bg-page px-4 py-10 md:w-1/2 md:py-16">
         <LoginForm />
       </div>
-    </div>
+    </main>
   );
 }

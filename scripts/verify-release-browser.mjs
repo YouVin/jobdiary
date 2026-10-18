@@ -115,7 +115,7 @@ try {
   await page.getByLabel('비밀번호 확인', { exact: true }).fill('Test-password-123!');
   await page.getByRole('button', { name: '회원가입', exact: true }).last().click();
   assert.equal(signupCount, 0);
-  await visible(page.getByText('약관에 동의해야 회원가입할 수 있습니다.'));
+  await visible(page.getByText('약관에 동의해야 이메일로 회원가입할 수 있습니다.'));
   await page.locator('#terms').check();
   await page.getByRole('button', { name: '회원가입', exact: true }).last().click();
   await visible(page.getByText('확인 메일을 발송했습니다.', { exact: false }));

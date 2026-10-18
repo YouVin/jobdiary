@@ -7,6 +7,14 @@ export function getEmailError(email: string): string | null {
   if (!email) {
     return '이메일을 입력해주세요.';
   }
+  if (/\s/.test(email)) {
+    return '이메일에는 공백을 넣을 수 없습니다.';
+  }
+  const parts = email.split('@');
+  if (parts.length === 1) return '이메일에 @를 포함해주세요. 예: name@example.com';
+  if (parts.length > 2) return '@는 한 번만 입력해주세요.';
+  if (!parts[0]) return '@ 앞에 이메일 아이디를 입력해주세요.';
+  if (!parts[1]) return '@ 뒤에 도메인을 입력해주세요. 예: gmail.com';
   if (!EMAIL_PATTERN.test(email)) {
     return '올바른 이메일 형식을 입력해주세요.';
   }

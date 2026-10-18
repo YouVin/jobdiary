@@ -13,6 +13,15 @@
 - 이 메타데이터는 사용자가 변경할 수 있는 **UI 확인 기록**이다. RLS/권한 판단이나 위변조 방지 동의 감사 원장으로 취급하지 않는다. 별도 감사 원장이 필요한 서비스로 확대할 때 서버 기록을 추가한다.
 - 아래 상세 Phase는 설계 이력이다. 정책 문서가 준비 중이라는 과거 계획은 위 구현으로 대체됐다. 실제 법률 검토를 받은 것으로 표시하지 않는다.
 
+### Google 인증 재시도·동의 흐름 (#101, 2026-10-18)
+
+- 로그인/가입 탭 모두 Google 인증 시작 전에 이메일 폼의 검증·약관 체크를 요구하지 않는다. Google 인증 후 현재 정책 버전 동의가 없는 계정만 ConsentGate를 거친다. 이미 동의한 계정은 다시 요구하지 않는다. Google에서 이메일·프로필 공유에 동의하는 것과 우리 서비스 약관 확인은 별개다.
+- 이메일 폼 값은 Google 요청에 전달하지 않는다. Google에서 선택한 계정으로 인증한다. 실제 이메일 가입 계정과 같은 검증된 이메일의 OAuth identity는 Supabase 자동 연결 대상이다. 미인증 identity에는 탈취 방지 처리가 있으며, 클라이언트가 입력 이메일만으로 계정을 합치지 않는다.
+- 이메일 요청 중에는 모드/필드/Google 전환을 막고, Google 이동 중에도 이메일 제출을 막는다. ref로 연타를 차단한다. 실패·정상 뒤로가기는 다시 시도할 수 있다. BFCache 복원은 pageshow.persisted에서 Google 잠금만 해제하며 이전 요청의 늦은 오류는 무시한다.
+- Google SDK는 location.assign 후에도 Promise가 성공 resolve할 수 있으므로 성공 직후 잠금을 풀지 않는다. 반환 오류와 throw 예외는 모두 안내하고 잠금을 해제한다.
+- OAuth redirectTo는 같은 origin의 `/login`과 허용된 `?import=1`만 사용한다. 콜백 오류·토큰·이메일·이전 일회성 알림을 다음 요청에 복사하지 않는다. 로그인 성공 후 보드 이동도 이 허용 목록을 따른다. error/error_description/error_code만 온 경우를 모두 안내하고 URL에서 제거한다.
+- 검증 범위, 재현 및 재실행: [AUTH_CHECK](AUTH_CHECK.md). 실제 Google 진입/뒤로가기는 확인했고 개인 계정 승인·실제 이메일 identity 연결 완료는 확인하지 않았다.
+
 ## 1. 현재 상태 (되는 것)
 
 - **인증 방식**: 이메일+비밀번호. Supabase Auth 기본 기능만 사용. Confirm email이 켜져 있어 회원가입 직후엔 세션이 없다(메일 인증 전까지 로그인 불가).
@@ -20,11 +29,11 @@
 - **세션 부트스트랩/구독**: [`AuthProvider`](../src/components/auth/AuthProvider.tsx)가 루트 레이아웃에서 한 번만 마운트된다. 마운트 시 `getSession()`으로 새로고침 후 세션을 복원하고, `onAuthStateChange`로 이후 로그인/로그아웃 등 변화를 실시간 반영한다.
 - **라우트 가드**: [`AuthGuard`](../src/components/auth/AuthGuard.tsx)는 [`(protected)` 레이아웃](../src/app/(protected)/layout.tsx)에서 `/`와 `/account`를 함께 감싼다. `status==='unauthenticated'`면 현재 쿼리를 보존해 `/login`으로, `status==='recovering'`이면 `/update-password`로 이동한다. `status==='authenticated'`면 자식을 렌더링하고, `loading`이면 로딩 화면만 보여준다. `/login`은 가드를 거치지 않으며 로그인 상태에서 홈으로 돌려보내는 처리는 `LoginForm` 내부의 `useEffect`가 담당한다. 이 가드는 브라우저 UI 제어이며 서버 측 접근 제어가 아니다. 렌더링 경계는 [RENDERING](RENDERING.md)을 참고한다.
 - **로그인/회원가입 폼**: [`LoginForm`](../src/components/auth/LoginForm.tsx) 하나가 탭 토글로 로그인·회원가입을 겸한다.
-  - 이메일 정규식(`EMAIL_PATTERN`)과 비밀번호 최소 6자(`MIN_PASSWORD_LENGTH`) 검증 — **제출 시점에만** 검증한다(필드별 실시간/blur 검증은 없음).
-  - Supabase 에러 메시지를 한글로 매핑하는 `getFriendlyErrorMessage` — 원문 문자열의 `includes()` 매칭으로 4가지 케이스만 다루고, 나머지는 공용 문구("요청 처리 중 문제가 발생했습니다...")로 뭉뚱그린다.
+  - 이메일 형식과 비밀번호 최소 6자(`MIN_PASSWORD_LENGTH`)를 로컬에서 검증한다. 입력 후 400ms 멈추거나 입력한 필드를 벗어나면 오류를 안내하고, 올바르게 수정하면 즉시 제거한다. 빈 칸은 포커스 이탈만으로 오류를 표시하지 않으며 제출 시 필수값을 즉시 확인한다. 가입에서는 비밀번호 확인과 약관 확인도 검사한다.
+  - Supabase 에러 메시지를 한글로 매핑하는 `getFriendlyErrorMessage`는 인증 실패·중복·형식·이메일 미인증·요청 제한·네트워크 오류를 안내한다. 나머지는 공용 문구를 사용한다.
   - `isSubmitting`으로 제출 중 버튼을 비활성화하고 "처리 중..." 문구를 보여준다.
   - 회원가입 성공 후에도 세션이 없으면(이메일 확인 대기 상태) 리다이렉트하지 않고 "확인 메일을 발송했습니다..." 안내만 표시한다.
-  - **리다이렉트 소유권은 단 하나의 `useEffect`**(`status==='authenticated'`를 구독)가 갖는다. `redirectToBoard()`가 `/login`에 붙어있던 쿼리(예: 익스텐션이 붙이는 `?import=1`)를 읽어 그대로 `/`에 이어 붙인다 — 로그인 폼의 다른 어떤 코드 경로도 직접 리다이렉트하지 않는다(중복 리다이렉트 방지, 이전 CodeRabbit 라운드에서 확정된 패턴).
+  - **리다이렉트 소유권은 단 하나의 `useEffect`**(`status==='authenticated'`를 구독)가 갖는다. `redirectToBoard()`는 허용된 `?import=1`만 보존해 홈으로 이동한다. 다른 폼 경로는 직접 리다이렉트하지 않는다.
 - **로그아웃**: `HeaderActions`가 `signOut()`을 호출하고, 인증 이벤트가 `authStore.setSession(null)`로 전달될 때 지원 목록을 초기화한다. 다른 탭의 로그아웃도 같은 경로를 사용한다. 실패 시 현재 세션의 목록을 임의로 지우지 않는다.
 
 ### 계정 전환과 지연 응답 보호 (#90, 2026-10-17)
@@ -68,7 +77,7 @@
 
 - `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })`.
 - Supabase 대시보드에서 Google OAuth 클라이언트 등록이 선행돼야 한다(§5).
-- 기존 이메일 계정과 구글 계정이 같은 이메일이면 자동으로 연결되는지, 별도 계정으로 취급되는지는 대시보드의 자동 연결(auto-linking) 설정에 좌우된다 — 착수 시점에 반드시 확인.
+- Supabase는 같은 검증된 이메일의 identity를 자동 연결한다. 미인증 identity는 계정 탈취 방지 규칙이 적용된다. [공식 identity linking 문서](https://supabase.com/docs/guides/auth/auth-identity-linking)를 기준으로 확인하고, 운영 계정 연결 완료 여부는 별도로 검증한다.
 
 ### 2.5 UX
 
