@@ -64,6 +64,26 @@ node scripts/verify-auth-browser.mjs
 npm.cmd test
 ```
 
+## 버튼 인터랙션·접근성 (#104, 2026-10-19)
+
+- 공통 버튼에 pointer/hover/active/focus-visible/disabled 상태를 통일했다. 모드 버튼, 비밀번호 표시, 약관 체크·링크, 비밀번호 찾기와 메일 재전송도 키보드 포커스를 제공한다. 아이콘 버튼은 32px 클릭 영역을 확보한다.
+- 모드는 native button 그룹과 aria-pressed/aria-controls로 선택 상태를 알린다. tab 역할은 사용하지 않으므로 Tab과 Enter/Space의 표준 버튼 조작을 따른다. 비밀번호 토글은 안정적인 이름과 aria-pressed, 제어하는 입력 ID를 연결한다.
+- 로그인 페이지는 main 1개·h1 1개로 구성한다. 이메일 fieldset에 legend를 제공하고 비밀번호 규칙·강도·오류, 약관 오류, Google 안내를 입력/버튼과 연결한다. 가입 성공·재전송 결과는 status, 인증 실패는 alert로 알린다. 요청에는 aria-busy와 native disabled를 적용한다.
+- 필수값 제출 실패 시 첫 오류 필드로 포커스를 옮긴다. 약관 링크의 새 탭 열림은 스크린리더용 텍스트로 안내한다. 작은 성공·오류 안내에는 대비가 높은 전용 디자인 토큰을 쓴다.
+- 재전송에서 SDK throw 시 안내 없이 예외가 전파되고 반환 오류가 성공 색상으로 보이던 경로를 보완했다. 예외/반환 오류를 안내하고 재시도를 허용하며 연타는 ref로 제한한다. 단위 회귀 2개 추가.
+- axe-core 4.11.0의 WCAG A/AA·best-practice 태그로 로그인, 빈 가입, 필수 오류, 비밀번호 표시/강도, 요청 중, 재전송 실패, 재전송 성공 **7개 상태에서 자동 검출 위반 0건**. ARIA 참조 ID도 모두 존재한다.
+- 실제 Edge에서 hover 색 변화·pointer/not-allowed 커서, Tab 포커스 외곽선, Space 모드/비밀번호 토글, 첫 오류 포커스, 375/768/1440px 가로 넘침 없음을 확인했다. 인증 브라우저 회귀 11개와 전체 테스트 73개·lint·프로덕션 빌드도 통과했다.
+- 실제 NVDA/VoiceOver 음성 청취와 모든 장애 환경을 검증한 결과는 아니다. Google/이메일 요청은 fixture이며 실제 이메일은 발송하지 않았다. 자동 검사 통과를 완전한 접근성 준수 보증으로 해석하지 않는다.
+
+```powershell
+# 운영 package.json을 바꾸지 않는 임시 검사 도구
+npm.cmd install --prefix node_modules/.release-tools --no-audit --no-fund --ignore-scripts playwright@1.58.2 axe-core@4.11.0
+# 위 '재실행' 절의 명령으로 프로덕션 빌드를 실행한 뒤
+node scripts/verify-auth-accessibility.mjs
+```
+
+의미·키보드 조작 근거: [W3C 버튼 패턴](https://www.w3.org/WAI/ARIA/apg/patterns/button/), [W3C 폼 알림](https://www.w3.org/WAI/tutorials/forms/notifications/).
+
 ## UX 및 동일 이메일 처리 근거
 
 - [Auth0 약관 확인 안내](https://support.auth0.com/center/s/article/how-to-add-terms-and-conditions-or-terms-of-service-to-the-signup-screen): 소셜 인증의 로그인/가입 구분과 별도 화면에서 확인하는 방식을 안내한다. 서비스마다 구현이 같다는 뜻은 아니다.
