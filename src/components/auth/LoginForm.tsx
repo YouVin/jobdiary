@@ -276,7 +276,35 @@ export function LoginForm() {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
+      <section aria-label="Google 인증">
+        <GoogleSignInButton
+          disabled={isBusy}
+          onPendingChange={handleOAuthPendingChange}
+          onStart={() => {
+            if (requestPending.current) return false;
+            requestPending.current = true;
+            setAuthError(null);
+            setInfoMessage(null);
+            emailFeedback.reset();
+            passwordFeedback.reset();
+            confirmationFeedback.reset();
+            // Google은 인증 후 ConsentGate에서 현재 계정의 동의 여부를 확인한다.
+            return true;
+          }}
+          onError={(message) => setAuthError({ message, kind: 'other' })}
+        />
+        <p className="mt-3 text-label text-text-secondary">
+          Google에서 이메일·프로필을 전달받습니다. 서비스 약관 확인은 인증 후 필요한 경우 한 번 진행합니다. <PolicyLinks />
+        </p>
+      </section>
+
+      <div className="my-4 flex items-center gap-3">
+        <div className="h-px flex-1 bg-card-border" />
+        <span className="text-label text-text-muted">또는 이메일로 {isSignUp ? '가입하기' : '로그인하기'}</span>
+        <div className="h-px flex-1 bg-card-border" />
+      </div>
+
+      <form aria-label={isSignUp ? '이메일 회원가입' : '이메일 로그인'} onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         <fieldset disabled={isBusy} className="flex min-w-0 flex-col gap-3">
           <div>
             <label htmlFor="email" className={labelClassName}>
@@ -392,12 +420,12 @@ export function LoginForm() {
                   aria-invalid={termsTouched && !agreedToTerms}
                 />
                 <label htmlFor="terms" className="text-label text-text-secondary">
-                  <PolicyLinks />을 확인하고 이용약관에 동의합니다.
+                  [이메일 가입 필수] <PolicyLinks />을 확인하고 이용약관에 동의합니다.
                 </label>
               </div>
               {termsTouched && !agreedToTerms && (
                 <p role="alert" className={fieldErrorClassName}>
-                  약관에 동의해야 회원가입할 수 있습니다.
+                  약관에 동의해야 이메일로 회원가입할 수 있습니다.
                 </p>
               )}
             </div>
@@ -426,31 +454,6 @@ export function LoginForm() {
         <p className="mt-3 text-label text-status-offer">{infoMessage ?? oneTimeMessage}</p>
       )}
 
-      <div className="my-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-card-border" />
-        <span className="text-label text-text-muted">또는</span>
-        <div className="h-px flex-1 bg-card-border" />
-      </div>
-
-      <GoogleSignInButton
-        disabled={isBusy}
-        onPendingChange={handleOAuthPendingChange}
-        onStart={() => {
-          if (requestPending.current) return false;
-          requestPending.current = true;
-          setAuthError(null);
-          setInfoMessage(null);
-          emailFeedback.reset();
-          passwordFeedback.reset();
-          confirmationFeedback.reset();
-          // Google은 인증 후 ConsentGate에서 현재 계정의 동의 여부를 확인한다.
-          return true;
-        }}
-        onError={(message) => setAuthError({ message, kind: 'other' })}
-      />
-      <p className="mt-3 text-label text-text-secondary">
-        Google로 계속하면 로그인에 필요한 이메일·프로필을 전달받습니다. 신규 계정은 로그인 후 약관 확인을 마쳐야 지원 내역을 이용할 수 있습니다. <PolicyLinks />
-      </p>
     </div>
   );
 }
