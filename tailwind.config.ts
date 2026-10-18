@@ -54,6 +54,10 @@ const config: Config = {
           offer: "#639922",
           rejected: "#E24B4A",
           canceled: "#D4D4D8",
+          // 밝은 상태색은 배지/막대에 쓰고, 작은 안내 글자는 대비가 높은 전용 토큰을 쓴다.
+          "rejected-text": "#B91C1C",
+          "offer-text": "#3F6212",
+          "screening-text": "#1D4ED8",
         },
         platform: {
           saramin: { bg: "#F4F4F5", text: "#3F3F46" },

@@ -78,11 +78,11 @@ export function AuthVisualPanel({ className }: AuthVisualPanelProps) {
 
         {/* md~lg 사이(태블릿)는 패널 폭이 좁아 heading-xl이면 "원티드,"가 중간에 잘려 두 줄로 밀린다 —
             heading-lg를 거쳐가는 중간 단계를 둬서 태블릿 폭에서도 한 줄에 들어가게 한다. */}
-        <h1 className="text-heading-md text-text-primary md:text-heading-lg lg:text-heading-xl">
+        <p className="text-heading-md text-text-primary md:text-heading-lg lg:text-heading-xl">
           사람인·잡코리아·원티드,
           <br />
           <span className="text-brand">한 곳에서</span>
-        </h1>
+        </p>
         {/* 모바일은 카피를 짧게 유지 — 부제는 데스크탑 전체 무대에서만 보여준다 */}
         <p className="mt-2 hidden text-body text-text-secondary md:block">
           지원부터 합격까지, 취준 여정을 한 곳에서 기록하고 관리하세요.

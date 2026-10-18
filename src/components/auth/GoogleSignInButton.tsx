@@ -62,6 +62,8 @@ export function GoogleSignInButton({ onStart, onError, disabled = false, onPendi
       type="button"
       onClick={handleClick}
       disabled={disabled || isRedirecting}
+      aria-busy={isRedirecting}
+      aria-describedby="google-auth-hint"
       className={buttonClassName('secondary', 'w-full')}
     >
       <GoogleIcon />

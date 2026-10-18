@@ -189,7 +189,8 @@ export function LoginForm() {
     }
 
     if (emailError || passwordError || (isSignUp && (confirmPasswordError || !agreedToTerms))) {
-      // 어떤 필드가 왜 막혔는지는 필드 아래 인라인 에러가 이미 보여주므로, 별도 상단 배너는 띄우지 않는다.
+      const invalidId = emailError ? 'email' : passwordError ? 'password' : confirmPasswordError ? 'confirmPassword' : 'terms';
+      document.getElementById(invalidId)?.focus();
       return;
     }
 
@@ -245,20 +246,22 @@ export function LoginForm() {
       </div>
 
       <div className="mb-6">
-        <h1 className="text-heading-lg text-text-primary">{isSignUp ? '환영해요' : '다시 오셨네요'}</h1>
+        <h1 id="auth-title" className="text-heading-lg text-text-primary">{isSignUp ? '환영해요' : '다시 오셨네요'}</h1>
         <p className="mt-1 text-label text-text-secondary">
           {isSignUp ? '지원 여정을 함께 기록해봐요' : '지원 현황을 이어서 관리해보세요'}
         </p>
       </div>
 
-      <div className="mb-5 flex rounded-lg bg-column p-1">
+      <div role="group" aria-label="로그인 또는 회원가입 선택" className="mb-5 flex rounded-lg bg-column p-1">
         <button
           type="button"
           onClick={() => handleModeChange('signin')}
           disabled={isBusy}
+          aria-pressed={!isSignUp}
+          aria-controls="email-auth-form"
           className={clsx(
-            'flex-1 rounded-md py-2 text-body font-medium transition-colors',
-            !isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary',
+            'flex-1 cursor-pointer rounded-md py-2 text-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
+            !isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary enabled:hover:bg-card enabled:hover:text-text-primary',
           )}
         >
           로그인
@@ -267,17 +270,20 @@ export function LoginForm() {
           type="button"
           onClick={() => handleModeChange('signup')}
           disabled={isBusy}
+          aria-pressed={isSignUp}
+          aria-controls="email-auth-form"
           className={clsx(
-            'flex-1 rounded-md py-2 text-body font-medium transition-colors',
-            isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary',
+            'flex-1 cursor-pointer rounded-md py-2 text-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
+            isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary enabled:hover:bg-card enabled:hover:text-text-primary',
           )}
         >
           회원가입
         </button>
       </div>
 
-      <form aria-label={isSignUp ? '이메일 회원가입' : '이메일 로그인'} onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
+      <form id="email-auth-form" aria-label={isSignUp ? '이메일 회원가입' : '이메일 로그인'} aria-busy={isSubmitting} onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         <fieldset disabled={isBusy} className="flex min-w-0 flex-col gap-3">
+          <legend className="sr-only">{isSignUp ? '이메일 회원가입 정보' : '이메일 로그인 정보'}</legend>
           <div>
             <label htmlFor="email" className={labelClassName}>
               이메일
@@ -318,12 +324,17 @@ export function LoginForm() {
                 autoComplete={isSignUp ? 'new-password' : 'current-password'}
                 aria-required="true"
                 aria-invalid={!!passwordFeedback.error}
-                aria-describedby={passwordFeedback.error ? 'password-error' : undefined}
+                aria-describedby={[
+                  isSignUp ? 'password-hint' : null,
+                  isSignUp && password ? 'password-strength' : null,
+                  passwordFeedback.error ? 'password-error' : null,
+                ].filter(Boolean).join(' ') || undefined}
               />
               <PasswordToggleButton
                 isVisible={showPassword}
                 onToggle={() => setShowPassword((prev) => !prev)}
                 fieldLabel="비밀번호"
+                controls="password"
               />
             </div>
             {passwordFeedback.error && (
@@ -332,11 +343,12 @@ export function LoginForm() {
               </p>
             )}
 
-            {isSignUp && password && <PasswordStrengthMeter password={password} />}
+            {isSignUp && <p id="password-hint" className="mt-1 text-label text-text-secondary">비밀번호는 {MIN_PASSWORD_LENGTH}자 이상 입력해주세요.</p>}
+            {isSignUp && password && <PasswordStrengthMeter id="password-strength" password={password} />}
 
             {!isSignUp && (
               <div className="mt-2 text-right">
-                <Link href="/reset-password" className="text-label text-brand hover:underline">
+                <Link href="/reset-password" className="cursor-pointer rounded-sm text-label text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                   비밀번호를 잊으셨나요?
                 </Link>
               </div>
@@ -366,6 +378,7 @@ export function LoginForm() {
                   isVisible={showConfirmPassword}
                   onToggle={() => setShowConfirmPassword((prev) => !prev)}
                   fieldLabel="비밀번호 확인"
+                  controls="confirmPassword"
                 />
               </div>
               {confirmationFeedback.error && (
@@ -387,16 +400,17 @@ export function LoginForm() {
                     setAgreedToTerms(event.target.checked);
                     setTermsTouched(true);
                   }}
-                  className="mt-1 h-4 w-4 shrink-0 accent-brand"
+                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-brand hover:ring-2 hover:ring-brand/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
                   aria-required="true"
                   aria-invalid={termsTouched && !agreedToTerms}
+                  aria-describedby={termsTouched && !agreedToTerms ? 'terms-error' : undefined}
                 />
-                <label htmlFor="terms" className="text-label text-text-secondary">
+                <label htmlFor="terms" className="cursor-pointer text-label text-text-secondary">
                   [이메일 가입 필수] <PolicyLinks />을 확인하고 이용약관에 동의합니다.
                 </label>
               </div>
               {termsTouched && !agreedToTerms && (
-                <p role="alert" className={fieldErrorClassName}>
+                <p id="terms-error" role="alert" className={fieldErrorClassName}>
                   약관에 동의해야 이메일로 회원가입할 수 있습니다.
                 </p>
               )}
@@ -406,6 +420,7 @@ export function LoginForm() {
           <button
             type="submit"
             disabled={isBusy}
+            aria-busy={isSubmitting}
             className={buttonClassName('primary', 'mt-2')}
           >
             {isSubmitting ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
@@ -416,19 +431,19 @@ export function LoginForm() {
       {/* 이메일/구글 공통 에러·안내 — 두 로그인 방식 모두 여기 하나로 표시한다 */}
       {authError && (
         <div className="mt-3">
-          <p role="alert" className="text-label text-status-rejected">
+          <p role="alert" className="text-label text-status-rejected-text">
             {authError.message}
           </p>
           {authError.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
         </div>
       )}
       {(infoMessage ?? oneTimeMessage) && (
-        <p className="mt-3 text-label text-status-offer">{infoMessage ?? oneTimeMessage}</p>
+        <p role="status" aria-atomic="true" className="mt-3 text-label text-status-offer-text">{infoMessage ?? oneTimeMessage}</p>
       )}
 
       <div className="my-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-card-border" />
-        <span className="text-label text-text-muted">또는</span>
+        <span className="text-label text-text-secondary">또는</span>
         <div className="h-px flex-1 bg-card-border" />
       </div>
 
@@ -449,7 +464,7 @@ export function LoginForm() {
           }}
           onError={(message) => setAuthError({ message, kind: 'other' })}
         />
-        <p className="mt-3 text-label text-text-secondary">
+        <p id="google-auth-hint" className="mt-3 text-label text-text-secondary">
           Google에서 이메일·프로필을 전달받습니다. 서비스 약관 확인은 인증 후 필요한 경우 한 번 진행합니다. <PolicyLinks />
         </p>
       </section>
