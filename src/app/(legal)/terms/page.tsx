@@ -1,7 +1,7 @@
-import type { Metadata } from 'next';
 import Link from 'next/link';
+import { publicPageMetadata } from '@/lib/siteMetadata';
 
-export const metadata: Metadata = { title: '이용약관 | 취준일기' };
+export const metadata = publicPageMetadata('이용약관', '취준일기의 서비스 이용 조건, 지원 기록과 자동 분류 안내, 회원 탈퇴 및 문의 방법을 확인하세요.', '/terms');
 
 export default function TermsPage() {
   return (

@@ -1,6 +1,6 @@
-import type { Metadata } from 'next';
+import { publicPageMetadata } from '@/lib/siteMetadata';
 
-export const metadata: Metadata = { title: '개인정보처리방침 | 취준일기' };
+export const metadata = publicPageMetadata('개인정보처리방침', '취준일기의 개인정보 처리 항목과 목적, 보관·삭제, 처리위탁 및 이용자 권리를 안내합니다.', '/privacy');
 
 export default function PrivacyPage() {
   return (
