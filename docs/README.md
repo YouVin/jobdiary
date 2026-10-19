@@ -16,12 +16,14 @@
 | 개발 순서·현황 | [ROADMAP](ROADMAP.md), [CONVENTION](CONVENTION.md) | `package.json`, `.github/workflows/ci.yml` |
 | 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `src/app/(protected)/`, `src/components/dashboard/`, `src/components/board/` |
 | Server/Client 렌더링 (#83) | [RENDERING](RENDERING.md) | `src/app/(protected)/layout.tsx`, `src/components/auth/AuthGuard.tsx` |
+| 인증 스켈레톤·SEO (#105·#106) | [SEO](SEO.md), [RENDERING](RENDERING.md) | `login/layout.tsx`, `AuthFormSkeleton.tsx`, `siteMetadata.ts`, `robots.ts`, `sitemap.ts` |
 | 검색·필터 (#73) | [DASHBOARD](DASHBOARD.md) | `src/utils/applicationFilters.ts`, `src/components/dashboard/ApplicationFilters.tsx` |
 | 공고 마감일·자동 탈락 (#85) | [DEADLINE](DEADLINE.md) | `src/utils/applicationDeadline.ts`, `src/lib/applicationsApi.ts`, `supabase/migrations/` |
 | 헤더 로고·홈 이동 (#79) | [TECH_DESIGN](TECH_DESIGN.md) | `src/components/header/Header.tsx` |
 | 가져오기·중복 판별 | [INTEGRATION](INTEGRATION.md) | `src/hooks/useExtensionImport.ts`, `src/utils/extensionImportPlan.ts`, `src/utils/duplicateDetection.ts` |
 | 저장·DB | [SUPABASE](SUPABASE.md) | `src/lib/applicationsApi.ts`, `src/store/applicationStore.ts`, `supabase/` |
 | 로그인·계정 | [AUTH](AUTH.md) | `src/lib/auth.ts`, `src/components/auth/`, `src/components/account/` |
+| Google 콜백·재시도 점검 (#101) | [AUTH_CHECK](AUTH_CHECK.md) | `scripts/verify-auth-browser.mjs`, `tests/googleSignIn.test.mjs` |
 | 보안 점검·릴리즈 보류 | [SECURITY](SECURITY.md) | `package.json`, `.github/workflows/ci.yml` |
 | 릴리즈 검증·마이그레이션 이력 (#96·#97) | [RELEASE_CHECK](RELEASE_CHECK.md) | `scripts/verify-release-browser.mjs`, `src/app/(legal)/` |
 | 익스텐션 계약 | [EXTENSION](EXTENSION.md), [INTEGRATION](INTEGRATION.md) | `src/lib/extensionImport.ts` (익스텐션 구현은 별도 저장소) |

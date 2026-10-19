@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, SEARCH_INDEXABLE } from "@/lib/siteMetadata";
 import "./globals.css";
 
 const pretendard = localFont({
@@ -11,8 +12,11 @@ const pretendard = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "취준일기",
-  description: "지원 내역을 한 곳에서 칸반 보드로 관리하고 기록하는 취준 일기 서비스",
+  metadataBase: new URL(SITE_URL),
+  title: { default: `${SITE_NAME} | 지원 내역과 취업 준비 기록`, template: `%s | ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  robots: { index: SEARCH_INDEXABLE, follow: SEARCH_INDEXABLE },
 };
 
 export default function RootLayout({

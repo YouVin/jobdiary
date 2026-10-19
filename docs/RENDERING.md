@@ -1,11 +1,11 @@
 # 렌더링 경계
 
-현재 구현 기준: 2026-10-15 (#83). Next.js App Router의 Server Component와 Client Component 경계를 기록한다. 이 구분은 사용자 데이터의 서버 조회 여부와 별개다.
+현재 구현 기준: 2026-10-19 (#83·#105·#106). Next.js App Router의 Server Component와 Client Component 경계를 기록한다. 이 구분은 사용자 데이터의 서버 조회 여부와 별개다.
 
 | 경로 | 서버 컴포넌트 | 클라이언트 컴포넌트 |
 |---|---|---|
 | `/`, `/account` | `src/app/(protected)/layout.tsx`의 공통 헤더·본문 틀과 각 `page.tsx` | `AuthGuard`, `DashboardClient`, 계정 관리 폼·동작 |
-| `/login` | `src/app/login/page.tsx`의 배치·시각 요소 | `LoginForm`과 인증 동작 |
+| `/login` | `login/layout.tsx`의 배치·소개·h1, `page.tsx`의 메타데이터, `loading.tsx`의 스켈레톤 | `LoginForm`과 인증 동작·세션 확인 중 스켈레톤 |
 | `/reset-password`, `/update-password` | 각 `page.tsx`의 배치 | 재설정 폼과 복구 세션 처리 |
 | 모든 경로 | `src/app/layout.tsx`의 문서·폰트 설정 | `AuthProvider`의 세션 구독 |
 
@@ -15,4 +15,8 @@
 
 새 화면은 서버에서 처리할 수 있는 정적 구조를 `page.tsx`나 `layout.tsx`에 두고, 상태·이벤트·브라우저 API가 필요한 부분만 Client Component로 분리한다. 사용자별 데이터의 서버 렌더링이 필요해지면 서버에서 읽을 수 있는 세션 방식, 서버 측 사용자 검증, 데이터 조회 위치, 로그인·복구 흐름을 함께 설계한다. 현재 브라우저 세션만 서버 컴포넌트에서 재사용하는 방식으로 옮기지 않는다.
 
-근거: 설치된 Next.js 16.2.9의 `node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md`, `03-layouts-and-pages.md`, `03-api-reference/03-file-conventions/route-groups.md`.
+`AuthFormSkeleton`은 라우트 로딩과 브라우저 세션 초기화에서 재사용한다. 서버의 브랜드 소개·h1은 유지하며, 로그인/가입 변형과 reduced-motion을 지원한다. 실제 폼 제출은 기존 busy/disabled 안내를 유지하고 입력을 스켈레톤으로 지우지 않는다. 정적 캐시·빠른 이동에서는 route loading이 보이지 않을 수 있어 가짜 지연을 추가하지 않는다.
+
+검색 메타데이터와 공개/개인 경로 정책은 [SEO](SEO.md)를 참고한다.
+
+근거: 설치된 Next.js 16.4.2의 `node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md`, `03-layouts-and-pages.md`, `03-api-reference/03-file-conventions/loading.md`, 메타데이터 가이드.

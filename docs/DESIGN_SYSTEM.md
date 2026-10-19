@@ -40,6 +40,8 @@
 - 버튼·버튼 모양 링크: `buttonClassName('primary' | 'secondary' | 'danger' | 'dangerOutline', 추가 배치 클래스)`.
 - 공통 버튼 스타일에 크기·색·포커스·disabled를 정의한다. 개별 화면에는 `mt-4`, `w-full` 같은 배치만 추가한다.
 - 텍스트 버튼·탭·아이콘 버튼은 목적에 맞는 크기를 유지하되 키보드 포커스를 표시한다.
+- 버튼은 pointer 커서, hover 색상, active 강조, focus-visible 외곽선을 제공한다. disabled는 not-allowed 커서와 흐림을 적용하고 hover/active 강조를 억제한다. 링크·체크박스도 포커스를 표시한다.
+- 상태색 막대/배지와 작은 안내 글자의 색을 구분한다. 글자는 `status-rejected-text`, `status-offer-text`, `status-screening-text` 토큰으로 대비를 확보한다. 기본 상태색은 유지한다.
 - 입력의 label은 중첩 또는 `htmlFor`/`id`로 연결한다. 여러 번 나타나는 폼은 `useId`로 충돌을 방지한다.
 - import는 외부 패키지 → 프로젝트 별칭 → 별도 type import 순으로 정리한다. 기능 로직과 표시 스타일은 분리한다.
 
