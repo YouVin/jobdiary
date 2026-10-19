@@ -1,5 +1,9 @@
+import type { Metadata } from 'next';
 import { AuthGuard } from '@/components/auth/AuthGuard';
 import { Header } from '@/components/header/Header';
+import { PRIVATE_ROBOTS } from '@/lib/siteMetadata';
+
+export const metadata: Metadata = { robots: PRIVATE_ROBOTS };
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (

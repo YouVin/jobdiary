@@ -1,4 +1,8 @@
+import type { Metadata } from 'next';
 import { UpdatePasswordForm } from '@/components/auth/UpdatePasswordForm';
+import { PRIVATE_ROBOTS } from '@/lib/siteMetadata';
+
+export const metadata: Metadata = { title: '새 비밀번호 설정', robots: PRIVATE_ROBOTS };
 
 export default function UpdatePasswordPage() {
   return (

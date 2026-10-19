@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { AuthFormSkeleton } from '@/components/auth/AuthFormSkeleton';
 import { PolicyLinks } from '@/components/auth/PolicyLinks';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
@@ -228,11 +229,7 @@ export function LoginForm() {
 
   // 세션 확인 중이거나 이미 로그인된 상태(리다이렉트 진행 중)면 폼 대신 로딩만 보여준다
   if (status !== 'unauthenticated') {
-    return (
-      <div className="w-full max-w-105 text-center">
-        <p className="text-body text-text-muted">로딩 중...</p>
-      </div>
-    );
+    return <AuthFormSkeleton isSignUp={isSignUp} />;
   }
 
   return (
@@ -246,7 +243,7 @@ export function LoginForm() {
       </div>
 
       <div className="mb-6">
-        <h1 id="auth-title" className="text-heading-lg text-text-primary">{isSignUp ? '환영해요' : '다시 오셨네요'}</h1>
+        <h2 id="auth-title" className="text-heading-lg text-text-primary">{isSignUp ? '환영해요' : '다시 오셨네요'}</h2>
         <p className="mt-1 text-label text-text-secondary">
           {isSignUp ? '지원 여정을 함께 기록해봐요' : '지원 현황을 이어서 관리해보세요'}
         </p>
