@@ -5,7 +5,7 @@ interface AuthFormSkeletonProps {
 // 세션 확인과 라우트 로딩에서 재사용한다. 실제 입력/버튼을 만들어 탭 이동을 가로채지 않는다.
 export function AuthFormSkeleton({ isSignUp = false }: AuthFormSkeletonProps) {
   return (
-    <div role="status" aria-live="polite" aria-busy="true" className="w-full max-w-105">
+    <div role="status" aria-live="polite" aria-atomic="true" className="w-full max-w-105">
       <span className="sr-only">{isSignUp ? '회원가입' : '로그인'} 화면을 준비하고 있습니다.</span>
       <div aria-hidden="true" className="animate-pulse motion-reduce:animate-none">
         <div className="mb-6 hidden h-8 w-28 rounded-lg bg-column md:block" />

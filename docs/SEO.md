@@ -21,7 +21,7 @@
 
 - `login/loading.tsx`: 라우트가 준비되는 동안 기본 로그인 스켈레톤.
 - `LoginForm`: 세션 확인·인증 후 이동 중 현재 로그인/가입 모드 스켈레톤.
-- `AuthFormSkeleton`: 가짜 입력/버튼 없이 폼 형태를 보여주고 장식은 aria-hidden으로 숨긴다. role=status·준비 안내·aria-busy를 제공하고 reduced-motion에서는 애니메이션을 끈다.
+- `AuthFormSkeleton`: 가짜 입력/버튼 없이 폼 형태를 보여주고 장식은 aria-hidden으로 숨긴다. role=status·준비 안내·aria-atomic을 제공하고 reduced-motion에서는 애니메이션을 끈다. 안내 영역 자체를 aria-busy=true로 두면 읽기가 지연될 수 있어 적용하지 않는다(#109). 실제 폼/버튼의 처리 상태 aria-busy는 유지한다.
 - 서버 레이아웃은 브랜드 소개와 제목을 유지한다. 단순 이메일 제출 중에는 기존 입력/오류를 유지하며 버튼 busy 상태로 안내한다. 로딩을 보여주려고 임의 지연이나 추가 요청을 넣지 않는다.
 
 ## 검증과 한계

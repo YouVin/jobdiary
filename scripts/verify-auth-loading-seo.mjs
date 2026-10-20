@@ -38,7 +38,7 @@ try {
   console.log('PASS 개인/복구 페이지 noindex, robots/sitemap HTTP');
   await page.goto(origin + '/login');
   const skeleton = page.getByRole('status');
-  assert.equal(await skeleton.getAttribute('aria-busy'), 'true');
+  assert.equal(await skeleton.getAttribute('aria-busy'), null);
   assert.equal(await skeleton.locator('input,button,a').count(), 0);
   assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1);
   for (const width of [375, 768, 1440]) {
@@ -72,7 +72,7 @@ try {
     assert.deepEqual(violations, []);
     release();
     await pendingPage.getByRole('button', { name: 'Google로 계속하기', exact: true }).waitFor();
-    assert.equal(await pendingPage.locator('[role="status"][aria-busy="true"]').count(), 0);
+    assert.equal(await pendingPage.getByRole('status').filter({ hasText: '화면을 준비하고 있습니다.' }).count(), 0);
     assert.deepEqual(errors, []);
     console.log('PASS 세션 지연 중 스켈레톤/axe → 종료 후 실제 폼, 브라우저 예외 0건');
   } finally {

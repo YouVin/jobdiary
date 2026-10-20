@@ -1,5 +1,6 @@
 // 실제 앱/SDK/Chromium을 실행하되 Google·Supabase HTTP는 fixture로 격리한다.
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { chromium } from '../node_modules/.release-tools/node_modules/playwright/index.mjs';
 
 const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
@@ -35,6 +36,10 @@ async function scenario(name, run) {
     if (url.pathname === '/auth/v1/user') {
       if (request.method() === 'PUT') {
         calls.consent++;
+        if (options.failConsent && calls.consent === 1) {
+          await new Promise(resolve => { options.releaseConsent = resolve; });
+          return send({ msg: 'test consent failure' }, 500);
+        }
         Object.assign(user.user_metadata, request.postDataJSON().data);
       }
       return send(user);
@@ -77,8 +82,8 @@ try {
     await page.getByLabel('이메일', { exact: true }).focus();
     await page.getByLabel('비밀번호', { exact: true }).focus();
     await page.getByRole('heading', { name: '다시 오셨네요', exact: true }).click();
-    assert.equal(await page.locator('#email-error').count(), 0);
-    assert.equal(await page.locator('#password-error').count(), 0);
+    assert.equal(await page.locator('#email-error').textContent(), '');
+    assert.equal(await page.locator('#password-error').textContent(), '');
     await page.getByRole('button', { name: '로그인', exact: true }).last().click();
     await page.getByText('이메일을 입력해주세요.', { exact: true }).waitFor();
     await page.getByText('비밀번호를 입력해주세요.', { exact: true }).waitFor();
@@ -90,15 +95,15 @@ try {
     const email = page.getByLabel('이메일', { exact: true });
     await email.fill('name');
     await page.clock.runFor(399);
-    assert.equal(await page.locator('#email-error').count(), 0);
+    assert.equal(await page.locator('#email-error').textContent(), '');
     await page.clock.runFor(1);
     await page.getByText('이메일에 @를 포함해주세요. 예: name@example.com', { exact: true }).waitFor();
     await email.fill('name@');
-    assert.equal(await page.locator('#email-error').count(), 0);
+    assert.equal(await page.locator('#email-error').textContent(), '');
     await page.clock.runFor(400);
     await page.getByText('@ 뒤에 도메인을 입력해주세요. 예: gmail.com', { exact: true }).waitFor();
     await email.fill('name@example.com');
-    assert.equal(await page.locator('#email-error').count(), 0);
+    assert.equal(await page.locator('#email-error').textContent(), '');
     assert.equal(await email.getAttribute('aria-invalid'), 'false');
     assert.equal(calls.email.length, 0);
     assert.equal(calls.google.length, 0);
@@ -113,7 +118,7 @@ try {
     await email.fill('name');
     await page.getByRole('button', { name: '회원가입', exact: true }).first().click();
     await page.clock.runFor(500);
-    assert.equal(await page.locator('#email-error').count(), 0);
+    assert.equal(await page.locator('#email-error').textContent(), '');
   });
   await scenario('가입 탭에서도 Google 시작 전 중복 약관 체크 없음', async ({ page, google, calls }) => {
     await page.getByRole('button', { name: '회원가입', exact: true }).first().click();
@@ -169,6 +174,7 @@ try {
     await google().click();
     await page.getByRole('link', { name: '승인', exact: true }).click();
     await page.getByRole('heading', { name: '서비스 이용 안내' }).waitFor();
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'consent-title');
     assert.equal(calls.applications, 0);
     await page.locator('#policy-consent').check();
     await page.getByRole('button', { name: '동의하고 시작하기', exact: true }).click();
@@ -181,6 +187,33 @@ try {
     await page.getByRole('button', { name: '지원추가', exact: true }).waitFor();
     assert.equal(calls.consent, 1);
     assert.equal(new URL(page.url()).hash, '');
+  });
+  await scenario('약관 단계 키보드 진입·저장 안내·실패 재시도 접근성', async ({ page, google, options }) => {
+    options.failConsent = true;
+    await google().click();
+    await page.getByRole('link', { name: '승인', exact: true }).click();
+    await page.getByRole('heading', { name: '서비스 이용 안내' }).waitFor();
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'consent-title');
+    await page.keyboard.press('Tab');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'policy-consent');
+    await page.keyboard.press('Space');
+    assert(await page.locator('#policy-consent').isChecked());
+    const errorRegion = await page.getByRole('main').getByRole('alert').elementHandle();
+    await page.addScriptTag({ content: fs.readFileSync('node_modules/.release-tools/node_modules/axe-core/axe.min.js', 'utf8') });
+    const scan = async () => assert.deepEqual(await page.evaluate(async () => (await window.axe.run(document)).violations.map(item => ({ id: item.id, targets: item.nodes.map(node => node.target) }))), []);
+    await scan();
+    await page.getByRole('button', { name: '동의하고 시작하기', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: '약관 동의를 저장하고 있습니다.' }).waitFor();
+    assert(await page.locator('#policy-consent').isDisabled());
+    await scan();
+    for (let i = 0; !options.releaseConsent && i < 100; i++) await new Promise(resolve => setTimeout(resolve, 20));
+    assert(options.releaseConsent);
+    options.releaseConsent();
+    await page.getByRole('alert').filter({ hasText: '동의를 저장하지 못했습니다.' }).waitFor();
+    assert(await errorRegion.evaluate(element => element === document.querySelector('[role="alert"]')));
+    await scan();
+    await page.getByRole('button', { name: '동의하고 시작하기', exact: true }).click();
+    await page.getByRole('button', { name: '지원추가', exact: true }).waitFor();
   });
   await scenario('이메일 가입 인증 대기 후 Google 전환 가능', async ({ page, google, calls }) => {
     await page.getByRole('button', { name: '회원가입', exact: true }).first().click();
