@@ -106,6 +106,16 @@ export function LoginForm() {
   }, []);
   const [authError, setAuthError] = useState<FriendlyAuthError | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
+  const [modeMessage, setModeMessage] = useState('');
+  const [focusRequest, setFocusRequest] = useState(0);
+  const invalidField = useRef<string | null>(null);
+
+  // 오류 설명과 aria-invalid가 DOM에 반영된 뒤 포커스해 함께 읽을 수 있게 한다.
+  useEffect(() => {
+    const id = invalidField.current;
+    invalidField.current = null;
+    if (id) document.getElementById(id)?.focus();
+  }, [focusRequest]);
 
   const isSignUp = mode === 'signup';
 
@@ -161,8 +171,9 @@ export function LoginForm() {
   }, [oauthErrorSignal]);
 
   const handleModeChange = (nextMode: Mode) => {
-    if (requestPending.current) return;
+    if (requestPending.current || nextMode === mode) return;
     setMode(nextMode);
+    setModeMessage(nextMode === 'signup' ? '이메일 회원가입 양식입니다. 이메일, 비밀번호, 비밀번호 확인과 약관 동의가 필요합니다.' : '이메일 로그인 양식입니다. 이메일과 비밀번호를 입력해주세요.');
     setAuthError(null);
     setInfoMessage(null);
     // 회원가입 전용 입력/터치/표시 상태는 모드를 바꾸면 초기화해 이전 모드의 흔적이 남지 않게 한다.
@@ -182,6 +193,7 @@ export function LoginForm() {
     setInfoMessage(null);
 
     // 제출을 시도하면 아직 blur하지 않은 필드의 인라인 에러도 바로 보이게 한다.
+    setModeMessage('');
     emailFeedback.validate();
     passwordFeedback.validate();
     if (isSignUp) {
@@ -191,7 +203,8 @@ export function LoginForm() {
 
     if (emailError || passwordError || (isSignUp && (confirmPasswordError || !agreedToTerms))) {
       const invalidId = emailError ? 'email' : passwordError ? 'password' : confirmPasswordError ? 'confirmPassword' : 'terms';
-      document.getElementById(invalidId)?.focus();
+      invalidField.current = invalidId;
+      setFocusRequest((value) => value + 1);
       return;
     }
 
@@ -278,6 +291,11 @@ export function LoginForm() {
         </button>
       </div>
 
+      {/* 처리 중인 폼 밖에 미리 둔다. disabled/aria-busy 컨트롤의 문구 변경에만 의존하지 않는다. */}
+      <p role="status" aria-atomic="true" className="sr-only">
+        {isSubmitting ? (isSignUp ? '이메일 회원가입을 처리하고 있습니다.' : '이메일 로그인을 처리하고 있습니다.') : isOAuthPending ? 'Google 인증 화면으로 이동하고 있습니다.' : modeMessage}
+      </p>
+
       <form id="email-auth-form" aria-label={isSignUp ? '이메일 회원가입' : '이메일 로그인'} aria-busy={isSubmitting} onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         <fieldset disabled={isBusy} className="flex min-w-0 flex-col gap-3">
           <legend className="sr-only">{isSignUp ? '이메일 회원가입 정보' : '이메일 로그인 정보'}</legend>
@@ -298,11 +316,9 @@ export function LoginForm() {
               aria-invalid={!!emailFeedback.error}
               aria-describedby={emailFeedback.error ? 'email-error' : undefined}
             />
-            {emailFeedback.error && (
-              <p id="email-error" role="status" className={fieldErrorClassName}>
-                {emailFeedback.error}
-              </p>
-            )}
+            <p id="email-error" role="status" aria-atomic="true" className={emailFeedback.error ? fieldErrorClassName : undefined}>
+              {emailFeedback.error}
+            </p>
           </div>
 
           <div>
@@ -334,11 +350,9 @@ export function LoginForm() {
                 controls="password"
               />
             </div>
-            {passwordFeedback.error && (
-              <p id="password-error" role="status" className={fieldErrorClassName}>
-                {passwordFeedback.error}
-              </p>
-            )}
+            <p id="password-error" role="status" aria-atomic="true" className={passwordFeedback.error ? fieldErrorClassName : undefined}>
+              {passwordFeedback.error}
+            </p>
 
             {isSignUp && <p id="password-hint" className="mt-1 text-label text-text-secondary">비밀번호는 {MIN_PASSWORD_LENGTH}자 이상 입력해주세요.</p>}
             {isSignUp && password && <PasswordStrengthMeter id="password-strength" password={password} />}
@@ -378,11 +392,9 @@ export function LoginForm() {
                   controls="confirmPassword"
                 />
               </div>
-              {confirmationFeedback.error && (
-                <p id="confirm-password-error" role="status" className={fieldErrorClassName}>
-                  {confirmationFeedback.error}
-                </p>
-              )}
+              <p id="confirm-password-error" role="status" aria-atomic="true" className={confirmationFeedback.error ? fieldErrorClassName : undefined}>
+                {confirmationFeedback.error}
+              </p>
             </div>
           )}
 
@@ -406,11 +418,9 @@ export function LoginForm() {
                   [이메일 가입 필수] <PolicyLinks />을 확인하고 이용약관에 동의합니다.
                 </label>
               </div>
-              {termsTouched && !agreedToTerms && (
-                <p id="terms-error" role="alert" className={fieldErrorClassName}>
-                  약관에 동의해야 이메일로 회원가입할 수 있습니다.
-                </p>
-              )}
+              <p id="terms-error" role="status" aria-atomic="true" className={termsTouched && !agreedToTerms ? fieldErrorClassName : undefined}>
+                {termsTouched && !agreedToTerms ? '약관에 동의해야 이메일로 회원가입할 수 있습니다.' : ''}
+              </p>
             </div>
           )}
 
@@ -426,17 +436,11 @@ export function LoginForm() {
       </form>
 
       {/* 이메일/구글 공통 에러·안내 — 두 로그인 방식 모두 여기 하나로 표시한다 */}
-      {authError && (
-        <div className="mt-3">
-          <p role="alert" className="text-label text-status-rejected-text">
-            {authError.message}
-          </p>
-          {authError.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
-        </div>
-      )}
-      {(infoMessage ?? oneTimeMessage) && (
-        <p role="status" aria-atomic="true" className="mt-3 text-label text-status-offer-text">{infoMessage ?? oneTimeMessage}</p>
-      )}
+      <p role="alert" aria-atomic="true" className={clsx('text-label text-status-rejected-text', authError && 'mt-3')}>
+        {authError?.message}
+      </p>
+      {authError?.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
+      <p role="status" aria-atomic="true" className={clsx('text-label text-status-offer-text', (infoMessage ?? oneTimeMessage) && 'mt-3')}>{infoMessage ?? oneTimeMessage}</p>
 
       <div className="my-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-card-border" />
@@ -453,6 +457,7 @@ export function LoginForm() {
             requestPending.current = true;
             setAuthError(null);
             setInfoMessage(null);
+            setModeMessage('');
             emailFeedback.reset();
             passwordFeedback.reset();
             confirmationFeedback.reset();

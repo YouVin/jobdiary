@@ -24,6 +24,7 @@
 | 저장·DB | [SUPABASE](SUPABASE.md) | `src/lib/applicationsApi.ts`, `src/store/applicationStore.ts`, `supabase/` |
 | 로그인·계정 | [AUTH](AUTH.md) | `src/lib/auth.ts`, `src/components/auth/`, `src/components/account/` |
 | Google 콜백·재시도 점검 (#101) | [AUTH_CHECK](AUTH_CHECK.md) | `scripts/verify-auth-browser.mjs`, `tests/googleSignIn.test.mjs` |
+| 인증 스크린리더·오류 포커스 (#109) | [AUTH_CHECK](AUTH_CHECK.md) | `scripts/verify-auth-accessibility.mjs`, `ConsentGate.tsx` |
 | 보안 점검·릴리즈 보류 | [SECURITY](SECURITY.md) | `package.json`, `.github/workflows/ci.yml` |
 | 릴리즈 검증·마이그레이션 이력 (#96·#97) | [RELEASE_CHECK](RELEASE_CHECK.md) | `scripts/verify-release-browser.mjs`, `src/app/(legal)/` |
 | 익스텐션 계약 | [EXTENSION](EXTENSION.md), [INTEGRATION](INTEGRATION.md) | `src/lib/extensionImport.ts` (익스텐션 구현은 별도 저장소) |

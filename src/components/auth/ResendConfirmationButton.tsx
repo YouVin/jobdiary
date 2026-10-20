@@ -53,7 +53,7 @@ export function ResendConfirmationButton({ email }: ResendConfirmationButtonProp
       >
         {isResending ? '재전송 중...' : '확인 메일 재전송'}
       </button>
-      <p id={messageId} role="status" aria-atomic="true" className={`mt-1 text-label ${resendFailed ? 'text-status-rejected-text' : 'text-status-offer-text'}`}>{resendMessage}</p>
+      <p id={messageId} role="status" aria-atomic="true" className={`mt-1 text-label ${resendFailed ? 'text-status-rejected-text' : 'text-status-offer-text'}`}>{isResending ? '확인 메일을 재전송하고 있습니다.' : resendMessage}</p>
     </div>
   );
 }

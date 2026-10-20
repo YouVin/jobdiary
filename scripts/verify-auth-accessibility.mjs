@@ -43,6 +43,25 @@ try {
   await page.goto(origin + '/login');
   await page.getByRole('button', { name: 'Google로 계속하기', exact: true }).waitFor();
   await page.addScriptTag({ content: axeSource });
+  const cdp = await context.newCDPSession(page);
+  async function accessibleField(name, description) {
+    const { nodes } = await cdp.send('Accessibility.getFullAXTree');
+    const field = nodes.find(node => node.role?.value === 'textbox' && node.name?.value === name);
+    assert(field, `${name}이 접근성 트리에 이름으로 노출`);
+    assert.match(field.description?.value || '', description);
+    assert(field.properties.some(property => property.name === 'required' && property.value.value === true));
+  }
+  await accessibleField('이메일', /^$/);
+  const errorRegion = await page.locator('#email-error').elementHandle();
+  const authAlert = await page.getByRole('main').getByRole('alert').elementHandle();
+  await page.evaluate(() => {
+    window.errorFocusEvents = [];
+    document.addEventListener('focusin', event => {
+      if (!['email', 'password', 'confirmPassword', 'terms'].includes(event.target.id)) return;
+      const field = event.target;
+      window.errorFocusEvents.push({ id: field.id, invalid: field.getAttribute('aria-invalid'), description: (field.getAttribute('aria-describedby') || '').split(' ').map(id => document.getElementById(id)?.textContent.trim() || '').join(' ') });
+    });
+  });
   await scan('로그인');
   assert.equal(await page.getByRole('main').count(), 1);
   assert.equal(await page.getByRole('heading', { level: 1 }).count(), 1);
@@ -56,6 +75,7 @@ try {
   await signup.focus();
   await page.keyboard.press('Space');
   assert.equal(await signup.getAttribute('aria-pressed'), 'true');
+  assert.match(await page.getByRole('status').filter({ hasText: '이메일 회원가입 양식입니다.' }).textContent(), /비밀번호 확인과 약관 동의/);
   await scan('가입·빈 필드');
   const submit = page.getByRole('form', { name: '이메일 회원가입' }).getByRole('button', { name: '회원가입', exact: true });
   await page.mouse.move(0, 0);
@@ -66,9 +86,17 @@ try {
   assert.equal(await submit.evaluate(element => getComputedStyle(element).cursor), 'pointer');
   await submit.click();
   assert.equal(await page.evaluate(() => document.activeElement.id), 'email');
+  const emailFocus = await page.evaluate(() => window.errorFocusEvents.at(-1));
+  assert.equal(emailFocus.invalid, 'true');
+  assert.match(emailFocus.description, /이메일을 입력해주세요/);
+  assert(await errorRegion.evaluate(element => element === document.getElementById('email-error')), '오류 live region은 기존 노드의 내용을 갱신');
+  await accessibleField('이메일', /이메일을 입력해주세요/);
   assert.equal(await page.locator('#terms').getAttribute('aria-describedby'), 'terms-error');
   await scan('가입·필수 오류');
   await page.getByLabel('이메일', { exact: true }).fill('test@example.test');
+  await submit.click();
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'password');
+  assert.match(await page.evaluate(() => window.errorFocusEvents.at(-1).description), /비밀번호를 입력해주세요/);
   await page.getByLabel('비밀번호', { exact: true }).fill('123456');
   await page.getByText('비밀번호 강도: 약함', { exact: true }).waitFor();
   const toggle = page.locator('button[aria-controls="password"]');
@@ -77,6 +105,13 @@ try {
   assert.equal(await toggle.getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('#password').getAttribute('type'), 'text');
   await scan('가입·비밀번호 강도/표시');
+  await submit.click();
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'confirmPassword');
+  assert.match(await page.evaluate(() => window.errorFocusEvents.at(-1).description), /비밀번호/);
+  await page.getByLabel('비밀번호 확인', { exact: true }).fill('123456');
+  await submit.click();
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'terms');
+  assert.match(await page.evaluate(() => window.errorFocusEvents.at(-1).description), /약관에 동의/);
   for (const width of [375, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
@@ -87,12 +122,17 @@ try {
   for (let i = 0; !releaseLogin && i < 100; i++) await new Promise(resolve => setTimeout(resolve, 20));
   assert(releaseLogin);
   assert.equal(await form.getAttribute('aria-busy'), 'true');
+  const progress = page.getByRole('status').filter({ hasText: '이메일 로그인을 처리하고 있습니다.' });
+  assert.equal(await progress.count(), 1);
+  assert.equal(await progress.evaluate(element => element.closest('[aria-busy="true"]')), null);
   const busy = form.getByRole('button', { name: '처리 중...', exact: true });
   assert(await busy.isDisabled());
   assert.equal(await busy.evaluate(element => getComputedStyle(element).cursor), 'not-allowed');
   await scan('이메일 요청 처리 중');
   releaseLogin();
   const resend = page.getByRole('button', { name: '확인 메일 재전송', exact: true });
+  await resend.waitFor();
+  assert(await authAlert.evaluate(element => element === document.querySelector('[role="alert"]')), '인증 오류는 기존 alert에 삽입');
   await resend.click();
   await page.getByText('재전송에 실패했습니다. 잠시 후 다시 시도해주세요.', { exact: true }).waitFor();
   await scan('재전송 실패·재시도');
