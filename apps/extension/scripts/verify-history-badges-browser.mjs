@@ -134,29 +134,45 @@ try {
     await popup.screenshot({ path: path.join(output, 'popup-diary.png') });
     assert.equal(await popup.locator('details').getAttribute('open'), null);
     await popup.locator('#root > div').screenshot({ path: path.join(output, 'popup-diary-default.png') });
-    await popup.locator('summary').click();
+    for (const name of ['전체 복사', '수집 내역 초기화']) {
+      const button = popup.getByRole('button', { name, exact: true });
+      const box = await button.boundingBox();
+      assert(box.width >= 140 && box.height >= 36, name + ': 명확한 버튼 클릭 영역');
+      assert.equal(await button.evaluate(node => getComputedStyle(node).borderTopStyle), 'solid');
+    }
+    await popup.getByRole('button', { name: '수집 내역 초기화', exact: true }).focus();
+    await popup.keyboard.press('Tab');
+    assert.equal(await popup.evaluate(() => document.activeElement.tagName), 'SUMMARY');
+    await popup.keyboard.press('Enter');
+    assert.equal(await popup.locator('details').evaluate(node => node.open), true);
     await checkbox.click();
     await popup.waitForFunction(() => { const input = document.querySelector('#history-display-enabled'); return input && !input.checked && !input.disabled; });
     await waitCount(page, 0);
-    await popup.getByText('자동 표시 꺼짐', { exact: true }).waitFor();
-    await popup.getByText(/식별하지 못한 지원 2건/).waitFor({ state: 'visible' });
+    await popup.getByText('꺼짐', { exact: true }).waitFor();
+    await popup.getByText(/미확인 2건 제외/).waitFor({ state: 'visible' });
     await measurePopup('details');
+    await popup.locator('.diary-popup').screenshot({ path: path.join(output, 'popup-controls-expanded.png') });
     assert.equal(await popup.locator('.diary-calendar').isVisible(), false);
     assert.equal(await popup.locator('.diary-month').isVisible(), true);
     await checkbox.click();
     await popup.waitForFunction(() => { const input = document.querySelector('#history-display-enabled'); return input && input.checked && !input.disabled; });
     await popup.locator('summary').click();
     await writeCache({ ...cache([]), unidentifiedCount: 35 });
-    await popup.getByText('비교할 수 있는 공고가 없어요', { exact: true }).waitFor();
+    await popup.getByText('연결 공고 없음', { exact: true }).waitFor();
     await measurePopup('unidentified');
     await popup.locator('#root > div').screenshot({ path: path.join(output, 'popup-diary-unidentified.png') });
     await popup.locator('summary').click();
-    await popup.getByText(/수집한 뒤 아래/).waitFor({ state: 'visible' });
+    await popup.getByText(/수집 후.*가져오기/).waitFor({ state: 'visible' });
     await measurePopup('unidentifiedDetails');
     await popup.locator('summary').click();
     await worker.evaluate(key => chrome.storage.local.remove(key), key);
-    await popup.getByText('지원 이력 연결 필요', { exact: true }).waitFor();
+    await popup.getByText('연결 필요', { exact: true }).waitFor();
     await measurePopup('disconnected');
+    await popup.locator('summary').click();
+    await popup.getByRole('button', { name: '취준일기에서 연결', exact: true }).waitFor();
+    await measurePopup('disconnectedDetails');
+    await popup.locator('.diary-popup').screenshot({ path: path.join(output, 'popup-controls-disconnected.png') });
+    await popup.locator('summary').click();
     await writeCache(cache());
     await check('흑백 팝업에서 실제 수집·확인 후 초기화가 별도 비교 캐시를 보존한다', async () => {
       await page.evaluate(() => {

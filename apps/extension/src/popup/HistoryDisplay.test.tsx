@@ -33,7 +33,7 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 it('공고 수·동기화·미식별 상태와 자동 표시 설정을 안내하고 저장한다', async () => {
   await act(async () => root.render(<App />));
   expect(container.textContent).toContain('1개 공고 연결');
-  expect(container.textContent).toContain('식별하지 못한 지원 2건');
+  expect(container.textContent).toContain('미확인 2건 제외');
   const checkbox = container.querySelector<HTMLInputElement>('#history-display-enabled')!;
   expect(checkbox.checked).toBe(true);
   await act(async () => checkbox.click());
@@ -53,14 +53,24 @@ it('캐시 삭제를 미지원 전체로 설명하지 않고 로그인 안내로
   await act(async () => root.render(<App />));
   delete stored[key];
   await act(async () => { listeners.forEach(listener => listener({ [key]: { newValue: undefined } }, 'local')); });
-  expect(container.textContent).toContain('연결된 지원 이력이 없어요');
+  expect(container.textContent).toContain('로그인 후 지원 이력을 연결하세요.');
   expect(container.textContent).not.toContain('1개 공고 연결');
 });
 
 it('이력 갱신은 자동 가져오기 신호 없이 웹앱을 연다', async () => {
   await act(async () => root.render(<App />));
-  const open = [...container.querySelectorAll('button')].find(button => button.textContent === '취준일기에서 이력 갱신')!;
+  const open = [...container.querySelectorAll('button')].find(button => button.textContent === '이력 갱신')!;
   await act(async () => open.click());
   expect(createTab).toHaveBeenCalledWith({ url: 'http://localhost:3000' });
   expect(stored[key]).toBeDefined();
+});
+
+it('미연결 안내는 연결 버튼을 제공하고 기존 수집을 다시 가져오지 않는다', async () => {
+  delete stored[key];
+  await act(async () => root.render(<App />));
+  const open = [...container.querySelectorAll('button')].find(button => button.textContent === '취준일기에서 연결')!;
+  await act(async () => open.click());
+  expect(createTab).toHaveBeenCalledWith({ url: 'http://localhost:3000' });
+  expect(container.textContent).toContain('로그인 후 지원 이력을 연결하세요.');
+  expect(container.querySelector('.diary-history-meta')).toBeNull();
 });
