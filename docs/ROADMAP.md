@@ -29,9 +29,10 @@
 
 **목표**: 사람인부터 지원 내역 자동 수집
 
-아래 항목은 별도 익스텐션 저장소에서 확인할 목록이며, 미체크가 미구현을 의미하지는 않는다.
+아래는 초기 계획의 체크리스트다. 현재 구현은 `apps/extension`과
+[통합 진행 계획](IMPLEMENTATION_ROADMAP.md)에서 확인하며, 미체크가 미구현을 의미하지는 않는다.
 
-- [ ] `jobdiary-extension` 레포에 CRXJS 세팅
+- [ ] `apps/extension`의 CRXJS 세팅 확인
 - [ ] manifest.json 작성
 - [ ] 사람인 content script (셀렉터 찾기 → 수집)
 - [ ] service worker (저장 로직)

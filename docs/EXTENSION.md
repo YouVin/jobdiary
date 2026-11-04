@@ -1,6 +1,8 @@
 # 크롬 익스텐션 설계
 
-> 별도 레포(`jobdiary-extension`)에서 개발. 웹앱 완성 후 착수.
+> 익스텐션은 모노레포의 `apps/extension`에서 개발한다.
+> 아래 내용은 초기 설계이며 현재 구현·셀렉터·연동 기준은
+> [익스텐션 문서](../apps/extension/docs/PLANNING.md)와 실제 코드에서 확인한다.
 
 ---
 

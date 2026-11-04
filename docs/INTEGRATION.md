@@ -1,6 +1,6 @@
 # 익스텐션 연동 설계 (INTEGRATION)
 
-> 익스텐션(`jobdiary-extension`)이 수집한 데이터를 이 웹앱으로 연동하는 설계 문서. "받는 쪽 계약"의 단일 진실 공급원.
+> 익스텐션(`apps/extension`, 패키지명 `jobdiary-extension`)이 수집한 데이터를 이 웹앱으로 연동하는 설계 문서. "받는 쪽 계약"의 단일 진실 공급원.
 
 ---
 
@@ -139,7 +139,7 @@
 - 응답 처리: payload 형식(배열 + 필수 필드) 검증 → 로그인 세션 확인 → `addApplicationsFromExtension` 호출 → 결과 배너 표시.
 - 결과 배너/토스트 컴포넌트 (`ImportSummary`의 `addedCount`/`duplicateCount`/`skippedCount`/`error`를 그대로 렌더링).
 
-**익스텐션 쪽에 필요한 작업 (`jobdiary-extension` 레포, 이 문서 확정 후 착수)**:
+**익스텐션 구현 위치 (`apps/extension`, 아래는 초기 구현 계획)**:
 - `manifest.json`에 `externally_connectable.matches`로 웹앱 origin 등록 (§6.4 예시).
 - service worker에 `chrome.runtime.onMessageExternal` 리스너 등록: `message.type === 'JOBDIARY_COLLECT'` 확인 → `chrome.storage`에서 수집된 항목 로드 → `sendResponse`로 반환.
 - popup은 더 이상 데이터를 "보내는" 주체가 아니다 — 수집 현황 표시 정도의 역할만 남고, 실제 전달은 웹앱이 주도한다.
@@ -152,7 +152,7 @@
 - **② 익스텐션 응답 신뢰: 웹앱은 고정된 익스텐션 ID로만 요청한다.** 웹앱은 `chrome.runtime.sendMessage`를 호출할 때 하드코딩된 상수(`JOBDIARY_EXTENSION_ID`)만 대상으로 삼는다 — 이 값이 코드에 고정돼 있으므로 웹앱이 의도치 않은(가짜) 확장에 요청을 보내 오염된 데이터를 응답받을 여지가 없다.
 - **익스텐션 쪽 sender 검증(참고, 익스텐션 레포 구현 시 적용)**: `onMessageExternal` 콜백의 `sender`는 발신자가 "웹페이지"일 때 `sender.id`가 채워지지 않는다(그 필드는 확장 간 메시징에서만 쓰인다) — 대신 `sender.url`/`sender.origin`으로 확인한다. `externally_connectable.matches`가 이미 브라우저 레벨에서 origin을 강제하므로 필수는 아니지만, defense-in-depth로 익스텐션 쪽에서 한 번 더 origin을 확인해도 좋다.
   ```ts
-  // 익스텐션 쪽 수신 핸들러 스케치 (jobdiary-extension 레포)
+  // 익스텐션 쪽 수신 핸들러 스케치 (apps/extension)
   chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
     if (message?.type !== 'JOBDIARY_COLLECT') {
       return; // 알려진 타입이 아니면 무시

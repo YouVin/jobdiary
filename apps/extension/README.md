@@ -172,7 +172,7 @@ npm run build:extension
 ## 프로젝트 구조
 
 ```
-jobdiary-extension/
+apps/extension/
 ├── src/
 │   ├── content/          # 사이트별 content script (DOM 파싱)
 │   │   ├── selectors/    # 사이트별 셀렉터 상수
@@ -219,8 +219,9 @@ jobdiary-extension/
 
 | 저장소 | 설명 |
 |--------|------|
-| [jobdiary](https://github.com/YouVin/jobdiary) | 취준일기 웹 대시보드 (칸반 보드, 일기, 통계) |
-| **jobdiary-extension** | 지원 내역 수집 크롬 익스텐션 (현재 저장소) |
+| [jobdiary](https://github.com/YouVin/jobdiary) | 웹앱·익스텐션 통합 저장소 |
+| `apps/web` | 취준일기 웹 대시보드 |
+| `apps/extension` | 지원 내역 수집 크롬 익스텐션 |
 
 ---
 
