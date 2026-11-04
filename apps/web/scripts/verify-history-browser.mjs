@@ -50,6 +50,7 @@ try {
     const url = new URL(req.url());
     if (!['http:', 'https:'].includes(url.protocol)) return route.continue();
     if (url.origin === origin) return route.continue();
+    if (url.hostname === 'www.jobkorea.co.kr' && url.pathname === '/User/AI') return route.fulfill({ contentType: 'text/html; charset=utf-8', body: '<!doctype html><h1>추천 공고 표본</h1><a href="/Recruit/GI_Read/101">기존 공고</a><a href="/Recruit/GI_Read/103">새 공고</a><a href="/Recruit/GI_Read/999">미식별 공고</a>' });
     if (!url.hostname.endsWith('.supabase.co')) { errors.push('Unexpected external host'); return route.abort(); }
     const send = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
     let current;
@@ -105,6 +106,7 @@ try {
     }
     throw new Error('브라우저 동기화 결과 대기 시간 초과');
   };
+  let badgePage;
   const page = await context.newPage();
   await page.goto(origin);
   await check('실제 웹앱 로그인 복원→DB 조회→MV3 캐시, 마감 이력 포함·URL 없는 기록 구분', async () => {
@@ -137,6 +139,13 @@ try {
     assert.equal(rows.filter(value => value.external_id === 'apply-103').length, 1);
     assert.equal(rows.find(value => value.external_id === 'apply-103').deadline_at, '2030-11-30');
   });
+  await check('웹앱 가져오기→동기화된 이력→공고 페이지의 실제 지원 배지', async () => {
+    badgePage = await context.newPage();
+    await badgePage.goto('https://www.jobkorea.co.kr/User/AI');
+    await badgePage.waitForFunction(() => document.querySelectorAll('[data-jobdiary-history]').length === 2);
+    assert.equal(await badgePage.locator('a').first().textContent(), '기존 공고');
+    assert.equal(await badgePage.locator('a').nth(2).locator('[data-jobdiary-history]').count(), 0);
+  });
   await check('수집 슬롯 초기화 후 비교 캐시 유지', async () => {
     await worker.evaluate(() => chrome.storage.local.remove('jobdiary:collected'));
     assert.equal((await read()).entries.length, 3);
@@ -144,6 +153,7 @@ try {
   await check('실제 로그아웃 UI→계정 캐시 삭제', async () => {
     await page.getByRole('button', { name: '로그아웃', exact: true }).click();
     await waitFor(value => value === null);
+    await badgePage.waitForFunction(() => document.querySelectorAll('[data-jobdiary-history]').length === 0);
   });
   await check('다른 계정 로그인 복원→이전 지원 제외·취소 구분', async () => {
     await page.evaluate(({ key, value }) => localStorage.setItem(key, JSON.stringify(value)), { key: authKey, value: session(users[1]) });
