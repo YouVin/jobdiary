@@ -54,6 +54,7 @@
 - Manifest V3 service worker의 실행 상태를 영구적으로 유지된다고 가정하지 않는다. 지속 데이터는 `chrome.storage`에 저장한다.
 - 비동기 메시지 응답은 Chrome 메시징 규약에 맞춰 처리한다. inline script를 추가하지 않는다.
 - 권한은 최소화한다. `host_permissions`, `content_scripts.matches`, 런타임 URL 검사 간의 역할을 혼동하지 말고 주입 범위 변경 시 `manifest.config.ts`와 `src/lib/platformDetect.ts`를 함께 확인한다.
+- 매니페스트·주입 경로 변경 후 실행 중인 Vite를 재시작하고 실제 로드할 `dist/manifest.json`의 등록을 확인한다. 정적 빌드 통과와 live 개발 확장의 주입 검증을 구분한다.
 - 저장 형식, 외부 메시지, 매니페스트 권한을 바꾸면 관련 문서와 사용처를 함께 갱신한다.
 - 사용자가 요청하지 않은 범위로 리팩터링하거나 기능 동작을 바꾸지 않는다.
 

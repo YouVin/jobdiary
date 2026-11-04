@@ -7,6 +7,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const output = path.join(root, 'release/badge-validation');
 const extension = process.env.EXTENSION_PATH || path.join(output, 'extension-development');
+const devOrigin = process.env.DEV_SERVER_ORIGIN ? new URL(process.env.DEV_SERVER_ORIGIN).origin : null;
+const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'), 'utf8'));
+assert(manifest.content_scripts?.some(script => script.js?.some(file => file.includes('historyBadges'))),
+  '로드할 확장의 manifest에 historyBadges가 없습니다. dev:extension을 재시작한 뒤 확장과 사이트를 다시 로드하세요.');
 const { chromium } = await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE || path.join(root, 'apps/web/node_modules/.release-tools/node_modules/playwright/index.mjs')).href);
 const key = 'jobdiary:application-history:v1:http://localhost:3000';
 const settingsKey = 'jobdiary:history-display:v1';
@@ -35,6 +39,8 @@ try {
   await context.route('**/*', async route => {
     const url = new URL(route.request().url());
     if (!['http:', 'https:'].includes(url.protocol)) return route.continue();
+    // Live CRXJS는 localhost 모듈을 읽는다. 사이트 HTTP 추가 여부와 분리한다.
+    if (devOrigin && url.origin === devOrigin) return route.continue();
     requests.push(url.origin + url.pathname);
     if (url.pathname === '/favicon.ico') return route.fulfill({ status: 204 });
     if (url.hostname === 'www.jobkorea.co.kr') {
