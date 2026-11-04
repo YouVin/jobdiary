@@ -1,5 +1,7 @@
+import { HISTORY_CLEAR_TYPE, HISTORY_SYNC_TYPE, parseHistoryRequest } from '@jobdiary/shared';
+import { applyHistoryRequest } from '../lib/applicationHistory';
 console.log('[JobDiary] background 서비스워커 로드됨');
-import { EXTERNAL_COLLECT_MESSAGE_TYPE, type ExternalCollectRequest, type ExternalCollectResponse } from '../lib/messages';
+import { EXTERNAL_COLLECT_MESSAGE_TYPE, type ExternalCollectResponse } from '../lib/messages';
 import { getAllApplications } from '../lib/storage';
 import { registerSaraminMobileHandler } from './saraminMobile';
 
@@ -15,9 +17,17 @@ const ALLOWED_ORIGINS = [
 
 // 웹앱의 pull 요청(JOBDIARY_COLLECT)에 응답한다. 새로 수집하지 않고, 기존 수집 로직(E-4)이
 // chrome.storage.local에 이미 저장해 둔 3사이트 누적 데이터를 그대로 반환한다.
-chrome.runtime.onMessageExternal.addListener((message: ExternalCollectRequest, sender, sendResponse) => {
+chrome.runtime.onMessageExternal.addListener((message: unknown, sender, sendResponse) => {
   if (!sender.origin || !ALLOWED_ORIGINS.includes(sender.origin)) return;
-  if (message?.type !== EXTERNAL_COLLECT_MESSAGE_TYPE) return;
+  if (!message || typeof message !== 'object' || !('type' in message)) return;
+  if (message.type === HISTORY_SYNC_TYPE || message.type === HISTORY_CLEAR_TYPE) {
+    if (sender.frameId !== 0) return;
+    const request = parseHistoryRequest(message);
+    if (!request) { sendResponse({ ok: false, error: 'invalid-history-message' }); return; }
+    void applyHistoryRequest(sender.origin, request).then(sendResponse);
+    return true;
+  }
+  if (message.type !== EXTERNAL_COLLECT_MESSAGE_TYPE) return;
 
   getAllApplications()
     .then((applications) => {
