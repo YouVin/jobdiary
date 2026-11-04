@@ -115,6 +115,11 @@ try {
     assert.deepEqual(cache.entries, [{ platform: 'jobkorea', postingId: '102', state: 'applied' }]);
     assert.equal(JSON.stringify(cache).includes('private synthetic memo'), false);
   });
+  // 실제로 다른 탭이 주소 없는 과거 목록을 보관하게 한 뒤 가져오기를 실행한다.
+  const stalePage = await context.newPage();
+  await stalePage.goto(origin);
+  await stalePage.getByRole('button', { name: '익스텐션에서 가져오기', exact: true }).waitFor();
+  await waitFor(value => value?.entries.length === 1 && value.unidentifiedCount === 2);
   await check('실제 가져오기 UI→빈 URL 보완·신규 삽입→비교 캐시 갱신', async () => {
     await worker.evaluate(async existing => chrome.storage.local.set({ 'jobdiary:collected': { saramin: [], wanted: [], jobkorea: [
       { company: existing.company, position: existing.position, platform: 'jobkorea', status: 'applied', appliedAt: '2026-11-01T00:00:00Z', externalId: 'apply-101', url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/101?tracking=x' },
@@ -127,6 +132,15 @@ try {
     assert.equal(rows[0].url, 'https://www.jobkorea.co.kr/Recruit/GI_Read/101');
     assert.equal(rows.find(value => value.external_id === 'apply-103').deadline_at, '2030-11-30');
     assert.equal(writes.length, 1);
+  });
+  await check('오래된 다른 웹앱 탭으로 복귀해도 주소 보완·신규 공고 배지 목록을 유지한다', async () => {
+    const before = (await read()).syncedAt;
+    await stalePage.bringToFront();
+    await stalePage.evaluate(() => window.dispatchEvent(new Event('focus')));
+    const refreshed = await waitFor(value => value?.syncedAt !== before);
+    assert.equal(refreshed.entries.length, 3, '오래된 탭이 최신 3개 공고를 과거 목록으로 덮지 않아야 한다');
+    assert.deepEqual(refreshed.entries.map(value => value.postingId), ['101', '102', '103']);
+    await stalePage.close(); await page.bringToFront();
   });
   await check('새로고침·반복 가져오기 후 날짜/주소 보존과 신규 중복 없음', async () => {
     const beforeReload = (await read()).syncedAt;

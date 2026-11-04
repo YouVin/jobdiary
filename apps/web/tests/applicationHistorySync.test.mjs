@@ -10,14 +10,23 @@ const app = { id: 'saved', company: '보내지 않을 회사', position: '보내
 function fixture(t, custom = {}) {
   const oldChrome = globalThis.chrome;
   const calls = [];
+  let database = [app];
   const load = createSourceLoader({
     '@/lib/storage': { saveApplications() {} },
     '@/lib/applicationsApi': {
       rejectExpiredApplications: async () => ({ applications: [], error: null }),
-      fetchApplications: async () => ({ applications: [app], error: null }),
-      insertApplication: async value => ({ application: { ...value, id: 'added' }, error: null }),
-      updateApplication: async (id, changes) => ({ application: { ...app, id, ...changes }, error: null }),
-      deleteApplication: async () => ({ error: null }),
+      fetchApplications: async () => ({ applications: database, error: null }),
+      fetchApplicationHistory: async context => custom.fetchApplications ? custom.fetchApplications(context) : ({ applications: database, error: null }),
+      insertApplication: async value => {
+        const added = { ...value, id: 'added' }; database = [...database, added];
+        return { application: added, error: null };
+      },
+      updateApplication: async (id, changes) => {
+        const updated = { ...database.find(value => value.id === id), ...changes };
+        database = database.map(value => value.id === id ? updated : value);
+        return { application: updated, error: null };
+      },
+      deleteApplication: async id => { database = database.filter(value => value.id !== id); return { error: null }; },
       ...custom,
     },
   });
@@ -162,4 +171,51 @@ test('주소 보완 응답이 늦게 와도 다른 계정의 이력으로 반영
   assert.ok((await pending).error);
   assert.equal(store.getState().userId, 'B');
   assert.deepEqual(store.getState().applications, []);
+});
+
+test('오래된 탭의 메모리가 최신 DB 공고 주소를 되돌리지 않는다', async t => {
+  let database = [app];
+  const { store, calls } = fixture(t, { fetchApplications: async () => ({ applications: database, error: null }) });
+  await store.getState().loadApplications();
+  await wait(() => calls.some(item => item.snapshot));
+  database = [{ ...app, url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/102' }];
+  const count = calls.length;
+  store.setState({ applications: [...store.getState().applications] });
+  await wait(() => calls.length > count);
+  assert.equal(calls.at(-1).snapshot.entries[0].postingId, '102');
+});
+
+test('전송 직전 DB 조회 실패는 기존 비교 목록을 빈 목록으로 교체하지 않는다', async t => {
+  let fail = false;
+  const { store, calls, sync } = fixture(t, { fetchApplications: async () => fail
+    ? ({ applications: [], error: new Error('offline') }) : ({ applications: [app], error: null }) });
+  await store.getState().loadApplications();
+  await wait(() => calls.some(item => item.snapshot));
+  const before = calls.length;
+  fail = true;
+  store.setState({ applications: [...store.getState().applications] });
+  await wait(() => sync.getApplicationHistorySyncStatus().state === 'error');
+  assert.equal(calls.length, before);
+  assert.equal(calls.at(-1).snapshot.entries[0].postingId, '101');
+});
+
+test('이전 계정의 늦은 DB 응답은 새 계정의 비교 목록에 반영하지 않는다', async t => {
+  let readsA = 0;
+  let release;
+  const { store, calls, auth, session } = fixture(t, {
+    fetchApplications: async context => {
+      if (context.userId === 'A' && ++readsA === 2) return new Promise(resolve => {
+        release = () => resolve({ applications: [app], error: null });
+      });
+      return { applications: [{ ...app, url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/202' }], error: null };
+    },
+  });
+  await store.getState().loadApplications();
+  await wait(() => release);
+  auth.getState().setSession(session('B'));
+  await store.getState().loadApplications();
+  release();
+  await wait(() => calls.some(item => item.snapshot));
+  assert.equal(calls.filter(item => item.snapshot).length, 1);
+  assert.equal(calls.at(-1).snapshot.entries[0].postingId, '202');
 });

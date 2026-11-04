@@ -241,3 +241,7 @@ node apps/web/scripts/verify-history-browser.mjs
 가짜 HTTP·데이터를 사용하는 재현 검증이며 사용자 실계정의 배지 표시 확인과 구분한다.
 재실행은 기존 verify-history-badges-browser.mjs를 사용하며
 로컬 release/badge-validation/popup-compact*.png와 browser-report.json에 결과를 보존한다.
+
+사용자가 localhost 가져오기 완료를 알려온 뒤, 공고 주소의 DB 저장은 정상임을 확인했다.
+오래된 다른 웹앱 탭의 과거 snapshot 덮어쓰기를 두 탭 브라우저·단위 테스트로 재현해 수정했다.
+원인·최소 조회 비용·실계정과 표본 검증의 경계는 [동기화 후속 기록](APPLICATION_HISTORY_SYNC.md#후속-수정-오래된-웹앱-탭의-비교-캐시-덮어쓰기-119)을 따른다.

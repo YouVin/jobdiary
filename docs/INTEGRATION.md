@@ -230,3 +230,6 @@ manifest 설정 예시(§6.1 B안, 확정된 origin 기준 — `key`는 실제 �
 웹앱이 HISTORY_SYNC/CLEAR 요청을 보내 최소 공고 식별 정보만 익스텐션에 저장한다.
 로그인 후 조회와 서버 반영 성공 뒤 갱신하고 로그아웃·계정 변경 때 정리한다.
 버전·보내는 필드·계정 격리·예외·검증과 남은 범위는 [APPLICATION_HISTORY_SYNC.md](APPLICATION_HISTORY_SYNC.md)를 따른다.
+
+비교 snapshot은 전송 직전 같은 계정의 DB 최소 필드(platform,status,url)를 재조회한다.
+이전 탭의 오래된 메모리로 최신 캐시를 덮지 않으며, 조회 실패는 빈 이력 전송으로 바꾸지 않는다.
