@@ -12,6 +12,7 @@
 - [5단계 공통 계약·지원 이력 비교 캐시 동기화](APPLICATION_HISTORY_SYNC.md)
 - [6단계 잡코리아·사람인 자동 표시·성능·직접 확인](APPLICATION_HISTORY_BADGES.md)
 - [익스텐션 흑백 일기장 팝업·사용자 선택·날짜·화면 검증](EXTENSION_POPUP_DESIGN.md)
+- [GitHub 소개·스크린샷 출처·재제작 기록](GITHUB_SHOWCASE.md)
 - [실행 코드·설정·GitHub 주소 연결 점검](MONOREPO_LINK_AUDIT.md)
 - [단계별 진행 계획](IMPLEMENTATION_ROADMAP.md)
 - [익스텐션 문서](../apps/extension/docs/PLANNING.md)
