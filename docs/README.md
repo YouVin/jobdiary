@@ -7,6 +7,8 @@
 
 - [이전 기록·실행·배포 경로](MONOREPO_MIGRATION.md)
 - [전환 정리와 외부 링크 체크리스트](MONOREPO_HANDOFF.md)
+- [모노레포 전환 사례·포트폴리오 근거](MONOREPO_CASE_STUDY.md)
+- [4단계 마감일 브라우저 검증·직접 확인 체크리스트](DEADLINE_VALIDATION.md)
 - [실행 코드·설정·GitHub 주소 연결 점검](MONOREPO_LINK_AUDIT.md)
 - [단계별 진행 계획](IMPLEMENTATION_ROADMAP.md)
 - [익스텐션 문서](../apps/extension/docs/PLANNING.md)

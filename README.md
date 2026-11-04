@@ -14,10 +14,12 @@
 | `supabase` | 기존 데이터베이스 마이그레이션과 Edge Functions |
 
 공통 연동 코드 추출과 지원 이력 자동 표시는 후속 단계다.
+모노레포로 바꾼 배경·이력 보존·문제 해결·검증 근거는 [전환 사례](docs/MONOREPO_CASE_STUDY.md),
+현재 진행 중인 마감일 검증은 [직접 확인 체크리스트](docs/DEADLINE_VALIDATION.md)를 참고한다.
 
 ## 개발
 
-Node.js 22.12 이상과 npm 11 이상을 사용한다. 의존성은 저장소 루트에서 설치한다.
+Node.js 22.12 이상 25 미만과 npm 11 이상을 사용한다. 의존성은 저장소 루트에서 설치한다.
 
 ```bash
 npm ci

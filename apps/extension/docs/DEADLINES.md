@@ -2,7 +2,10 @@
 
 상위 이슈: [#60](https://github.com/YouVin/jobdiary-extension/issues/60)
 작업 이슈: [#63](https://github.com/YouVin/jobdiary-extension/issues/63)
-브랜치: `feat/63-application-deadline`
+최초 작업 브랜치: `feat/63-application-deadline`. 기존 저장소 PR #64와 모노레포 PR #112로 dev에 통합했다.
+현재 소스: 모노레포 `apps/extension`.
+후속 검증: [모노레포 #113](https://github.com/YouVin/jobdiary/issues/113),
+[실제 MV3 자동 검증과 직접 확인 체크리스트](../../../docs/DEADLINE_VALIDATION.md).
 
 ## 구현 상태
 
@@ -113,9 +116,15 @@ undefined를 반환했다. 이 일회성 검증 파일은 제거했고 CI에는 
 - PC 수집→background 모바일 요청→어댑터→저장→웹앱 응답의 통합 테스트
 - 실제 로그인 환경·페이지네이션·웹앱 신규 가져오기는 수동 확인 필요
 
+2026-11-04: 실제 Chromium MV3 확장에서 고정 HTTP 표본을 사용한 8개 시나리오가 통과했다.
+실제 content script·service worker·storage·외부 메시지와 웹앱 수신 검증/가져오기 계획을 확인했다.
+실제 로그인된 사이트·팝업 UI·웹앱 DB 저장 검증과는 구분한다. 상세 결과와 재실행 방법은
+[모노레포 검증 기록](../../../docs/DEADLINE_VALIDATION.md)을 따른다.
+
 ## 사용자가 확인할 순서
 
-1. 빌드 후 `chrome://extensions`에서 테스트 확장을 새로고침한다.
+1. 모노레포 루트에서 `npm run dev:extension`을 실행한 뒤 `chrome://extensions`에서
+   `apps/extension/dist`의 개발 확장을 로드/새로고침한다. localhost 연동은 개발 빌드로 확인한다.
 2. 사람인 또는 잡코리아 PC 지원현황을 새로고침하고 수집한다.
 3. 팝업의 “마감일 N건 확인” 또는 “마감일을 확인하지 못했어요”를 확인한다.
 4. 제공 표본과 같은 지원이 모바일 첫 응답에 있으면 1건 이상 확인되는지 살펴본다.
@@ -126,4 +135,5 @@ undefined를 반환했다. 이 일회성 검증 파일은 제거했고 CI에는 
 
 빌드가 만드는 `release/crx-jobdiary-extension-1.0.3.zip`은 개발 중 소스로 재생성된
 검증 산출물이다. 기존 출시본과 같은 이름이므로 새 출시 버전 결정 전 웹스토어에
-업로드하지 않는다. 정책·스토어 설명의 변경도 아직 공개 배포되지 않았다.
+업로드하지 않는다. 기존 저장소 dev 병합 후 Pages 자동 게시가 성공했으며, 정책·스토어 설명의
+공개 내용과 버전은 각 게시 경로에서 별도로 확인한다. 스토어 신규 제출은 수행하지 않았다.
