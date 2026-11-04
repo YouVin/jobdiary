@@ -93,7 +93,7 @@ try {
     await page.locator('#dynamic-row').evaluate(row => row.remove());
     await waitCount(page, 2);
   });
-  await check('360px 팝업의 수집 15건·연결 정보·스위치를 스크롤 없이 확인한다', async () => {
+  await check('360px 흑백 일기장 팝업의 달력·수집 15건·연결 정보·스위치를 확인한다', async () => {
     await worker.evaluate(async () => {
       const app = { company: '검증 회사', position: '개발자', status: 'applied', appliedAt: '2026-11-01T00:00:00Z' };
       await chrome.storage.local.set({ 'jobdiary:collected': {
@@ -104,6 +104,8 @@ try {
     const popup = await context.newPage();
     await popup.setViewportSize({ width: 360, height: 600 });
     await popup.goto('chrome-extension://' + extensionId + '/src/popup/index.html');
+    // 독립 팝업 탭에서도 수집할 사이트를 활성 상태로 둔 뒤 화면을 연다.
+    await page.bringToFront(); await popup.reload();
     const checkbox = popup.getByRole('checkbox', { name: '지원 이력 자동 표시', exact: true });
     await popup.getByText('전체 15건', { exact: true }).waitFor();
     const measurePopup = async name => {
@@ -112,14 +114,26 @@ try {
         return { height: box.getBoundingClientRect().height, scrollHeight: box.scrollHeight, clientHeight: box.clientHeight,
           documentHeight: document.documentElement.scrollHeight, viewportHeight: innerHeight, open: !!document.querySelector('details').open };
       });
-      assert(size.height <= (size.open ? 600 : 520), name + ': 기본 520px·설정 펼침 600px 이하여야 함');
+      report.metrics.popup ??= {}; report.metrics.popup[name] = size;
+      if (size.scrollHeight > size.clientHeight + 1) await popup.screenshot({ path: path.join(output, 'popup-diary-overflow.png') });
+      assert(size.height <= (size.open ? 600 : 560), name + ': 기본 560px·설정 펼침 600px 이하여야 함');
       assert(size.scrollHeight <= size.clientHeight + 1, name + ': 내부 스크롤 없음');
       assert(size.documentHeight <= size.viewportHeight, name + ': 페이지 스크롤 없음');
-      report.metrics.popup ??= {}; report.metrics.popup[name] = size;
     };
     await measurePopup('connected');
+    await popup.getByRole('table', { name: /월 달력/ }).waitFor();
+    const today = popup.locator('.diary-calendar [aria-current="date"]');
+    assert.equal(await today.count(), 1);
+    assert.equal(await today.textContent(), String(new Date().getDate()));
+    assert.equal(await popup.locator('.diary-button-primary').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(24, 24, 27)');
+    assert.equal(await popup.locator('.diary-popup').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(255, 255, 255)');
+    assert.equal(await popup.locator('img').evaluateAll(nodes => nodes.every(node => node.complete && node.naturalWidth > 0)), true);
+    await popup.keyboard.press('Tab');
+    assert.equal(await popup.evaluate(() => document.activeElement.textContent.trim()), '지원내역 수집하기');
+    assert.equal(await popup.evaluate(() => getComputedStyle(document.activeElement).outlineStyle), 'solid');
+    await popup.screenshot({ path: path.join(output, 'popup-diary.png') });
     assert.equal(await popup.locator('details').getAttribute('open'), null);
-    await popup.locator('#root > div').screenshot({ path: path.join(output, 'popup-classic.png') });
+    await popup.locator('#root > div').screenshot({ path: path.join(output, 'popup-diary-default.png') });
     await popup.locator('summary').click();
     await checkbox.click();
     await popup.waitForFunction(() => { const input = document.querySelector('#history-display-enabled'); return input && !input.checked && !input.disabled; });
@@ -127,13 +141,15 @@ try {
     await popup.getByText('자동 표시 꺼짐', { exact: true }).waitFor();
     await popup.getByText(/식별하지 못한 지원 2건/).waitFor({ state: 'visible' });
     await measurePopup('details');
+    assert.equal(await popup.locator('.diary-calendar').isVisible(), false);
+    assert.equal(await popup.locator('.diary-month').isVisible(), true);
     await checkbox.click();
     await popup.waitForFunction(() => { const input = document.querySelector('#history-display-enabled'); return input && input.checked && !input.disabled; });
     await popup.locator('summary').click();
     await writeCache({ ...cache([]), unidentifiedCount: 35 });
     await popup.getByText('비교할 수 있는 공고가 없어요', { exact: true }).waitFor();
     await measurePopup('unidentified');
-    await popup.locator('#root > div').screenshot({ path: path.join(output, 'popup-classic-unidentified.png') });
+    await popup.locator('#root > div').screenshot({ path: path.join(output, 'popup-diary-unidentified.png') });
     await popup.locator('summary').click();
     await popup.getByText(/수집한 뒤 아래/).waitFor({ state: 'visible' });
     await measurePopup('unidentifiedDetails');
@@ -142,6 +158,30 @@ try {
     await popup.getByText('지원 이력 연결 필요', { exact: true }).waitFor();
     await measurePopup('disconnected');
     await writeCache(cache());
+    await check('흑백 팝업에서 실제 수집·확인 후 초기화가 별도 비교 캐시를 보존한다', async () => {
+      await page.evaluate(() => {
+        const table = document.createElement('table'); table.id = 'collect-fixture';
+        table.innerHTML = '<tbody><tr><td class="company"><a>검증 회사</a></td><td class="description"><a href="/Recruit/GI_Read/101">검증 개발자</a></td><td class="apply-status"><span class="item status">지원완료</span></td><td><button data-memname="검증 회사" data-gititle="검증 개발자" data-applydate="20261101120000" data-idx="9001">지원취소</button></td></tr></tbody>';
+        document.body.append(table);
+      });
+      await page.bringToFront();
+      // 팝업 표본은 독립 탭이다. 사이트를 활성 상태로 둔 채 실제 수집 핸들러를 실행한다.
+      await popup.getByRole('button', { name: '지원내역 수집하기', exact: true }).evaluate(button => button.click());
+      await popup.getByText('1건 수집됨', { exact: true }).waitFor();
+      await popup.getByText('전체 6건', { exact: true }).waitFor();
+      assert.equal(await popup.locator('.diary-calendar').isVisible(), false);
+      await measurePopup('collected');
+      await popup.locator('.diary-popup').screenshot({ path: path.join(output, 'popup-diary-collected.png') });
+      await popup.getByRole('button', { name: '수집 내역 초기화', exact: true }).click();
+      assert.equal(await worker.evaluate(async () => (await chrome.storage.local.get('jobdiary:collected'))['jobdiary:collected'].jobkorea.length), 1);
+      await popup.getByRole('button', { name: '다시 누르면 수집 내역 삭제', exact: true }).click();
+      await popup.getByText('전체 0건', { exact: true }).waitFor();
+      assert.equal(await popup.getByRole('button', { name: '전체 복사', exact: true }).isDisabled(), true);
+      assert.equal(await worker.evaluate(async key => !!(await chrome.storage.local.get(key))[key], key), true);
+      assert.equal(await popup.locator('.diary-calendar').isVisible(), true);
+      await measurePopup('empty');
+      await page.locator('#collect-fixture').evaluate(node => node.remove());
+    });
     await page.bringToFront(); await waitCount(page, 2);
     await popup.close();
   });

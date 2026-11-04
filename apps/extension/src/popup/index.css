@@ -1,35 +1,55 @@
-/* source(none): 프로젝트 전체 자동 스캔 대신 아래 @source로 범위를 명시한다
-   (자동 스캔은 CLAUDE.md/docs의 "inline", "container" 같은 일반 단어도 클래스 후보로 주워
-   .container/.inline 유틸을 만들어내는 걸 빌드로 확인함). */
+/* 팝업과 관련 TS/TSX만 스캔한다. 문서의 일반 단어는 클래스 후보에 넣지 않는다. */
 @import "tailwindcss" source(none);
 @source "./**";
 @source "../**/*.{ts,tsx}";
 @config "../../tailwind.config.ts";
 
-:root {
-  --background: #fafafa;
-  --foreground: #18181b;
-}
-
-/*
- * 웹앱은 Pretendard를 쓰지만 그 로딩 방식(next/font)이 Next.js 전용이라
- * 익스텐션에는 아직 이식하지 않았다. 폰트 통일은 추후 과제 — 지금은 시스템 sans-serif.
- */
 body {
-  margin: 0;
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  @apply m-0 bg-diary-paper text-diary-ink;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
-button:focus-visible,
-a:focus-visible {
-  /* 흰 글자의 기본 버튼에서도 밝은 팝업 배경과 구분되도록 한다. */
-  outline: 2px solid var(--foreground);
-  outline-offset: 3px;
+button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible {
+  @apply outline-2 outline-offset-2 outline-diary-ink;
 }
+
+.diary-popup { @apply max-h-150 w-90 overflow-y-auto bg-diary-paper text-diary-ink; }
+.diary-brand { @apply flex h-11 items-center gap-2 border-b border-diary-line px-6; }
+.diary-content { @apply px-6 pb-4; }
+.diary-date { @apply flex items-center justify-between gap-3 border-b border-diary-ink py-3; }
+.diary-year { @apply font-diary text-xs tracking-widest text-diary-secondary; }
+.diary-month { @apply mb-2 font-diary text-diary-month font-normal tracking-tight; }
+.diary-today { @apply block text-xs text-diary-secondary; }
+.diary-calendar { @apply w-32 table-fixed border-collapse text-center text-diary-calendar text-diary-ink; font-variant-numeric: tabular-nums; }
+.diary-calendar th { @apply h-4 border-b border-diary-line p-0 font-normal text-diary-secondary; }
+.diary-calendar td { @apply h-3 p-0; }
+.diary-calendar td span { @apply inline-flex h-3 w-3 items-center justify-center rounded-sm; }
+.diary-calendar [aria-current='date'] { @apply bg-diary-ink font-semibold text-diary-paper; }
+.diary-collect { @apply pt-4; }
+.diary-current-page { @apply mb-2 flex min-h-4 items-center justify-between gap-2 text-xs text-diary-secondary; }
+.diary-platform { @apply text-xs font-medium text-diary-ink; }
+.diary-button { @apply relative cursor-pointer rounded-md px-3 py-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60; }
+.diary-button-primary { @apply min-h-10 w-full border border-diary-ink bg-diary-ink text-sm text-diary-paper enabled:hover:bg-diary-hover enabled:active:bg-diary-hover; }
+.diary-button-secondary { @apply min-h-10 w-full border border-diary-line bg-diary-paper text-sm text-diary-ink enabled:hover:bg-diary-tint enabled:active:bg-diary-tint; }
+.diary-button-primary:has(.diary-action-icon), .diary-button-secondary:has(.diary-action-icon) { @apply px-8; }
+.diary-button-text { @apply min-h-8 max-w-full px-0 py-1 text-xs text-diary-secondary enabled:hover:text-diary-ink enabled:hover:underline; }
+.diary-action-icon { @apply absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2; }
+.diary-collect-status:not(:empty) { @apply mt-2 flex flex-col gap-1; }
+.diary-records { @apply mt-4; }
+.diary-records-heading { @apply mb-1 flex items-center justify-between gap-2; }
+.diary-records-heading h2 { @apply text-xs font-semibold; }
+.diary-total { @apply flex items-baseline gap-1 text-xs text-diary-secondary; }
+.diary-total strong { @apply text-xl font-medium leading-7 text-diary-ink; }
+.diary-site-counts li { @apply flex h-7 items-center justify-between border-b border-diary-line text-xs text-diary-secondary; }
+.diary-count { @apply font-medium text-diary-ink; font-variant-numeric: tabular-nums; }
+.diary-count small { @apply ml-1 text-xs font-normal text-diary-secondary; }
+.diary-tools { @apply mt-1 flex flex-wrap items-center justify-between gap-x-3; }
+.diary-history { @apply mt-3 mb-3 border-t border-diary-line pt-3; }
+.diary-history-summary { @apply flex min-h-6 cursor-pointer list-none items-center justify-between gap-2 text-xs; }
+.diary-history-summary::-webkit-details-marker { display: none; }
+.diary-history-details { @apply mt-2 flex flex-col gap-1 text-xs text-diary-secondary; }
+/* 설정이나 수집 안내가 보이면 날짜를 한 줄로 접어 600px 안의 작업 공간을 확보한다. */
+.diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-calendar { @apply hidden; }
+.diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-date { @apply py-2; }
+.diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-date > div { @apply flex flex-wrap items-baseline gap-x-2; }
+.diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-month { @apply mb-0 text-xl leading-8; }
