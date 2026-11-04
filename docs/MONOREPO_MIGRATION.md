@@ -29,8 +29,8 @@ jobdiary/
   package-lock.json      # npm workspaces 전체 잠금 파일
 ```
 
-현재 workspace는 `apps/web`(`jobdiary`)와 `apps/extension`(`jobdiary-extension`)이다.
-`packages/shared`는 계약 추출을 진행하는 5단계에서 추가한다.
+이전 당시 workspace는 `apps/web`(`jobdiary`)와 `apps/extension`(`jobdiary-extension`)이었다.
+후속 5단계에서 `packages/shared`를 추가했다. 현재 계약은 [지원 이력 동기화](APPLICATION_HISTORY_SYNC.md)를 따른다.
 
 ## 설치·명령·산출물
 
@@ -134,7 +134,7 @@ Vercel 프로젝트 공통 설정은 변경하지 않고 브랜치 소스로 배
 
 ## 다음 단계
 
-공통 메시지 계약과 자동 표시 구현은 아직 추가하지 않았다.
+이전 당시에는 공통 메시지 계약과 자동 표시를 추가하지 않았다. 후속 5단계에서 공통 계약·비교 캐시를 구현했으며 실제 배지는 6단계다.
 GitHub dev 통합과 Preview 배포 경로 확인은 완료했다. 남은 운영·외부 링크 작업은
 [전환 정리 체크리스트](MONOREPO_HANDOFF.md)에 유지한다.
 사용자 요청으로 4단계를 재개했으며 자동 브라우저 검증과 실제 Chrome 로그인 확인은

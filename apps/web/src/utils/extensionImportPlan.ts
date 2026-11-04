@@ -28,6 +28,7 @@ export function buildExtensionImportPlan(existing: Application[], incoming: Inco
         appliedAt: merged.appliedAt,
         deadlineAt: merged.deadlineAt,
         externalId: merged.externalId,
+        url: merged.url,
       });
       continue;
     }

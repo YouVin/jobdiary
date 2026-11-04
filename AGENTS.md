@@ -1,6 +1,8 @@
 # 취준일기 모노레포 작업 지침
 
 - 웹앱은 `apps/web`, Chrome 익스텐션은 `apps/extension`에 있다.
+- 공통 메시지·공고 식별·캐시 검증은 `packages/shared`의 순수 TypeScript로 관리한다.
+  변경 시 양쪽 테스트·빌드와 `docs/APPLICATION_HISTORY_SYNC.md`의 계약을 함께 확인한다.
 - 각 앱의 `AGENTS.md`를 함께 읽고 해당 앱의 코드 규칙을 따른다.
 - 웹앱 문서는 루트 `docs/`, 익스텐션 문서는 `apps/extension/docs/`가 기준이다.
 - 웹앱 작업 전 `docs/README.md`와 관련 상세 문서를 확인한다.

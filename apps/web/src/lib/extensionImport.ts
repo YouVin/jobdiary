@@ -1,3 +1,4 @@
+import { getPostingReference } from '@jobdiary/shared';
 import { JOBDIARY_COLLECT_MESSAGE_TYPE } from '@/constants/extension';
 import { PLATFORM_INFO } from '@/constants/platform';
 import { STATUS_INFO } from '@/constants/status';
@@ -59,6 +60,9 @@ function toApplicationInput(item: CollectItem): CollectItem {
   if (item.deadlineAt !== undefined) {
     input.deadlineAt = item.deadlineAt;
   }
+
+  const posting = getPostingReference(item.url);
+  if (posting?.platform === item.platform) input.url = posting.url;
 
   return input;
 }

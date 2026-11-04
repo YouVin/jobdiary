@@ -11,9 +11,10 @@ export function createSourceLoader(mocks = {}) {
   const cache = new Map();
   function load(specifier) {
     if (Object.hasOwn(mocks, specifier)) return mocks[specifier];
-    if (!specifier.startsWith('@/')) return require(specifier);
+    const shared = specifier === '@jobdiary/shared';
+    if (!shared && !specifier.startsWith('@/')) return require(specifier);
     if (cache.has(specifier)) return cache.get(specifier).exports;
-    const sourcePath = path.resolve('src', specifier.slice(2));
+    const sourcePath = shared ? path.resolve('../../packages/shared/src/index') : path.resolve('src', specifier.slice(2));
     const filename = fs.existsSync(sourcePath + '.ts') ? sourcePath + '.ts' : sourcePath + '.tsx';
     const loadedModule = { exports: {} };
     cache.set(specifier, loadedModule);

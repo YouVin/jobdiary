@@ -10,4 +10,4 @@ export const JOBDIARY_EXTENSION_ID =
     : 'dckfpbmglbagcpnkkkdcnbnpjdpfjcde'; // 압축해제 개발 빌드 고정 ID (jobdiary-extension의 manifest.config.ts key)
 
 // 익스텐션 → 웹앱 수집 데이터 전달 메시지의 type 값.
-export const JOBDIARY_COLLECT_MESSAGE_TYPE = 'JOBDIARY_COLLECT';
+export { COLLECT_MESSAGE_TYPE as JOBDIARY_COLLECT_MESSAGE_TYPE } from '@jobdiary/shared';

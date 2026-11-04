@@ -29,6 +29,7 @@ export function mergeImportedApplication(existing: Application, incoming: Incomi
     appliedAt: incoming.appliedAt,
     deadlineAt: incoming.deadlineAt ?? existing.deadlineAt,
     externalId: incoming.externalId?.trim() || existing.externalId,
+    url: incoming.url ?? existing.url,
   };
 }
 
@@ -54,7 +55,7 @@ function isSameContent(existing: Application, incoming: IncomingApplication): bo
     existing.externalId === merged.externalId &&
     existing.status === merged.status &&
     toDateInputValue(existing.appliedAt) === toDateInputValue(merged.appliedAt) &&
-    existing.deadlineAt === merged.deadlineAt
+    existing.deadlineAt === merged.deadlineAt && existing.url === merged.url
   );
 }
 

@@ -136,3 +136,10 @@ jobdiary-extension/
 - Atomic 커밋 (한 커밋 하나의 작업)
 - 사이트별 파서는 동일 인터페이스(ScrapedApplication[]) 반환
 - 사람인 1개 완성 후 나머지 복제
+
+## 5단계: 비교 캐시의 별도 흐름
+
+웹앱의 조회/저장 성공 → 공통 공고 식별 → HISTORY_SYNC → service worker 검증 →
+origin별 `jobdiary:application-history:v1:` 키에 최소 정보 저장. 로그아웃/계정 변경은
+HISTORY_CLEAR로 이 키만 정리한다. 수집 슬롯과 저장 책임이 분리되어 있다.
+실제 채용 화면 배지는 다음 단계이며 [공통 계약 기록](../../../docs/APPLICATION_HISTORY_SYNC.md)을 따른다.
