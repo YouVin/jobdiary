@@ -302,3 +302,15 @@ document.querySelectorAll('li[class*="table_tr"]').forEach((row) => {
 - 셀렉터가 깨지면 이 문서를 먼저 업데이트하고 content script 상수 수정
 - 각 사이트별 셀렉터는 `src/content/selectors/{site}.ts` 에 상수로 관리
 - 수동 저장 버튼(백업)은 항상 제공 — 자동 파싱 실패 시 대비
+
+## 지원 이력 자동 표시 (6단계)
+
+수집과 별도 진입점은 `src/content/historyBadges.ts`다. 표시 선택자는
+`src/content/selectors/historyBadges.ts`의 `a[href]`, `h1` 및 자체 marker를 따른다.
+페이지별 카드 경로를 등록하는 대신 shared의 검증된 URL에서 같은 사이트·공고 ID만 비교한다.
+텍스트 없는 이미지 링크·편집 영역·iframe/Shadow DOM 내부는 제외한다.
+상세는 현재 공고 URL과 캐시가 일치하고 비어 있지 않은 비편집 제목 후보가 하나일 때만 표시한다.
+공개 잡코리아 상세에는 빈 로고 h1이 있어 제외했으며 사람인 목록의 relay/view+rec_idx 링크를 확인했다.
+로그인 AI 추천 전체 DOM·사람인 모든 상세 템플릿은 실사용 미검증이다.
+닫힌 Shadow DOM 배지로 원본 textContent를 보존하며 실제 양쪽 파서 전후 동일 회귀 테스트를 유지한다.
+범위·공개 구조 근거는 [상세 기록](../../../docs/APPLICATION_HISTORY_BADGES.md)을 따른다.

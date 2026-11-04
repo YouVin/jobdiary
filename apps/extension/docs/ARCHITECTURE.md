@@ -143,3 +143,13 @@ jobdiary-extension/
 origin별 `jobdiary:application-history:v1:` 키에 최소 정보 저장. 로그아웃/계정 변경은
 HISTORY_CLEAR로 이 키만 정리한다. 수집 슬롯과 저장 책임이 분리되어 있다.
 실제 채용 화면 배지는 다음 단계이며 [공통 계약 기록](../../../docs/APPLICATION_HISTORY_SYNC.md)을 따른다.
+
+## 지원 이력 자동 표시 (6단계)
+
+웹앱 기준 캐시 → historyBadges 저장소/가시성 구독 → historyBadgeEngine 사이트별 Map → 공고 링크/단일 제목 배지 흐름이다.
+수집 슬롯과 표시 설정·캐시는 별개다. cache 없음/꺼짐/해당 사이트 이력 없음은 탐색·observer를 시작하지 않는다.
+TreeWalker는 200요소/약 6ms 단위로 나누고 MutationObserver는 변경 영역을 큐에 넣는다.
+자체 배지 변경은 무시하며 삭제 노드와 순회 cursor 연결 여부를 함께 검사한다.
+숨김은 구독·작업·배지·Map을 해제하고 복귀는 최신 캐시를 다시 읽는다.
+일반 pagehide는 리스너까지 제거하고 BFCache는 복귀 이벤트만 유지한다.
+[설계·버그 재현·성능과 제한](../../../docs/APPLICATION_HISTORY_BADGES.md)을 따른다.
