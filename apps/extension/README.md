@@ -9,7 +9,7 @@
 취업 준비생이 여러 채용 플랫폼에 흩어진 지원 현황을, 직접 입력하는 수고 없이 [취준일기](https://github.com/YouVin/jobdiary)로 자동 수집합니다.
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-Live-4F46E5?logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/afnboeihbppogfinbickjaaadcgjkmil)
-[![CI](https://github.com/YouVin/jobdiary-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/YouVin/jobdiary-extension/actions/workflows/ci.yml)
+[![CI](https://github.com/YouVin/jobdiary/actions/workflows/ci.yml/badge.svg)](https://github.com/YouVin/jobdiary/actions/workflows/ci.yml)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-4F46E5)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
@@ -138,34 +138,34 @@
 ### 개발 환경에서 실행 (기여자용)
 
 **요구 사항**
-- Node.js 18 이상
+- Node.js 22.12 이상, npm 11 이상
 - Chrome 브라우저
 
 **설치 및 실행**
 
 ```bash
 # 저장소 클론
-git clone https://github.com/YouVin/jobdiary-extension.git
-cd jobdiary-extension
+git clone https://github.com/YouVin/jobdiary.git
+cd jobdiary
 
 # 의존성 설치
-npm install
+npm ci
 
 # 개발 모드 실행 (HMR 지원)
-npm run dev
+npm run dev:extension
 ```
 
 ### 브라우저에 로드
 
 ```bash
 # 프로덕션 빌드
-npm run build
+npm run build:extension
 ```
 
 1. Chrome에서 `chrome://extensions` 접속
 2. 우측 상단 **개발자 모드** 활성화
 3. **압축해제된 확장 프로그램을 로드** 클릭
-4. 빌드된 `dist` 폴더 선택
+4. 빌드된 `apps/extension/dist` 폴더 선택
 
 ---
 

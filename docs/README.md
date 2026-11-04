@@ -1,3 +1,14 @@
+# 모노레포 문서 경로
+
+웹앱 코드는 `apps/web`, 익스텐션 코드는 `apps/extension`에 있다.
+기존 상세 문서의 `src/`, `public/`, `scripts/`, `tests/` 및 설정 파일 경로는 웹앱 폴더 기준이다.
+웹앱 상세 문서의 직접 실행 명령은 `apps/web`에서 실행하고, 루트에서는 workspace 명령을 사용한다.
+설치 명령은 루트의 `npm ci`를 사용한다. `supabase/`와 이 문서 폴더는 저장소 루트에 유지한다.
+
+- [이전 기록·실행·배포 경로](MONOREPO_MIGRATION.md)
+- [단계별 진행 계획](IMPLEMENTATION_ROADMAP.md)
+- [익스텐션 문서](../apps/extension/docs/PLANNING.md)
+
 # 개발 문서 인덱스
 
 마지막 정리: 2026-10-14 (#75). 구현 상태는 이 저장소 기준이며 배포·외부 서비스 상태는 별도로 확인한다.
@@ -11,23 +22,23 @@
 
 | 작업 | 문서 | 코드 진입점 |
 |---|---|---|
-| UI 스타일·SVG 규칙 (#81) | [DESIGN_SYSTEM](DESIGN_SYSTEM.md) | `tailwind.config.ts`, `src/components/common/`, `public/icons/` |
+| UI 스타일·SVG 규칙 (#81) | [DESIGN_SYSTEM](DESIGN_SYSTEM.md) | `apps/web/tailwind.config.ts`, `apps/web/src/components/common/`, `apps/web/public/icons/` |
 | 미사용 후보 조사 (#81) | [UNUSED_AUDIT](UNUSED_AUDIT.md) | 소스·자산·직접 의존성 참조 근거 |
 | 개발 순서·현황 | [ROADMAP](ROADMAP.md), [CONVENTION](CONVENTION.md) | `package.json`, `.github/workflows/ci.yml` |
-| 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `src/app/(protected)/`, `src/components/dashboard/`, `src/components/board/` |
-| Server/Client 렌더링 (#83) | [RENDERING](RENDERING.md) | `src/app/(protected)/layout.tsx`, `src/components/auth/AuthGuard.tsx` |
+| 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `apps/web/src/app/(protected)/`, `apps/web/src/components/dashboard/`, `apps/web/src/components/board/` |
+| Server/Client 렌더링 (#83) | [RENDERING](RENDERING.md) | `apps/web/src/app/(protected)/layout.tsx`, `apps/web/src/components/auth/AuthGuard.tsx` |
 | 인증 스켈레톤·SEO (#105·#106) | [SEO](SEO.md), [RENDERING](RENDERING.md) | `login/layout.tsx`, `AuthFormSkeleton.tsx`, `siteMetadata.ts`, `robots.ts`, `sitemap.ts` |
-| 검색·필터 (#73) | [DASHBOARD](DASHBOARD.md) | `src/utils/applicationFilters.ts`, `src/components/dashboard/ApplicationFilters.tsx` |
-| 공고 마감일·자동 탈락 (#85) | [DEADLINE](DEADLINE.md) | `src/utils/applicationDeadline.ts`, `src/lib/applicationsApi.ts`, `supabase/migrations/` |
-| 헤더 로고·홈 이동 (#79) | [TECH_DESIGN](TECH_DESIGN.md) | `src/components/header/Header.tsx` |
-| 가져오기·중복 판별 | [INTEGRATION](INTEGRATION.md) | `src/hooks/useExtensionImport.ts`, `src/utils/extensionImportPlan.ts`, `src/utils/duplicateDetection.ts` |
-| 저장·DB | [SUPABASE](SUPABASE.md) | `src/lib/applicationsApi.ts`, `src/store/applicationStore.ts`, `supabase/` |
-| 로그인·계정 | [AUTH](AUTH.md) | `src/lib/auth.ts`, `src/components/auth/`, `src/components/account/` |
-| Google 콜백·재시도 점검 (#101) | [AUTH_CHECK](AUTH_CHECK.md) | `scripts/verify-auth-browser.mjs`, `tests/googleSignIn.test.mjs` |
-| 인증 스크린리더·오류 포커스 (#109) | [AUTH_CHECK](AUTH_CHECK.md) | `scripts/verify-auth-accessibility.mjs`, `ConsentGate.tsx` |
+| 검색·필터 (#73) | [DASHBOARD](DASHBOARD.md) | `apps/web/src/utils/applicationFilters.ts`, `apps/web/src/components/dashboard/ApplicationFilters.tsx` |
+| 공고 마감일·자동 탈락 (#85) | [DEADLINE](DEADLINE.md) | `apps/web/src/utils/applicationDeadline.ts`, `apps/web/src/lib/applicationsApi.ts`, `supabase/migrations/` |
+| 헤더 로고·홈 이동 (#79) | [TECH_DESIGN](TECH_DESIGN.md) | `apps/web/src/components/header/Header.tsx` |
+| 가져오기·중복 판별 | [INTEGRATION](INTEGRATION.md) | `apps/web/src/hooks/useExtensionImport.ts`, `apps/web/src/utils/extensionImportPlan.ts`, `apps/web/src/utils/duplicateDetection.ts` |
+| 저장·DB | [SUPABASE](SUPABASE.md) | `apps/web/src/lib/applicationsApi.ts`, `apps/web/src/store/applicationStore.ts`, `supabase/` |
+| 로그인·계정 | [AUTH](AUTH.md) | `apps/web/src/lib/auth.ts`, `apps/web/src/components/auth/`, `apps/web/src/components/account/` |
+| Google 콜백·재시도 점검 (#101) | [AUTH_CHECK](AUTH_CHECK.md) | `apps/web/scripts/verify-auth-browser.mjs`, `apps/web/tests/googleSignIn.test.mjs` |
+| 인증 스크린리더·오류 포커스 (#109) | [AUTH_CHECK](AUTH_CHECK.md) | `apps/web/scripts/verify-auth-accessibility.mjs`, `ConsentGate.tsx` |
 | 보안 점검·릴리즈 보류 | [SECURITY](SECURITY.md) | `package.json`, `.github/workflows/ci.yml` |
-| 릴리즈 검증·마이그레이션 이력 (#96·#97) | [RELEASE_CHECK](RELEASE_CHECK.md) | `scripts/verify-release-browser.mjs`, `src/app/(legal)/` |
-| 익스텐션 계약 | [EXTENSION](EXTENSION.md), [INTEGRATION](INTEGRATION.md) | `src/lib/extensionImport.ts` (익스텐션 구현은 별도 저장소) |
+| 릴리즈 검증·마이그레이션 이력 (#96·#97) | [RELEASE_CHECK](RELEASE_CHECK.md) | `apps/web/scripts/verify-release-browser.mjs`, `apps/web/src/app/(legal)/` |
+| 익스텐션 계약 | [EXTENSION](EXTENSION.md), [INTEGRATION](INTEGRATION.md) | `apps/web/src/lib/extensionImport.ts` (익스텐션 구현은 `apps/extension/`) |
 | 제품 방향 | [PLANNING](PLANNING.md) | 기획·목표 자료이며 구현 완료 증거로 사용하지 않는다 |
 
 ## 검증
@@ -40,7 +51,7 @@ npm run build
 ```
 
 Windows PowerShell에서 실행 정책으로 `npm.ps1`이 차단되면 `npm.cmd`, `npx.cmd`를 사용한다. 파일 권한 오류는 실행 정책 문제와 구분한다.
-테스트는 `tests/*.test.mjs`와 기존 소스 로더를 사용한다. 표시 문구만 변경한 경우처럼 영향이 작으면 불필요한 테스트를 추가하지 않는다.
+테스트는 `apps/web/tests/*.test.mjs`와 기존 소스 로더를 사용한다. 표시 문구만 변경한 경우처럼 영향이 작으면 불필요한 테스트를 추가하지 않는다.
 UI 작업은 관련 화면의 모바일·데스크톱·키보드 동작을 확인하고, 실행하지 못한 검증은 PR에 명시한다.
 검사가 통과한 후에는 코드 변경이나 새 문제가 없는 한 반복 실행하지 않는다.
 

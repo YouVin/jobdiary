@@ -1,41 +1,44 @@
 name: CI
 
-# dev, main 브랜치에 push하거나 PR 올릴 때 자동 실행
 on:
   push:
     branches: [main, dev]
   pull_request:
     branches: [main, dev]
 
+permissions:
+  contents: read
+
 jobs:
-  lint-and-build:
+  web:
+    name: Web lint, test and build
     runs-on: ubuntu-latest
     steps:
-      # 1. 코드 체크아웃
       - uses: actions/checkout@v4
-
-      # 2. Node 세팅
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: npm
-
-      # 3. 패키지 설치
-      - name: Install dependencies
-        run: npm ci
-
+      - name: Use reviewed npm version
+        run: npm install --global npm@11.7.0
+      - run: npm ci
       - name: Audit production dependencies
-        run: npm audit --omit=dev
+        run: npm audit --omit=dev --workspace=jobdiary
+      - run: npm run lint
+      - run: npm run test:web
+      - run: npm run build:web
 
-      # 4. Lint 검사
-      - name: Lint
-        run: npm run lint
-
-      # 5. 익스텐션 재수집/수동 상태 보존 회귀 테스트
-      - name: Test
-        run: npm test
-
-      # 6. 빌드 확인
-      - name: Build
-        run: npm run build
+  extension:
+    name: Extension test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Use reviewed npm version
+        run: npm install --global npm@11.7.0
+      - run: npm ci
+      - run: npm run test:extension
+      - run: npm run build:extension

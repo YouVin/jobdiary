@@ -5,7 +5,7 @@ import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, SEARCH_INDEXABLE } from "@/lib/s
 import "./globals.css";
 
 const pretendard = localFont({
-  src: "../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
+  src: "../../../../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
   variable: "--font-pretendard",
   weight: "45 920",
   display: "swap",
