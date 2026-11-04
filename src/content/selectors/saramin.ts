@@ -23,3 +23,11 @@ export const SARAMIN_SELECTORS = {
   // 페이지네이션 쿼리 파라미터 (소문자 page). 없는 페이지를 요청하면 사람인이 1페이지로 클램프한다.
   pageParam: 'page',
 } as const;
+
+// 2026-10-22 사용자 제공 모바일 /apply/state HTML에서 확인한 구조.
+export const SARAMIN_MOBILE_SELECTORS = {
+  container: '.apply_condition .status_list .box_apply',
+  externalId: 'input[name="recruitapply_idx"]',
+  jobLink: 'a.name_job[href]',
+  title: 'a.name_job .txt',
+} as const;

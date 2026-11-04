@@ -5,6 +5,8 @@ import { toSafeUrl } from '../lib/url';
 import { collectAllPages, getCurrentPageNumber } from './paginate';
 import { registerCollectHandler } from './collectHandler';
 import { buildRowKey } from './rowKey';
+import { supplementSaraminDeadlines } from './saraminDeadlines';
+import type { DeadlineSummary } from '../lib/messages';
 
 // .txt_sub는 지원완료 행에선 "미열람"/"열람"이지만 지원취소완료 행에선 취소일시가 들어온다.
 // 열람/미열람으로 "시작"할 때만 viewed로 쓰고, 아니면(취소일시 등) undefined로 둔다.
@@ -62,7 +64,7 @@ function buildSaraminPageUrl(pageNum: number): string {
 // — 클램프된 첫 페이지는 직전 페이지(진짜 마지막 페이지)와는 다르고 1페이지와만 같아서,
 // 직전 페이지 비교로는 그 시점을 못 잡고 중복 데이터가 결과에 한 페이지만큼 섞여 들어간다
 // (격리 테스트로 확인됨).
-async function collectSaraminAllPages(): Promise<{ rows: ScrapedApplication[], truncated: boolean }> {
+async function collectSaraminAllPages(): Promise<{ rows: ScrapedApplication[], truncated: boolean, deadlines?: DeadlineSummary }> {
   const { rows, pageCount, truncated } = await collectAllPages({
     currentPageNumber: getCurrentPageNumber(SARAMIN_SELECTORS.pageParam),
     currentPageRows: parseSaramin(document),
@@ -76,7 +78,8 @@ async function collectSaraminAllPages(): Promise<{ rows: ScrapedApplication[], t
     },
   });
   console.log(`[사람인 파서] 총 ${pageCount}페이지, ${rows.length}건 수집${truncated ? ' (일부 중단됨)' : ''}`);
-  return { rows, truncated };
+  const supplemented = await supplementSaraminDeadlines(rows);
+  return { ...supplemented, truncated };
 }
 
 registerCollectHandler('saramin', collectSaraminAllPages);

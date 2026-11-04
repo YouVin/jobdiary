@@ -58,4 +58,17 @@ describe('convertToApplication', () => {
     expect(result).not.toHaveProperty('id');
     expect(result).not.toHaveProperty('updatedAt');
   });
+
+  it('검증된 마감일을 YYYY-MM-DD로 전달하되 마감 경과로 상태를 변경하지 않는다', () => {
+    const result = convertToApplication(scraped({ deadlineAt: '2026.01.01 (목) 23:59' }));
+    expect(result.deadlineAt).toBe('2026-01-01');
+    expect(result.status).toBe('applied');
+    expect(result).not.toHaveProperty('statusSource');
+  });
+
+  it.each([undefined, '상시채용', '2026.02.31', '10.28'])('마감일 %s는 필드 자체를 생략한다', (deadlineAt) => {
+    const result = convertToApplication(scraped({ deadlineAt }));
+    expect(result).not.toHaveProperty('deadlineAt');
+    expect(result.appliedAt).toBe('2026-06-09T00:00:00.000Z');
+  });
 });

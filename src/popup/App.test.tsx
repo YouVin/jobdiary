@@ -77,6 +77,17 @@ afterEach(async () => {
 })
 
 describe('팝업 저장 현황과 기존 기능', () => {
+  it.each([
+    [{ matchedCount: 1, lookupFailed: false }, '마감일 1건 확인'],
+    [{ matchedCount: 0, lookupFailed: true }, '마감일을 확인하지 못했어요. 지원내역은 저장됐어요.'],
+    [{ matchedCount: 1, lookupFailed: true }, '마감일 1건 확인 · 일부 조회는 실패했어요. 지원내역은 저장됐어요.'],
+  ])('선택적 마감일 조회 결과를 지원내역 수집 성공과 함께 표시한다', async (deadlines, expected) => {
+    sendMessage.mockResolvedValueOnce({ count: 2, applications: [], truncated: false, deadlines });
+    await render();
+    await click('지원내역 수집하기');
+    expect(container.textContent).toContain('2건 수집됨');
+    expect(container.textContent).toContain(expected);
+  });
   it('조회 전에는 0건 대신 로딩을 표시하고 복사를 비활성화한다', async () => {
     let resolve!: (value: Record<string, unknown>) => void
     get.mockImplementationOnce(() => new Promise(r => { resolve = r }))

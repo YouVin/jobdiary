@@ -16,6 +16,7 @@ interface ScrapedApplication {
   company: string; // 회사명
   position: string; // 공고명/포지션
   appliedAt: string; // 지원일
+  deadlineAt?: string; // 확인된 마감 표시 원문. 연도 미확인 값은 웹앱에 전달하지 않음
   status: string; // 지원 상태 (원문)
   externalId?: string; // 사이트 고유 ID (중복 방지용)
   viewed?: boolean; // 열람 여부. 원티드는 없음
@@ -25,6 +26,15 @@ interface ScrapedApplication {
 ```
 
 수집한 status 원문은 웹앱의 Status 타입으로 매핑한다 (매핑 규칙: [INTEGRATION.md](./INTEGRATION.md) 참고).
+
+### 선택적 마감일 수집 준비 (#60 / #63)
+
+잡코리아는 제공받은 DOM의 `.apply-progress .extra`를 마감 표시 원문으로 읽는다.
+`(~10/31)`만으로 연도를 추정하지 않으며 연결된 공개 공고의 두 날짜를 교차 확인해 보충한다.
+사람인은 아래 모바일 구조로 날짜를 보충하며 원티드는 출처가 없어 채우지 않는다. 공고 상세의 마감일과
+지원현황 행의 날짜를 혼동하지 않으며 지원일·취소일·열람일로 대체하지 않는다.
+실제 지원현황 DOM 확인 후 사이트별 상수와 파서를 함께 추가한다.
+사이트별 확인 조건과 작업 상태는 [DEADLINES.md](./DEADLINES.md)를 따른다.
 
 ---
 
@@ -46,9 +56,23 @@ https://www.saramin.co.kr/zf_user/persons/apply-status-list
 
 ### DOM 검증 노트 (실물 HTML 분석 결과)
 
+- **2026-10-22 제공 표본 4건**: 최초 3건과 사용자가 방금 지원했다고 알려준 추가 1건 모두 `.col_btns .action .date_end`가 비어 있다. `.col_date`는 지원일이고 `.txt_sub`는 열람/취소일/점핏 안내이므로 마감일로 대신 사용하지 않는다. 마감일 필터의 존재만으로 행별 날짜를 확정할 수 없다. `TipTxt`의 삭제 안내는 방금 지원한 행에도 있어 숨겨진 안내용 요소일 수 있으며, 이 문구만으로 실제 삭제 여부를 단정하지 않는다.
+
 - **점핏(Jumpit) 연동 공고는 `rec_division`이 빈 문자열로 옴**: `data-jumpit_rec_idx`에 값이 있는 행(점핏 경유 공고)은 `data-rec_division=""`이고, 화면에도 `.division` span 자체가 없다. 이 경우 `data-recruittitle` 속성에 공고 제목(예: "프론트엔드 개발자 (React)")이 대신 들어있어 이걸로 폴백한다. `rec_division`이 정상 값인 일반 공고(대다수)는 폴백을 타지 않고 그대로 쓴다.
 
 ### 셀렉터
+
+#### 모바일 마감일 보충 (사용자 제공 `/apply/state` HTML)
+
+- 목록: `.apply_condition .status_list .box_apply`
+- 지원 ID: `input[name="recruitapply_idx"]`의 value
+- 공고 ID: `a.name_job[href]`의 `rec_idx`
+- 날짜: `a.name_job .txt` 제목 끝의 `(~YYYY-MM-DD)`만 추출·달력 검증
+- `(마감)`은 날짜를 알 수 없으므로 생략. 추천 `.recomm_cont` 제외
+- 페이지네이션 구조 미확인으로 첫 응답 HTML만 처리. PC의 지원 ID/공고 ID가 모두 일치해야 보충
+- 모바일 요청은 background에서 수행하고 DOM 파싱은 content script에서 수행
+
+#### PC 지원내역 셀렉터
 
 | 데이터   | 셀렉터                                              | 비고                                                                |
 | -------- | ---------------------------------------------------- | ------------------------------------------------------------------- |
@@ -120,6 +144,7 @@ document.querySelectorAll(".row._apply_list").forEach((row) => {
 | 지원일   | `[data-applydate]`, 없으면 `.apply-status .date` | 버튼 데이터는 "20260601235538"(YYYYMMDDHHmmss) 고정 포맷. 본문 폴백은 "2026.04.01"(YYYY.MM.DD) |
 | 상태     | `.apply-status .item.status` 텍스트 | "지원취소", "지원완료" 등. 버튼 유무와 무관하게 항상 본문에서 읽음                              |
 | 진행상태 | `.apply-progress .status` 텍스트    | "진행중" 등                                                                                     |
+| 마감 표시 원문 | `.apply-progress .extra` 텍스트 | 실물 `(~10/31)`, `(상시)`. 추천공고 `.deadline` 제외. 연도 미확인/상시는 웹앱 전달 시 생략 |
 | 열람여부 | `.reading` 텍스트                   | "미열람"/"열람". 클래스(`read-not`)가 아니라 텍스트로 판별한다                                   |
 | 고유ID   | `[data-idx]`                        | 중복 방지. `.devBtnDel`/`.devBtnCancel`(최신) 또는 `.devBtnOldDel`(오래된 지원) 버튼에서 읽음   |
 | 공고 URL | `.description a` 의 `href`          | 상대경로 — `new URL(href, location.origin)`로 절대화                                            |
@@ -166,6 +191,17 @@ document.querySelectorAll("tr").forEach((row) => {
 
 ---
 
+### 잡코리아 공개 공고의 마감일 보충
+
+2026-10-22 지원현황에 연결된 공개 공고 50200844/50064583/49885752의 원본 HTML 확인:
+
+- `meta[name="description"]`의 `마감일 : YYYY.MM.DD`
+- `script[type="application/ld+json"]`의 `@type: JobPosting`, `validThrough`
+- JobPosting의 `url`과 `identifier: { name: 'JobKorea', value: 공고ID }`가 요청 ID와 일치
+- 명시된 메타 날짜와 validThrough 날짜가 같을 때만 보충
+- 상시 공고 49885752는 메타에 `상시채용`이지만 validThrough가 있어 단독 사용 금지
+- JSON-LD는 JSON.parse로 읽고 실행하지 않음. 제목·지원일·추천공고로 날짜를 보충하지 않음
+
 ## 3. 원티드 (wanted.co.kr)
 
 **난이도: 보통** — class에 해시가 붙어서 부분매칭 필요
@@ -188,6 +224,7 @@ li[class*="table_tr"]   (해시 무시하고 부분매칭)
 - **externalId(고유ID) 없음**: `<li>` 안에 지원건을 식별할 data 속성이나 상세 링크가 없다. 회사 로고 이미지 URL이 있긴 하지만 회사 단위로만 구분되고 지원건 단위 식별에는 쓸 수 없다. 원티드는 `externalId`를 빈 값(`undefined`)으로 둔다.
 - **React SPA 렌더링 주의**: class에 `wds-` 접두사와 해시 접미사가 붙은 것으로 보아 클라이언트 사이드 렌더링이다. 페이지 로드 직후에는 목록이 비어 있을 수 있어, content script가 즉시 파싱하면 0건이 잡힐 위험이 있다. 실제 파싱 트리거 시점(버튼 클릭 등) 또는 목록 렌더 완료 감지가 필요한지 검증 시 확인해야 한다.
 - **지원일 포맷 정규화 필요**: "2026. 7. 11"처럼 마침표+공백 구분이고 월/일이 한 자리로 나올 수 있다. 공백 제거 + 0 채움으로 "2026.07.11" 형태로 정규화해서 쓴다.
+- **2026-10-22 제공된 실제 행**: `role="presentation"` 래퍼 안에 회사명·포지션·지원일·상태·추천인·보상 칸이 있다. 마감일이나 공고 링크는 없으므로 `td_create_time`을 마감일로 사용하지 않는다.
 
 ### 셀렉터 (부분매칭 필수)
 

@@ -2,7 +2,7 @@ import type { Platform } from '@/types/application'
 import { useEffect, useRef, useState } from 'react'
 import { isConnectionError, waitForTabComplete } from '@/lib/collectRecovery'
 import { copyRichText } from '@/lib/clipboard'
-import { COLLECT_MESSAGE_TYPE, type CollectMessage, type CollectResponse } from '@/lib/messages'
+import { COLLECT_MESSAGE_TYPE, type CollectMessage, type CollectResponse, type DeadlineSummary } from '@/lib/messages'
 import { detectPlatform } from '@/lib/platformDetect'
 import { clearAll, getAllApplications } from '@/lib/storage'
 import { applicationsToHtml, applicationsToTsv } from '@/lib/tsv'
@@ -61,7 +61,7 @@ type CollectState =
   | { status: 'loading' }
   // truncated: 페이지네이션이 정상 종료가 아니라 fetch 실패/렌더 타임아웃/상한 도달로
   // 중간에 멈췄을 때 true. count는 그때까지 모은 값이지만 실제로는 더 있을 수 있다는 뜻.
-  | { status: 'success', count: number, truncated: boolean }
+  | { status: 'success', count: number, truncated: boolean, deadlines?: DeadlineSummary }
   // (c) 0건 수집: 응답은 왔지만 count === 0. 에러가 아니라 "찾지 못함" — 파서 미스인지
   // 진짜 0건인지 유저가 구분할 수 있게 별도 상태로 둔다.
   | { status: 'empty', truncated: boolean }
@@ -183,7 +183,7 @@ export function App() {
         setCollectState({ status: 'empty', truncated })
       }
       else {
-        setCollectState({ status: 'success', count: response.count, truncated })
+        setCollectState({ status: 'success', count: response.count, truncated, deadlines: response.deadlines })
       }
     }
     catch {
@@ -267,6 +267,15 @@ export function App() {
               </p>
               {collectState.truncated && (
                 <p className="text-sm text-status-rejected">{TRUNCATED_MESSAGE}</p>
+              )}
+              {collectState.deadlines && (
+                <p className="text-sm text-text-secondary">
+                  {collectState.deadlines.lookupFailed
+                    ? collectState.deadlines.matchedCount > 0
+                      ? `마감일 ${collectState.deadlines.matchedCount}건 확인 · 일부 조회는 실패했어요. 지원내역은 저장됐어요.`
+                      : '마감일을 확인하지 못했어요. 지원내역은 저장됐어요.'
+                    : `마감일 ${collectState.deadlines.matchedCount}건 확인 · 나머지는 미확인이거나 날짜가 없어요.`}
+                </p>
               )}
             </>
           )}
