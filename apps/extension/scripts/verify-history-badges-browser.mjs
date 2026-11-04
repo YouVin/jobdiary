@@ -82,19 +82,56 @@ try {
     await page.locator('#dynamic-row').evaluate(row => row.remove());
     await waitCount(page, 2);
   });
-  await check('팝업의 실제 스위치로 끄기/켜기·연결 상태 표시', async () => {
+  await check('360px 팝업의 수집 15건·연결 정보·스위치를 스크롤 없이 확인한다', async () => {
+    await worker.evaluate(async () => {
+      const app = { company: '검증 회사', position: '개발자', status: 'applied', appliedAt: '2026-11-01T00:00:00Z' };
+      await chrome.storage.local.set({ 'jobdiary:collected': {
+        saramin: Array.from({ length: 5 }, () => ({ ...app, platform: 'saramin' })),
+        jobkorea: Array.from({ length: 10 }, () => ({ ...app, platform: 'jobkorea' })), wanted: [],
+      } });
+    });
     const popup = await context.newPage();
+    await popup.setViewportSize({ width: 360, height: 600 });
     await popup.goto('chrome-extension://' + extensionId + '/src/popup/index.html');
     const checkbox = popup.getByRole('checkbox', { name: '지원 이력 자동 표시', exact: true });
+    await popup.getByText('전체 15건', { exact: true }).waitFor();
+    const measurePopup = async name => {
+      const size = await popup.evaluate(() => {
+        const box = document.querySelector('#root > div');
+        return { height: box.getBoundingClientRect().height, scrollHeight: box.scrollHeight, clientHeight: box.clientHeight,
+          documentHeight: document.documentElement.scrollHeight, viewportHeight: innerHeight, open: !!document.querySelector('details').open };
+      });
+      assert(size.height <= 520, name + ': 일반 화면 높이가 520px 이하여야 함');
+      assert(size.scrollHeight <= size.clientHeight + 1, name + ': 내부 스크롤 없음');
+      assert(size.documentHeight <= size.viewportHeight, name + ': 페이지 스크롤 없음');
+      report.metrics.popup ??= {}; report.metrics.popup[name] = size;
+    };
+    await measurePopup('connected');
+    assert.equal(await popup.locator('details').getAttribute('open'), null);
+    await popup.locator('#root > div').screenshot({ path: path.join(output, 'popup-compact.png') });
     await checkbox.click();
     await popup.waitForFunction(() => { const input = document.querySelector('#history-display-enabled'); return input && !input.checked && !input.disabled; });
     await waitCount(page, 0);
-    assert.equal(await popup.getByText(/식별하지 못한 지원 2건/).count(), 1);
+    await popup.getByText('자동 표시 꺼짐', { exact: true }).waitFor();
+    await popup.locator('summary').click();
+    await popup.getByText(/식별하지 못한 지원 2건/).waitFor({ state: 'visible' });
+    await measurePopup('details');
+    await popup.locator('summary').click();
     await checkbox.click();
     await popup.waitForFunction(() => { const input = document.querySelector('#history-display-enabled'); return input && input.checked && !input.disabled; });
-    await page.bringToFront();
-    await waitCount(page, 2);
-    await popup.screenshot({ path: path.join(output, 'popup.png'), fullPage: true });
+    await writeCache({ ...cache([]), unidentifiedCount: 35 });
+    await popup.getByText('비교할 수 있는 공고가 없어요', { exact: true }).waitFor();
+    await measurePopup('unidentified');
+    await popup.locator('#root > div').screenshot({ path: path.join(output, 'popup-compact-unidentified.png') });
+    await popup.locator('summary').click();
+    await popup.getByText(/수집한 뒤 아래/).waitFor({ state: 'visible' });
+    await measurePopup('unidentifiedDetails');
+    await popup.locator('summary').click();
+    await worker.evaluate(key => chrome.storage.local.remove(key), key);
+    await popup.getByText('지원 이력 연결 필요', { exact: true }).waitFor();
+    await measurePopup('disconnected');
+    await writeCache(cache());
+    await page.bringToFront(); await waitCount(page, 2);
     await popup.close();
   });
   await check('상세 URL와 제목에 지원 이력을 표시하고 사람인 목록도 연결한다', async () => {
