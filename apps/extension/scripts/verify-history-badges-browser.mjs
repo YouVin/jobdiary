@@ -104,7 +104,7 @@ try {
     const popup = await context.newPage();
     await popup.setViewportSize({ width: 360, height: 600 });
     await popup.goto('chrome-extension://' + extensionId + '/src/popup/index.html');
-    // ?? ?? ?? ????? ?? action ???? ??? ??? ?? ?????.
+    // 독립 팝업 탭에서도 수집할 사이트를 활성 상태로 둔 뒤 화면을 연다.
     await page.bringToFront(); await popup.reload();
     const checkbox = popup.getByRole('checkbox', { name: '지원 이력 자동 표시', exact: true });
     await popup.getByText('전체 15건', { exact: true }).waitFor();
