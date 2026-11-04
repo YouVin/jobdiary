@@ -7,6 +7,7 @@ import { detectPlatform } from '@/lib/platformDetect'
 import { clearAll, getAllApplications } from '@/lib/storage'
 import { applicationsToHtml, applicationsToTsv } from '@/lib/tsv'
 import { Button } from './components/Button'
+import { DiaryDate } from './components/DiaryDate'
 import { PLATFORM_LABEL, PlatformBadge } from './components/PlatformBadge'
 import { useSiteCounts } from './useSiteCounts'
 import { useHistoryDisplay } from './useHistoryDisplay'
@@ -243,133 +244,132 @@ export function App() {
   }
 
   return (
-    <div className="max-h-150 w-90 overflow-y-auto bg-page text-text-primary">
-      <header className="flex items-center gap-2 border-b border-card-border bg-card px-4 py-2">
-        <img src="/logo-128.png" alt="취준일기 로고" className="h-6 w-6 rounded" />
-        <h1 className="text-base font-semibold">취준일기</h1>
+    <div className="diary-popup">
+      <header className="diary-brand">
+        <img src="/logo-128.png" alt="취준일기 로고" className="h-6 w-6 grayscale" />
+        <h1 className="text-sm font-semibold">취준일기</h1>
       </header>
 
-      <section className="border-b border-card-border bg-column px-4 py-2">
-        {platformLoading ? <p className="text-xs text-text-muted">현재 페이지 확인 중…</p> : <PlatformBadge platform={platform} />}
-      </section>
-
-      <section className="flex flex-col gap-2 border-b border-card-border px-4 py-3">
-        <Button
-          variant="primary"
-          onClick={handleCollect}
-          disabled={platformLoading || resetting || collectState.status === 'loading'}
-        >
-          {collectState.status === 'loading' ? '수집 중...' : '지원내역 수집하기'}
-        </Button>
-        <div role="status" aria-atomic="true">
-          {collectState.status === 'success' && (
-            <>
-              <p className="text-sm text-text-muted">
-                {collectState.count}
-                건 수집됨
-              </p>
-              {collectState.truncated && (
-                <p className="text-sm text-status-rejected">{TRUNCATED_MESSAGE}</p>
-              )}
-              {collectState.deadlines && (
-                <p className="text-sm text-text-secondary">
-                  {collectState.deadlines.lookupFailed
-                    ? collectState.deadlines.matchedCount > 0
-                      ? `마감일 ${collectState.deadlines.matchedCount}건 확인 · 일부 조회는 실패했어요. 지원내역은 저장됐어요.`
-                      : '마감일을 확인하지 못했어요. 지원내역은 저장됐어요.'
-                    : `마감일 ${collectState.deadlines.matchedCount}건 확인 · 나머지는 미확인이거나 날짜가 없어요.`}
-                </p>
-              )}
-            </>
-          )}
-          {collectState.status === 'empty' && (
-            <>
-              <p className="text-sm text-text-muted">{EMPTY_RESULT_MESSAGE}</p>
-              {collectState.truncated && (
-                <p className="text-sm text-status-rejected">{TRUNCATED_MESSAGE}</p>
-              )}
-            </>
-          )}
-          {collectState.status === 'unsupported' && (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm text-text-secondary">{UNSUPPORTED_MESSAGE}</p>
-              <div className="flex flex-col gap-0.5">
-                {SITE_APPLY_STATUS_LINKS.map(link => (
-                  <button
-                    key={link.platform}
-                    type="button"
-                    onClick={() => chrome.tabs.create({ url: link.url })}
-                    className="text-left text-sm text-brand hover:text-brand-hover hover:underline"
-                  >
-                    {link.label}
-                    {' '}
-                    바로가기
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-          {collectState.status === 'error' && (
-            <p className="text-sm text-status-rejected">{COLLECT_FAILED_MESSAGE}</p>
-          )}
-          {collectState.status === 'busy' && (
-            <p className="text-sm text-text-muted">{BUSY_MESSAGE}</p>
-          )}
-          {collectState.status === 'loading' && (
-            <p className="text-sm text-text-muted">
-              {recovering ? '페이지를 준비하는 중...' : '수집하는 중이에요…'}
-            </p>
-          )}
-        </div>
-      </section>
-
-      <section className="border-b border-card-border px-4 py-2" aria-label="저장된 지원내역" aria-busy={countsState.status === 'loading'}>
-        <div role="status" aria-atomic="true">
-          {countsState.status === 'loading' && <p className="text-sm text-text-muted">저장 내역 불러오는 중…</p>}
-          {countsState.status === 'error' && <p className="text-sm text-status-rejected">저장 내역을 불러오지 못했어요.</p>}
-        </div>
-        {countsState.status === 'error' && <Button variant="secondary" onClick={() => void refreshSiteCounts()}>다시 불러오기</Button>}
-        {countsState.status === 'ready' && <>
-          <p className="mb-1 text-sm font-medium text-text-primary">
-            전체
-            {' '}
-            {totalCount}
-            건
-          </p>
-          <ul className="flex flex-col gap-1">
-            {PLATFORM_ORDER.map(p => (
-              <li key={p} className="flex items-center justify-between text-sm text-text-secondary">
-                <span>{PLATFORM_LABEL[p]}</span>
-                <span>
-                  {countsState.counts[p]}
-                  건
-                </span>
-              </li>
-            ))}
-          </ul>
-        </>}
-      </section>
-
-      <section className="flex flex-col gap-2 border-b border-card-border px-4 py-2">
-        <Button variant="secondary" onClick={handleCopyAll} disabled={!hasAnyData || resetting}>
-          {COPY_BUTTON_LABEL[copyState]}
-        </Button>
-        {hasAnyData && (
-          <Button variant="secondary" onClick={handleReset} disabled={resetting || collectState.status === 'loading'} className="text-status-rejected!">
-            {resetting ? '초기화 중…' : resetConfirming ? '다시 누르면 수집 내역 삭제' : '수집 내역 초기화'}
+      <div className="diary-content">
+        <DiaryDate />
+        <section className="diary-collect">
+          <div className="diary-current-page">
+            <span>현재 페이지</span>
+            {platformLoading ? <span>확인 중…</span> : <PlatformBadge platform={platform} />}
+          </div>
+          <Button
+            variant="primary"
+            onClick={handleCollect}
+            disabled={platformLoading || resetting || collectState.status === 'loading'}
+          >
+            {collectState.status === 'loading' ? '수집 중...' : '지원내역 수집하기'}
+            <img className="diary-action-icon invert" src="/icons/arrow-down.svg" alt="" aria-hidden="true" />
           </Button>
-        )}
-        <p role="status" aria-atomic="true" className="sr-only">{copyState === 'idle' ? '' : COPY_BUTTON_LABEL[copyState]}</p>
-        {resetError && <p role="alert" className="text-sm text-status-rejected">초기화하지 못했어요. 다시 시도해 주세요.</p>}
-      </section>
+          <div className="diary-collect-status" role="status" aria-atomic="true">
+            {collectState.status === 'success' && (
+              <>
+                <p className="text-xs text-diary-secondary">
+                  {collectState.count}
+                  건 수집됨
+                </p>
+                {collectState.truncated && (
+                  <p className="text-xs font-medium text-diary-ink">{TRUNCATED_MESSAGE}</p>
+                )}
+                {collectState.deadlines && (
+                  <p className="text-xs text-diary-secondary">
+                    {collectState.deadlines.lookupFailed
+                      ? collectState.deadlines.matchedCount > 0
+                        ? `마감일 ${collectState.deadlines.matchedCount}건 확인 · 일부 조회는 실패했어요. 지원내역은 저장됐어요.`
+                        : '마감일을 확인하지 못했어요. 지원내역은 저장됐어요.'
+                      : `마감일 ${collectState.deadlines.matchedCount}건 확인 · 나머지는 미확인이거나 날짜가 없어요.`}
+                  </p>
+                )}
+              </>
+            )}
+            {collectState.status === 'empty' && (
+              <>
+                <p className="text-xs text-diary-secondary">{EMPTY_RESULT_MESSAGE}</p>
+                {collectState.truncated && (
+                  <p className="text-xs font-medium text-diary-ink">{TRUNCATED_MESSAGE}</p>
+                )}
+              </>
+            )}
+            {collectState.status === 'unsupported' && (
+              <div className="flex flex-col gap-2">
+                <p className="text-xs text-diary-secondary">{UNSUPPORTED_MESSAGE}</p>
+                <div className="flex flex-col gap-1">
+                  {SITE_APPLY_STATUS_LINKS.map(link => (
+                    <button
+                      key={link.platform}
+                      type="button"
+                      onClick={() => chrome.tabs.create({ url: link.url })}
+                      className="text-left text-xs text-diary-ink underline underline-offset-2"
+                    >
+                      {link.label}
+                      {' '}
+                      바로가기
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {collectState.status === 'error' && (
+              <p className="text-xs font-medium text-diary-ink">{COLLECT_FAILED_MESSAGE}</p>
+            )}
+            {collectState.status === 'busy' && (
+              <p className="text-xs text-diary-secondary">{BUSY_MESSAGE}</p>
+            )}
+            {collectState.status === 'loading' && (
+              <p className="text-xs text-diary-secondary">
+                {recovering ? '페이지를 준비하는 중...' : '수집하는 중이에요…'}
+              </p>
+            )}
+          </div>
+        </section>
 
-      <HistoryDisplayPanel state={historyDisplay.state} saving={historyDisplay.saving} error={historyDisplay.error}
-        onToggle={enabled => void historyDisplay.setEnabled(enabled)} onRefresh={() => void historyDisplay.refresh()}
-        onOpenHistory={() => void chrome.tabs.create({ url: WEBAPP_URL })} />
+        <section className="diary-records" aria-label="저장된 지원내역" aria-busy={countsState.status === 'loading'}>
+          <div role="status" aria-atomic="true">
+            {countsState.status === 'loading' && <p className="text-xs text-diary-secondary">저장 내역 불러오는 중…</p>}
+            {countsState.status === 'error' && <p className="text-xs font-medium text-diary-ink">저장 내역을 불러오지 못했어요.</p>}
+          </div>
+          {countsState.status === 'error' && <Button variant="secondary" onClick={() => void refreshSiteCounts()}>다시 불러오기</Button>}
+          {countsState.status === 'ready' && <>
+            <div className="diary-records-heading">
+              <h2>수집한 지원 내역</h2>
+              <p className="diary-total"><span className="sr-only">전체 </span><strong>{totalCount}</strong>건</p>
+            </div>
+            <ul className="diary-site-counts">
+              {PLATFORM_ORDER.map(p => (
+                <li key={p}>
+                  <span>{PLATFORM_LABEL[p]}</span>
+                  <span className="diary-count">{countsState.counts[p]}<small>건</small></span>
+                </li>
+              ))}
+            </ul>
+          </>}
+          <div className="diary-tools">
+            <Button variant="text" onClick={handleCopyAll} disabled={!hasAnyData || resetting}>
+              {COPY_BUTTON_LABEL[copyState]}
+            </Button>
+            {hasAnyData && (
+              <Button variant="text" onClick={handleReset} disabled={resetting || collectState.status === 'loading'}>
+                {resetting ? '초기화 중…' : resetConfirming ? '다시 누르면 수집 내역 삭제' : '수집 내역 초기화'}
+              </Button>
+            )}
+          </div>
+          <p role="status" aria-atomic="true" className="sr-only">{copyState === 'idle' ? '' : COPY_BUTTON_LABEL[copyState]}</p>
+          {resetError && <p role="alert" className="text-xs font-medium text-diary-ink">초기화하지 못했어요. 다시 시도해 주세요.</p>}
+        </section>
 
-      <section className="px-4 py-2">
-        <Button variant="secondary" onClick={handleOpenJobdiary}>취준일기로 가져오기</Button>
-      </section>
+        <HistoryDisplayPanel state={historyDisplay.state} saving={historyDisplay.saving} error={historyDisplay.error}
+          onToggle={enabled => void historyDisplay.setEnabled(enabled)} onRefresh={() => void historyDisplay.refresh()}
+          onOpenHistory={() => void chrome.tabs.create({ url: WEBAPP_URL })} />
+
+        <Button variant="secondary" onClick={handleOpenJobdiary}>
+          취준일기로 가져오기
+          <img className="diary-action-icon" src="/icons/arrow-right.svg" alt="" aria-hidden="true" />
+        </Button>
+      </div>
     </div>
   )
 }

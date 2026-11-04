@@ -18,16 +18,16 @@ export function HistoryDisplayPanel({ state, saving, error, onToggle, onRefresh,
           : state.count === 0 ? '비교할 수 있는 공고가 없어요' : state.count + '개 공고 연결';
 
   return (
-    <section className="border-b border-card-border px-4 py-2" aria-label="지원 이력 자동 표시">
+    <section className="diary-history" aria-label="지원 이력 자동 표시">
       <details>
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-xs focus-visible:outline-2 focus-visible:outline-offset-2">
-          <span className="shrink-0 text-text-secondary">지원 이력 표시</span>
-          <span className="flex items-center gap-1 text-text-muted"><span role="status" aria-atomic="true">{status}</span><span aria-hidden="true">⌄</span></span>
+        <summary className="diary-history-summary">
+          <span className="shrink-0 text-diary-secondary">지원 이력 표시</span>
+          <span className="flex items-center gap-1 text-diary-secondary"><span role="status" aria-atomic="true">{status}</span><span aria-hidden="true">⌄</span></span>
         </summary>
-        <div className="mt-2 flex flex-col gap-1 text-xs text-text-muted">
-          <div className="mb-1 flex items-center justify-between gap-2">
-            <label htmlFor="history-display-enabled" className="text-text-secondary">지원 이력 자동 표시</label>
-            <input id="history-display-enabled" type="checkbox" className="h-4 w-4 cursor-pointer accent-brand disabled:cursor-wait"
+        <div className="diary-history-details">
+          <div className="flex items-center justify-between gap-2">
+            <label htmlFor="history-display-enabled" className="text-diary-secondary">지원 이력 자동 표시</label>
+            <input id="history-display-enabled" type="checkbox" className="h-4 w-4 cursor-pointer accent-diary-ink disabled:cursor-wait"
               checked={state.status === 'ready' && state.enabled} disabled={state.status !== 'ready' || saving}
               onChange={event => onToggle(event.target.checked)} aria-describedby="history-display-description" />
           </div>
@@ -37,11 +37,11 @@ export function HistoryDisplayPanel({ state, saving, error, onToggle, onRefresh,
             {state.unidentifiedCount > 0 && <p>공고를 식별하지 못한 지원 {state.unidentifiedCount}건은 표시하지 않아요.</p>}
             {state.count === 0 && <p>지원현황에서 수집한 뒤 아래 ‘취준일기로 가져오기’를 눌러 공고 주소를 연결해 주세요.</p>}
           </> : <p>연결된 지원 이력이 없어요. 취준일기에 로그인해 이력을 불러와 주세요.</p>)}
-          <button type="button" onClick={onOpenHistory} className="self-start text-brand underline hover:text-brand-hover">취준일기에서 이력 갱신</button>
+          <button type="button" onClick={onOpenHistory} className="self-start text-diary-ink underline underline-offset-2">취준일기에서 이력 갱신</button>
           {state.status === 'error' && <Button variant="secondary" onClick={onRefresh}>연결 정보 다시 불러오기</Button>}
         </div>
       </details>
-      {error && <p role="alert" className="mt-1 text-xs text-status-rejected">{error}</p>}
+      {error && <p role="alert" className="mt-1 text-xs font-medium text-diary-ink">{error}</p>}
     </section>
   );
 }
