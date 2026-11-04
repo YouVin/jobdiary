@@ -244,14 +244,14 @@ export function App() {
 
   return (
     <div className="max-h-150 w-90 overflow-y-auto bg-page text-text-primary">
-      <header className="flex items-center gap-2 border-b border-card-border bg-card px-4 py-3">
+      <header className="flex items-center gap-2 border-b border-card-border bg-card px-4 py-2">
         <img src="/logo-128.png" alt="취준일기 로고" className="h-6 w-6 rounded" />
         <h1 className="text-base font-semibold">취준일기</h1>
+        <div className="ml-auto">
+          {platformLoading ? <span className="text-xs text-text-muted">확인 중…</span>
+            : platform ? <PlatformBadge platform={platform} /> : null}
+        </div>
       </header>
-
-      <section className="border-b border-card-border bg-column px-4 py-3">
-        {platformLoading ? <p className="text-sm text-text-muted">현재 페이지 확인 중…</p> : <PlatformBadge platform={platform} />}
-      </section>
 
       <section className="flex flex-col gap-2 border-b border-card-border px-4 py-3">
         <Button
@@ -323,22 +323,22 @@ export function App() {
         </div>
       </section>
 
-      <section className="border-b border-card-border px-4 py-3" aria-label="저장된 지원내역" aria-busy={countsState.status === 'loading'}>
+      <section className="border-b border-card-border px-4 py-2" aria-label="저장된 지원내역" aria-busy={countsState.status === 'loading'}>
         <div role="status" aria-atomic="true">
           {countsState.status === 'loading' && <p className="text-sm text-text-muted">저장 내역 불러오는 중…</p>}
           {countsState.status === 'error' && <p className="text-sm text-status-rejected">저장 내역을 불러오지 못했어요.</p>}
         </div>
         {countsState.status === 'error' && <Button variant="secondary" onClick={() => void refreshSiteCounts()}>다시 불러오기</Button>}
         {countsState.status === 'ready' && <>
-          <p className="mb-2 text-sm font-medium text-text-primary">
+          <p className="mb-1 text-sm font-medium text-text-primary">
             전체
             {' '}
             {totalCount}
             건
           </p>
-          <ul className="flex flex-col gap-1">
+          <ul className="grid grid-cols-3 gap-2">
             {PLATFORM_ORDER.map(p => (
-              <li key={p} className="flex items-center justify-between text-sm text-text-secondary">
+              <li key={p} className="flex items-center justify-between gap-1 text-xs text-text-secondary">
                 <span>{PLATFORM_LABEL[p]}</span>
                 <span>
                   {countsState.counts[p]}
@@ -354,7 +354,7 @@ export function App() {
         onToggle={enabled => void historyDisplay.setEnabled(enabled)} onRefresh={() => void historyDisplay.refresh()}
         onOpenHistory={() => void chrome.tabs.create({ url: WEBAPP_URL })} />
 
-      <section className="flex flex-col gap-2 border-b border-card-border px-4 py-3">
+      <section className="grid grid-cols-2 gap-2 border-b border-card-border px-4 py-2">
         <Button variant="secondary" onClick={handleCopyAll} disabled={!hasAnyData || resetting}>
           {COPY_BUTTON_LABEL[copyState]}
         </Button>
@@ -364,7 +364,7 @@ export function App() {
           </Button>
         )}
         <p role="status" aria-atomic="true" className="sr-only">{copyState === 'idle' ? '' : COPY_BUTTON_LABEL[copyState]}</p>
-        <p role="alert" className="text-sm text-status-rejected">{resetError ? '초기화하지 못했어요. 다시 시도해 주세요.' : ''}</p>
+        <p role="alert" className="col-span-2 text-sm text-status-rejected">{resetError ? '초기화하지 못했어요. 다시 시도해 주세요.' : ''}</p>
       </section>
 
       <section className="px-4 py-3">

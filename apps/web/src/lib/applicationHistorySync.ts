@@ -1,5 +1,6 @@
 import { buildHistoryEntries, HISTORY_CLEAR_TYPE, HISTORY_PROTOCOL_VERSION, HISTORY_SYNC_TYPE, MAX_HISTORY_ENTRIES, type HistoryRequest, type HistoryResponse } from '@jobdiary/shared';
 import { JOBDIARY_EXTENSION_ID } from '@/constants/extension';
+import { fetchApplicationHistory } from '@/lib/applicationsApi';
 import { useApplicationStore } from '@/store/applicationStore';
 import { useAuthStore } from '@/store/authStore';
 
@@ -71,7 +72,11 @@ export function startApplicationHistorySync(options: { debounceMs?: number; retr
         if (!initial.userId || !initial.historyReady || useAuthStore.getState().status !== 'authenticated') return;
         const key = await ownerKey(initial.userId);
         if (!isCurrent()) return;
-        const snapshot = { ownerKey: key, ...buildHistoryEntries(initial.applications) };
+        // 다른 탭이 가진 오래된 배열로 덮지 않도록 전송 직전 같은 계정의 DB를 다시 읽는다.
+        const latest = await fetchApplicationHistory({ userId: initial.userId, isCurrent });
+        if (!isCurrent()) return;
+        if (latest.error) throw latest.error;
+        const snapshot = { ownerKey: key, ...buildHistoryEntries(latest.applications) };
         if (snapshot.entries.length > MAX_HISTORY_ENTRIES) throw new Error('history-too-large');
         const response = await sendHistoryMessage({ type: HISTORY_SYNC_TYPE, version: HISTORY_PROTOCOL_VERSION, snapshot });
         if (!isCurrent() || !response.ok) return;

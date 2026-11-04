@@ -177,6 +177,20 @@ export async function fetchApplications(context?: ApplicationRequestContext): Pr
   }
 }
 
+// 비교 캐시 전용 조회. 다른 탭의 오래된 목록을 피하고 메모·일기는 다시 전송받지 않는다.
+export async function fetchApplicationHistory(context: ApplicationRequestContext): Promise<{
+  applications: Pick<Application, 'platform' | 'status' | 'url'>[];
+  error: ApiError | null;
+}> {
+  try {
+    const userId = await getCurrentUserId(context);
+    const { data, error } = await supabase.from(TABLE_NAME).select('platform,status,url').eq('user_id', userId);
+    if (error) return { applications: [], error };
+    return { applications: (data as Pick<ApplicationRow, 'platform' | 'status' | 'url'>[])
+      .map(row => ({ platform: row.platform, status: row.status, url: row.url ?? undefined })), error: null };
+  } catch (error) { return { applications: [], error: error as Error }; }
+}
+
 // 조건을 DB에서 함께 검사한다. 다른 탭에서 진행 상태를 바꿨다면 해당 행은 갱신되지 않는다.
 export async function rejectExpiredApplications(
   today = getTodayInKorea(),
