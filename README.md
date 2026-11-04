@@ -9,11 +9,13 @@
 | --- | --- |
 | `apps/web` | Next.js 웹앱 |
 | `apps/extension` | Vite·CRXJS 기반 Chrome 익스텐션 |
+| `packages/shared` | 공통 메시지·공고 식별·비교 캐시 계약 |
 | `docs` | 웹앱 설계·검증 기록 및 통합 진행 계획 |
 | `apps/extension/docs` | 익스텐션 설계·셀렉터·스토어·개인정보 문서 |
 | `supabase` | 기존 데이터베이스 마이그레이션과 Edge Functions |
 
-공통 연동 코드 추출과 지원 이력 자동 표시는 후속 단계다.
+공통 연동 계약과 웹앱 지원 이력의 비교 캐시 동기화를 구현했다.
+[동작·검증·제한](docs/APPLICATION_HISTORY_SYNC.md)을 참고한다. 실제 채용 페이지의 자동 표시는 후속 단계다.
 모노레포로 바꾼 배경·이력 보존·문제 해결·검증 근거는 [전환 사례](docs/MONOREPO_CASE_STUDY.md),
 현재 진행 중인 마감일 검증은 [직접 확인 체크리스트](docs/DEADLINE_VALIDATION.md)를 참고한다.
 

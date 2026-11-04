@@ -123,3 +123,13 @@ HTML을 받을 수 있는지는 수동 확인이 필요하다. 상세 기준은 
 - 웹앱 페이지에 content script를 주입하거나 inline script를 실행하지 않는다.
   postMessage/CustomEvent를 통한 전달도 사용하지 않는다.
 - service worker의 실행 상태는 영구적이지 않으므로 응답 시 저장소에서 읽는다.
+
+## 웹앱 지원 이력 비교 캐시 (5단계)
+
+공통 계약은 `packages/shared`의 `@jobdiary/shared`를 사용한다. 기존 수집 데이터 pull과 별도로
+웹앱은 HISTORY_SYNC/CLEAR 요청으로 최소 비교 정보를 보낸다. 이 캐시는 수집 슬롯과
+다른 키에 저장하며 사이트별 재수집과 팝업 초기화로 지우지 않는다. 로그아웃·계정 변경은
+웹앱이 해당 origin의 캐시를 정리한다. 인증 토큰·메모·일기는 받지 않는다.
+웹앱은 신규 공고 URL을 보존하고 같은 지원 ID의 빈 URL만 조건부로 보완한다.
+기존 상태·마감일·메모·일기를 재수집으로 바꾸지 않는다.
+세부 계약·검증·제한은 [통합 기록](../../../docs/APPLICATION_HISTORY_SYNC.md)을 따른다.
