@@ -1,0 +1,46 @@
+{
+  "renderedAt": "2026-11-04T16:34:23.591Z",
+  "exampleData": true,
+  "files": [
+    {
+      "file": "1-overview.png",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "file": "2-copy.png",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "file": "3-start.png",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "file": "4-sites.png",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "file": "5-history.png",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "file": "../usage-guides/guide-saramin.png",
+      "width": 1120,
+      "height": 760
+    },
+    {
+      "file": "../usage-guides/guide-jobkorea.png",
+      "width": 1120,
+      "height": 760
+    },
+    {
+      "file": "../usage-guides/guide-wanted.png",
+      "width": 1120,
+      "height": 760
+    }
+  ]
+}

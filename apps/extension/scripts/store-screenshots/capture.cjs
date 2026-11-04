@@ -1,90 +1,112 @@
-// 스토어 스크린샷용 팝업 UI 캡처. 실제 사이트 로그인 세션 없이도, chrome.storage.local에
-// 그럴듯한 목업 지원 내역을 직접 주입한 뒤 팝업(익스텐션 페이지)을 헤드리스 크롬으로 열어
-// 캡처한다. 사용법은 이 폴더의 README.md 참고.
-const puppeteer = require('puppeteer');
-const path = require('path');
-const fs = require('fs');
-
-const DIST_PATH = path.resolve(__dirname, '..', '..', 'dist');
-const OUT_DIR = path.resolve(__dirname, '..', '..', 'docs', 'store-screenshots', 'raw');
-
-const STORAGE_KEY = 'jobdiary:collected';
-const POPUP_WIDTH = 360; // App.tsx 루트의 w-90 (Tailwind v4 spacing 스케일: 90 * 4px = 360px)
-
-const MOCK_DATA = {
-  saramin: [
-    { company: '(주)플레이웍스', position: '프론트엔드 개발자', platform: 'saramin', status: 'applied', appliedAt: '2026-08-10T00:00:00.000Z', viewed: true, appliedAtExact: '2026-08-10T02:30:00.000Z', externalId: '1001', url: 'https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=1001' },
-    { company: '(주)테크노베이션', position: '백엔드 개발자 (Node.js)', platform: 'saramin', status: 'rejected', appliedAt: '2026-08-05T00:00:00.000Z', viewed: true, externalId: '1002' },
-    { company: '데이터브릿지', position: '데이터 엔지니어', platform: 'saramin', status: 'canceled', appliedAt: '2026-07-28T00:00:00.000Z', viewed: false, externalId: '1003' },
-  ],
-  jobkorea: [
-    { company: '(주)클라우드나인', position: 'iOS 개발자', platform: 'jobkorea', status: 'applied', appliedAt: '2026-08-12T00:00:00.000Z', viewed: false, externalId: '2001' },
-    { company: '넥스트페이먼츠', position: '프로덕트 매니저', platform: 'jobkorea', status: 'applied', appliedAt: '2026-08-09T00:00:00.000Z', viewed: true, externalId: '2002' },
-  ],
-  wanted: [
-    { company: '무론', position: '프론트엔드 개발자', platform: 'wanted', status: 'applied', appliedAt: '2026-08-11T00:00:00.000Z' },
-    { company: '스퀘어랩', position: 'UI/UX 디자이너', platform: 'wanted', status: 'rejected', appliedAt: '2026-08-03T00:00:00.000Z' },
-    { company: '그린테이블', position: '백엔드 개발자', platform: 'wanted', status: 'applied', appliedAt: '2026-08-07T00:00:00.000Z' },
-  ],
-};
-
-async function captureTight(page, filePath) {
-  await page.setViewport({ width: POPUP_WIDTH, height: 700, deviceScaleFactor: 3 });
-  await new Promise(r => setTimeout(r, 200));
-  const height = await page.evaluate(() => Math.ceil(document.body.firstElementChild.getBoundingClientRect().height));
-  await page.setViewport({ width: POPUP_WIDTH, height, deviceScaleFactor: 3 });
-  await new Promise(r => setTimeout(r, 200));
-  await page.screenshot({ path: filePath, clip: { x: 0, y: 0, width: POPUP_WIDTH, height } });
-}
-
+// 실제 확장 UI를 별도 프로필·예시 데이터로 촬영한다. 사용자의 로그인/저장소/클립보드에 접근하지 않는다.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { execFileSync } = require('node:child_process');
+const { root, loadBrowser, browserOptions } = require('./browser.cjs');
+const extension = process.env.EXTENSION_PATH || path.join(root, 'release/github-screenshots/extension-development');
+const output = path.join(root, 'apps/extension/docs/store-screenshots/raw');
+const scratch = path.join(root, 'release/github-screenshots');
+const key = 'jobdiary:collected';
+const historyKey = 'jobdiary:application-history:v1:http://localhost:3000';
+const sites = [
+  { id: 'jobkorea', label: '잡코리아', url: 'https://www.jobkorea.co.kr/User/ApplyMng', count: 7 },
+  { id: 'saramin', label: '사람인', url: 'https://www.saramin.co.kr/zf_user/persons/apply-status-list', count: 5 },
+  { id: 'wanted', label: '원티드', url: 'https://www.wanted.co.kr/status/applications/applied', count: 3 },
+];
+const entries = [];
+const slots = Object.fromEntries(sites.map(site => [site.id, Array.from({ length: site.count }, (_, index) => {
+  const postingId = String(900101 + index);
+  if (site.id !== 'wanted') entries.push({ platform: site.id, postingId, state: index === 1 ? 'canceled' : 'applied' });
+  return { company: '가상회사 ' + String(index + 1).padStart(2, '0'), position: ['프론트엔드 개발자', '백엔드 개발자', '프로덕트 디자이너'][index % 3],
+    platform: site.id, status: index === 1 ? 'canceled' : 'applied', appliedAt: '2026-11-01T00:00:00.000Z', externalId: site.id + '-' + index,
+    ...(site.id === 'jobkorea' ? { url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/' + postingId }
+      : site.id === 'saramin' ? { url: 'https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=' + postingId } : {}) };
+})]));
+const fixture = '<!doctype html><html lang="ko"><meta charset="utf-8"><style>body{margin:0;padding:28px;font:14px/1.6 system-ui;color:#18181b;background:#fafafa}h1{font-size:20px;margin:0 0 6px}p{font-size:12px;color:#52525b;margin:0 0 20px}article{background:white;border:1px solid #dedee2;border-radius:10px;padding:20px;margin-bottom:12px}a{color:#18181b;text-decoration:none;font-weight:600;font-size:15px}small{display:block;color:#52525b;margin-top:8px;font-size:12px}</style><h1>공고를 둘러보는 중</h1><p>개발 검증용 예시 · 실제 채용 사이트 화면이 아닙니다.</p><article data-sentry-component="CardJob"><a data-sentry-component="Title" href="/Recruit/GI_Read/900101">프론트엔드 개발자</a><small>가상회사 01</small></article><article data-sentry-component="CardJob"><a data-sentry-component="Title" href="/Recruit/GI_Read/900102">백엔드 개발자</a><small>가상회사 02</small></article><article data-sentry-component="CardJob"><a data-sentry-component="Title" href="/Recruit/GI_Read/99999999">프로덕트 디자이너</a><small>가상회사 03</small></article></html>';
 async function main() {
-  if (!fs.existsSync(DIST_PATH)) {
-    throw new Error(`dist/ 가 없다 — 먼저 npm run build 실행: ${DIST_PATH}`);
-  }
-  fs.mkdirSync(OUT_DIR, { recursive: true });
-
-  const browser = await puppeteer.launch({
-    headless: 'new',
-    args: [
-      `--disable-extensions-except=${DIST_PATH}`,
-      `--load-extension=${DIST_PATH}`,
-      '--no-sandbox',
-    ],
+  const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'), 'utf8'));
+  assert(manifest.externally_connectable.matches.includes('http://localhost:3000/*'), '별도 정적 development 빌드를 사용하세요.');
+  assert(!fs.readFileSync(path.join(extension, manifest.background.service_worker), 'utf8').includes('localhost:5173'), 'live 개발 dist 대신 별도 정적 빌드를 사용하세요.');
+  fs.mkdirSync(output, { recursive: true }); fs.mkdirSync(scratch, { recursive: true });
+  const chromium = await loadBrowser();
+  const context = await chromium.launchPersistentContext(fs.mkdtempSync(path.join(scratch, 'capture-profile-')), {
+    ...browserOptions(), headless: true, locale: 'ko-KR', timezoneId: 'Asia/Seoul', viewport: { width: 1200, height: 760 }, deviceScaleFactor: 2,
+    args: ['--disable-extensions-except=' + extension, '--load-extension=' + extension],
   });
-
-  // MV3 서비스워커 타겟이 뜰 때까지 기다렸다가 익스텐션 ID를 뽑는다.
-  let extensionId = null;
-  for (let i = 0; i < 20 && !extensionId; i++) {
-    const targets = await browser.targets();
-    const swTarget = targets.find(t => t.url().startsWith('chrome-extension://') && t.type() === 'service_worker');
-    if (swTarget) {
-      extensionId = new URL(swTarget.url()).host;
-    } else {
-      await new Promise(r => setTimeout(r, 300));
+  const errors = [];
+  try {
+    context.on('page', page => page.on('pageerror', error => errors.push(error.message)));
+    await context.route('**/*', route => {
+      const url = new URL(route.request().url());
+      if (!['http:', 'https:'].includes(url.protocol)) return route.continue();
+      assert(['www.jobkorea.co.kr', 'www.saramin.co.kr', 'www.wanted.co.kr'].includes(url.hostname), '예상하지 못한 외부 요청');
+      return route.fulfill({ contentType: 'text/html; charset=utf-8', body: fixture });
+    });
+    const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
+    const extensionId = new URL(worker.url()).host;
+    const site = await context.newPage();
+    const popup = await context.newPage();
+    await popup.setViewportSize({ width: 360, height: 600 });
+    // 운영체제 클립보드는 건드리지 않고 실제 복사 핸들러의 표 payload와 완료 UI만 검증한다.
+    await popup.addInitScript(() => {
+      window.__screenshotClipboard = {};
+      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: {
+        write: async items => { for (const type of items[0].types) window.__screenshotClipboard[type] = await (await items[0].getType(type)).text(); },
+        writeText: async text => { window.__screenshotClipboard['text/plain'] = text; },
+      } });
+    });
+    const popupUrl = 'chrome-extension://' + extensionId + '/src/popup/index.html';
+    const captures = [];
+    async function shot(name) {
+      await popup.getByText(/수집한 지원 내역/).waitFor();
+      const box = popup.locator('.diary-popup');
+      const size = await box.evaluate(node => ({ width: node.clientWidth, height: node.getBoundingClientRect().height, scroll: node.scrollHeight > node.clientHeight + 1 }));
+      assert.equal(size.scroll, false); assert(size.height <= 600);
+      await box.screenshot({ path: path.join(output, name + '.png') }); captures.push({ name, ...size });
     }
-  }
-  if (!extensionId) throw new Error('익스텐션 서비스워커를 못 찾음 — extension ID 추출 실패');
-  console.log('extensionId:', extensionId);
-
-  const popupUrl = `chrome-extension://${extensionId}/src/popup/index.html`;
-  const page = await browser.newPage();
-
-  // 1) 빈 상태(수집 전) — 익스텐션을 처음 쓰는 유저가 보는 화면
-  await page.goto(popupUrl, { waitUntil: 'networkidle0' });
-  await new Promise(r => setTimeout(r, 300));
-  await captureTight(page, path.join(OUT_DIR, 'popup-empty.png'));
-
-  // 2) 목업 데이터 주입 — 팝업 페이지 자체가 익스텐션 컨텍스트라 chrome.storage 접근 가능
-  await page.evaluate((key, data) => chrome.storage.local.set({ [key]: data }), STORAGE_KEY, MOCK_DATA);
-  await page.reload({ waitUntil: 'networkidle0' });
-  await new Promise(r => setTimeout(r, 300));
-  await captureTight(page, path.join(OUT_DIR, 'popup-collected.png'));
-
-  await browser.close();
-  console.log('done —', OUT_DIR);
+    await worker.evaluate(() => chrome.storage.local.clear());
+    for (const platform of sites) {
+      await site.goto(platform.url);
+      await site.bringToFront();
+      if (popup.url() === 'about:blank') await popup.goto(popupUrl); else await popup.reload();
+      await popup.locator('.diary-platform').filter({ hasText: platform.label }).waitFor();
+      await popup.getByText('전체 0건', { exact: true }).waitFor();
+      await shot('popup-empty-' + platform.id);
+    }
+    fs.copyFileSync(path.join(output, 'popup-empty-jobkorea.png'), path.join(output, 'popup-empty.png'));
+    await site.goto(sites[0].url); await site.bringToFront();
+    await worker.evaluate(async ({ key, slots, historyKey, entries }) => chrome.storage.local.set({ [key]: slots,
+      [historyKey]: { version: 1, ownerKey: 'a'.repeat(64), syncedAt: '2026-11-04T16:00:00.000Z', entries, unidentifiedCount: 3 },
+    }), { key, slots, historyKey, entries });
+    await popup.reload(); await popup.getByText('전체 15건', { exact: true }).waitFor();
+    await shot('popup-collected');
+    // 촬영 중에만 2초 완료 표시의 복귀를 늦춘다. 제품 코드와 OS 클립보드는 바꾸지 않는다.
+    await popup.evaluate(() => {
+      const schedule = window.setTimeout.bind(window);
+      window.setTimeout = (handler, delay, ...args) => schedule(handler, delay === 2000 ? 60000 : delay, ...args);
+    });
+    await popup.getByRole('button', { name: '전체 복사', exact: true }).click();
+    await popup.getByRole('button', { name: '복사됐어요', exact: true }).waitFor();
+    await shot('popup-copied');
+    assert(await popup.getByRole('button', { name: '복사됐어요', exact: true }).isVisible());
+    const clipboard = await popup.evaluate(() => window.__screenshotClipboard);
+    assert.equal(clipboard['text/plain'].trim().split('\n').length, 16);
+    assert(clipboard['text/html'].includes('<table'));
+    await popup.reload(); await popup.locator('summary').click();
+    await popup.getByRole('checkbox', { name: '지원 이력 자동 표시', exact: true }).waitFor();
+    await shot('popup-history');
+    await popup.locator('summary').click();
+    await site.setViewportSize({ width: 680, height: 460 });
+    await site.goto('https://www.jobkorea.co.kr/Search/?stext=개발자');
+    await site.waitForFunction(() => document.querySelectorAll('[data-jobdiary-history]').length === 2);
+    await site.screenshot({ path: path.join(output, 'history-site.png') });
+    assert.deepEqual(errors, []);
+    const report = { capturedAt: new Date().toISOString(), sourceUiCommit: execFileSync('git', ['-c', 'safe.directory=' + root, 'rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+      exampleData: true, captures, collectionCounts: Object.fromEntries(sites.map(site => [site.id, site.count])), comparisonCount: entries.length,
+      clipboardAdapter: 'mocked; actual payload generation and feedback UI; feedback reset delayed for capture', clipboardRows: 15, unexpectedPageErrors: errors.length };
+    fs.writeFileSync(path.join(output, 'capture-manifest.json'), JSON.stringify(report, null, 2) + '\n');
+    console.log(JSON.stringify(report, null, 2));
+  } finally { await context.close(); }
 }
-
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch(error => { console.error(error); process.exitCode = 1; });

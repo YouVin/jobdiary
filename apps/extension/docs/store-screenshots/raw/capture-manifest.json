@@ -1,0 +1,52 @@
+{
+  "capturedAt": "2026-11-04T16:34:21.779Z",
+  "sourceUiCommit": "e683e013b0f1a7d2862af680f3d4178bb261fb32",
+  "exampleData": true,
+  "captures": [
+    {
+      "name": "popup-empty-jobkorea",
+      "width": 360,
+      "height": 539.5,
+      "scroll": false
+    },
+    {
+      "name": "popup-empty-saramin",
+      "width": 360,
+      "height": 539.5,
+      "scroll": false
+    },
+    {
+      "name": "popup-empty-wanted",
+      "width": 360,
+      "height": 539.5,
+      "scroll": false
+    },
+    {
+      "name": "popup-collected",
+      "width": 360,
+      "height": 539.5,
+      "scroll": false
+    },
+    {
+      "name": "popup-copied",
+      "width": 360,
+      "height": 539.5,
+      "scroll": false
+    },
+    {
+      "name": "popup-history",
+      "width": 360,
+      "height": 583,
+      "scroll": false
+    }
+  ],
+  "collectionCounts": {
+    "jobkorea": 7,
+    "saramin": 5,
+    "wanted": 3
+  },
+  "comparisonCount": 12,
+  "clipboardAdapter": "mocked; actual payload generation and feedback UI; feedback reset delayed for capture",
+  "clipboardRows": 15,
+  "unexpectedPageErrors": 0
+}
