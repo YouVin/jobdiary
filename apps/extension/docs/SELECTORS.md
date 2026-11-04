@@ -314,3 +314,13 @@ document.querySelectorAll('li[class*="table_tr"]').forEach((row) => {
 로그인 AI 추천 전체 DOM·사람인 모든 상세 템플릿은 실사용 미검증이다.
 닫힌 Shadow DOM 배지로 원본 textContent를 보존하며 실제 양쪽 파서 전후 동일 회귀 테스트를 유지한다.
 범위·공개 구조 근거는 [상세 기록](../../../docs/APPLICATION_HISTORY_BADGES.md)을 따른다.
+
+### 잡코리아 검색 카드의 중복 표시 방지 (#125)
+
+2026-11-04 공개 https://www.jobkorea.co.kr/Search/?stext=AI HTML에서
+카드 [data-sentry-component="CardJob"]와 제목 a[data-sentry-component="Title"][href]를 확인했다.
+같은 카드의 로고·제목·회사명이 동일 GI_Read 공고 ID를 가리킬 수 있다.
+이 구조에서는 제목 링크 하나에만 표시한다. 제목이 아직 없으면 카드 배지를 보류한다.
+선택자는 src/content/selectors/jobkorea.ts의 JOBKOREA_HISTORY_SELECTORS에 둔다.
+카드 바깥과 기존 지원현황·사람인 표시는 기존 URL 규칙을 따른다.
+다른 카드에 같은 공고가 나오면 각 제목에 표시하며 페이지 전체의 ID로 배지를 합치지 않는다.

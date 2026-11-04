@@ -39,3 +39,9 @@ export const JOBKOREA_POSTING_SELECTORS = {
   description: 'meta[name="description"]',
   structuredData: 'script[type="application/ld+json"]',
 } as const;
+
+// 2026-11-04 공개 검색 HTML: 로고·제목·회사명이 같은 공고 URL을 가리킨다.
+export const JOBKOREA_HISTORY_SELECTORS = {
+  card: '[data-sentry-component="CardJob"]',
+  titleLink: 'a[data-sentry-component="Title"][href]',
+} as const;
