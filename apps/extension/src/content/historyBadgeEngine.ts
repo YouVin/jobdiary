@@ -2,6 +2,7 @@ import { getPostingReference, type HistoryCache, type HistoryEntry } from '@jobd
 import type { Platform } from '../types/application';
 import { HISTORY_BADGE_CSS, HISTORY_BADGE_LABEL } from '../lib/historyBadgeStyle';
 import { HISTORY_BADGE_SELECTORS } from './selectors/historyBadges';
+import { JOBKOREA_HISTORY_SELECTORS } from './selectors/jobkorea';
 
 type BadgeState = HistoryEntry['state'];
 type SupportedPlatform = Exclude<Platform, 'wanted'>;
@@ -91,6 +92,11 @@ export function createHistoryAnnotator(
     const reference = getPostingReference(anchor.href);
     const state = reference?.platform === platform ? index.get(reference.postingId) : undefined;
     if (!reference || !state) { remove(anchor); return; }
+    if (platform === 'jobkorea') {
+      const card = anchor.closest(JOBKOREA_HISTORY_SELECTORS.card);
+      // 검색 카드는 제목과 회사명도 같은 공고 URL이다. 제목 하나에만 표시한다.
+      if (card && card.querySelector(JOBKOREA_HISTORY_SELECTORS.titleLink) !== anchor) { remove(anchor); return; }
+    }
     put(anchor, reference.postingId, state, 'link');
   }
   function refreshDetail() {
@@ -109,6 +115,7 @@ export function createHistoryAnnotator(
   }
   function enqueue(root: Element) {
     if (!root.isConnected || owned.has(root)) return;
+    if (platform === 'jobkorea') root = root.closest(JOBKOREA_HISTORY_SELECTORS.card) ?? root;
     const body = doc.body ?? doc.documentElement;
     if (root === body || roots.size >= 100) { roots.clear(); walker = null; roots.add(body); }
     else if (!roots.has(body)) roots.add(root);
@@ -176,6 +183,10 @@ export function createHistoryAnnotator(
         if (expectedRemovals.delete(node)) continue;
         meaningful = true;
         pruneNeeded = true;
+        if (platform === 'jobkorea' && record.target instanceof view.Element) {
+          const card = record.target.closest(JOBKOREA_HISTORY_SELECTORS.card);
+          if (card) enqueue(card);
+        }
         if (walker && node.contains(walker.cursor.currentNode)) { walker = null; enqueue(doc.body ?? doc.documentElement); }
         if (owned.has(node) && record.target instanceof view.Element) enqueue(record.target);
       }

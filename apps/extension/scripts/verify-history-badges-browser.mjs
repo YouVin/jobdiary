@@ -22,7 +22,11 @@ const cache = (values = entries) => ({ version: 1, ownerKey: 'a'.repeat(64), ent
 const html = body => '<!doctype html><html lang="ko"><head><meta charset="utf-8"><style>body{margin:24px;font:14px/1.5 system-ui;color:#18181b;background:#fafafa}h1{font-size:24px}article{box-sizing:border-box;height:82px;display:grid;grid-template-columns:minmax(0,1fr) 96px;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #dedee2;background:white}a{color:#18181b;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}button{padding:8px;background:#4f46e5;color:white;border:0;border-radius:4px}#rows{max-width:900px}</style></head><body>' + body + '</body></html>';
 const anchor = (id, title = '프론트엔드 개발자') => '<a href="/Recruit/GI_Read/' + id + '">' + title + '</a>';
 const fixture = html('<h1>AI 추천공고 검증 표본</h1><div id="rows"><article>' + anchor('101') + '<button>지원</button></article><article>' + anchor('102', '지원 취소한 공고') + '<button>지원</button></article><article>' + anchor('999', '이력이 확인되지 않은 공고') + '<button>지원</button></article></div>');
-const large = html('<h1>긴 목록 성능 검증</h1><div id="rows">' + Array.from({ length: 5000 }, (_, index) => '<article>' + anchor(String(1000 + index), '표본 공고 ' + index) + '<button>지원</button></article>').join('') + '</div>');
+// 2026-11-04 공개 검색의 CardJob/Title 구조를 개인정보 없는 텍스트로 재현한다.
+const searchCard = (id, postingId, companyId = postingId) => '<div id="' + id + '" data-sentry-component="CardJob"><a href="/Recruit/GI_Read/' + postingId + '"><img alt="회사 로고"></a><div><a data-sentry-component="Title" href="/Recruit/GI_Read/' + postingId + '?listno=1">AI 개발자</a><span><a data-fixture-company href="/Recruit/GI_Read/' + companyId + '">예시 회사</a></span></div><button>지원</button></div>';
+const search = html('<style>[data-sentry-component="CardJob"]{display:flex;align-items:center;gap:16px;padding:24px;margin-bottom:16px;background:white;border-radius:12px;max-width:850px}[data-sentry-component="CardJob"]>div{flex:1}[data-sentry-component="Title"]{display:block;font-weight:600;margin-bottom:6px}[data-fixture-company]{font-size:13px;color:#52525b}</style><h1>검색 카드 중복 표시 검증 표본</h1>'
+  + searchCard('card-one', '101') + searchCard('card-two', '101') + searchCard('card-other', '999', '101'));
+const large = html('<h1>긴 목록 성능 검증</h1><div id="rows">' + Array.from({ length: 5000 }, (_, index) => '<article data-sentry-component="CardJob">' + anchor(String(1000 + index), '표본 공고 ' + index).replace('<a ', '<a data-sentry-component="Title" ') + '<button>지원</button></article>').join('') + '</div>');
 const report = { at: new Date().toISOString(), checks: [], metrics: {}, cpu: os.cpus()[0]?.model, scope: 'Synthetic site HTTP, actual Chromium MV3 and popup. Performance values include fixture page work.' };
 let context;
 const errors = [];
@@ -44,6 +48,7 @@ try {
     requests.push(url.origin + url.pathname);
     if (url.pathname === '/favicon.ico') return route.fulfill({ status: 204 });
     if (url.hostname === 'www.jobkorea.co.kr') {
+      if (url.pathname === '/Search/') return route.fulfill({ contentType: 'text/html; charset=utf-8', body: search });
       if (url.pathname === '/User/Large') return route.fulfill({ contentType: 'text/html; charset=utf-8', body: large });
       if (url.pathname.startsWith('/Recruit/GI_Read/')) return route.fulfill({ contentType: 'text/html; charset=utf-8', body: html('<h1>개발자 상세 공고</h1><button>지원</button>') });
       return route.fulfill({ contentType: 'text/html; charset=utf-8', body: fixture });
@@ -139,6 +144,27 @@ try {
     await writeCache(cache());
     await page.bringToFront(); await waitCount(page, 2);
     await popup.close();
+  });
+  await check('잡코리아 검색 카드에는 제목에만 하나씩 표시하고 같은 공고의 다른 카드도 유지한다', async () => {
+    const searchPage = await context.newPage(); await searchPage.goto(origin + '/Search/?stext=AI');
+    await waitCount(searchPage, 2);
+    for (const id of ['card-one', 'card-two']) {
+      const card = searchPage.locator('#' + id);
+      assert.equal(await card.locator(marker).count(), 1);
+      assert.equal(await card.locator('a[data-sentry-component="Title"] ' + marker).count(), 1);
+      assert.equal(await card.locator('[data-fixture-company] ' + marker).count(), 0);
+      assert.equal(await card.locator('[data-fixture-company]').textContent(), '예시 회사');
+    }
+    assert.equal(await searchPage.locator('#card-other ' + marker).count(), 0);
+    await searchPage.screenshot({ path: path.join(output, 'jobkorea-single-card.png') });
+    await searchPage.locator('#card-one').evaluate(card => card.insertAdjacentHTML('afterbegin',
+      '<a data-sentry-component="Title" href="/Recruit/GI_Read/102">동적으로 바뀐 공고</a>'));
+    await searchPage.waitForFunction(() => document.querySelector('#card-one [data-jobdiary-history]')?.getAttribute('aria-label').includes('지원취소'));
+    assert.equal(await searchPage.locator('#card-one ' + marker).count(), 1);
+    await searchPage.locator('#card-one > a').first().evaluate(anchor => anchor.remove());
+    await searchPage.waitForFunction(() => document.querySelector('#card-one [data-jobdiary-history]')?.getAttribute('aria-label').includes('지원 이력 있음'));
+    assert.equal(await searchPage.locator('#card-one ' + marker).count(), 1);
+    await searchPage.close(); await page.bringToFront(); await waitCount(page, 2);
   });
   await check('상세 URL와 제목에 지원 이력을 표시하고 사람인 목록도 연결한다', async () => {
     const detail = await context.newPage(); await detail.goto(origin + '/Recruit/GI_Read/101');

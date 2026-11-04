@@ -179,3 +179,56 @@ it('사람인 실제 파서의 결과는 배지 표시 전후 동일하다', asy
   expect(document.querySelector('[data-jobdiary-history]')).not.toBeNull();
   expect(parseSaramin()).toEqual(before);
 });
+
+it('잡코리아 검색 카드의 같은 공고 제목·회사명 링크에는 제목에만 한 번 표시한다', async () => {
+  document.body.innerHTML = '<div data-sentry-component="CardJob"><div>'
+    + '<a data-sentry-component="Title" href="https://www.jobkorea.co.kr/Recruit/GI_Read/101?listno=1">개발자 공고</a>'
+    + '</div><span>' + link('101', '예시 회사') + '</span></div>';
+  engine.update(cache([entry('101')])); await flush();
+  expect(document.querySelectorAll(marker)).toHaveLength(1);
+  expect(document.querySelector('a[data-sentry-component="Title"] ' + marker)).not.toBeNull();
+  expect(document.querySelectorAll('a')[1].querySelector(marker)).toBeNull();
+});
+it('같은 공고가 서로 다른 검색 카드에 나오면 각 제목에 하나씩 표시한다', async () => {
+  const card = '<div data-sentry-component="CardJob">' + link('101', '예시 회사')
+    + '<a data-sentry-component="Title" href="https://www.jobkorea.co.kr/Recruit/GI_Read/101">개발자 공고</a></div>';
+  document.body.innerHTML = card + card;
+  engine.update(cache([entry('101')])); await flush();
+  expect(document.querySelectorAll(marker)).toHaveLength(2);
+  for (const element of document.querySelectorAll('[data-sentry-component="CardJob"]')) {
+    expect(element.querySelectorAll(marker)).toHaveLength(1);
+    expect(element.querySelector('a[data-sentry-component="Title"] ' + marker)).not.toBeNull();
+  }
+});
+it('회사명 링크만 먼저 생긴 검색 카드는 제목이 추가된 뒤 제목에만 표시한다', async () => {
+  document.body.innerHTML = '<div data-sentry-component="CardJob">' + link('101', '예시 회사') + '</div>';
+  engine.update(cache([entry('101')])); await flush();
+  expect(document.querySelector(marker)).toBeNull();
+  document.querySelector('[data-sentry-component="CardJob"]')!.insertAdjacentHTML('beforeend',
+    '<a data-sentry-component="Title" href="https://www.jobkorea.co.kr/Recruit/GI_Read/101">개발자 공고</a>');
+  await flush();
+  expect(document.querySelectorAll(marker)).toHaveLength(1);
+  expect(document.querySelector('a[data-sentry-component="Title"] ' + marker)).not.toBeNull();
+});
+it('검색 카드 제목의 공고 ID가 다르면 회사명 링크의 과거 ID로 표시하지 않는다', async () => {
+  document.body.innerHTML = '<div data-sentry-component="CardJob">'
+    + '<a data-sentry-component="Title" href="https://www.jobkorea.co.kr/Recruit/GI_Read/999">다른 공고</a>'
+    + link('101', '예시 회사') + '</div>';
+  engine.update(cache([entry('101')])); await flush();
+  expect(document.querySelector(marker)).toBeNull();
+});
+
+it('검색 카드의 제목이 앞에 추가되거나 삭제되면 해당 카드의 표시 위치를 다시 고른다', async () => {
+  document.body.innerHTML = '<div data-sentry-component="CardJob">'
+    + '<a data-sentry-component="Title" href="https://www.jobkorea.co.kr/Recruit/GI_Read/101">기존 제목</a>'
+    + link('101', '예시 회사') + '</div>';
+  engine.update(cache([entry('101'), entry('102', 'canceled')])); await flush();
+  const card = document.querySelector('[data-sentry-component="CardJob"]')!;
+  card.insertAdjacentHTML('afterbegin', '<a data-sentry-component="Title" href="https://www.jobkorea.co.kr/Recruit/GI_Read/102">새 제목</a>');
+  await flush();
+  expect(card.querySelectorAll(marker)).toHaveLength(1);
+  expect(card.firstElementChild?.querySelector(marker)?.getAttribute('aria-label')).toContain('지원취소');
+  card.firstElementChild!.remove(); await flush();
+  expect(card.querySelectorAll(marker)).toHaveLength(1);
+  expect(card.firstElementChild?.querySelector(marker)?.getAttribute('aria-label')).toContain('지원 이력 있음');
+});
