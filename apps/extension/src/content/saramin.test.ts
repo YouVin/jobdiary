@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseSaramin } from './saramin';
+import { convertToApplication } from '../lib/adapter';
 
 function fixture(html: string): HTMLDivElement {
   const container = document.createElement('div');
@@ -8,6 +9,23 @@ function fixture(html: string): HTMLDivElement {
 }
 
 describe('parseSaramin', () => {
+  it('삭제 안내 툴팁이 포함된 행의 빈 date_end를 지원일·취소일로 보충하지 않는다', () => {
+    // 제공받은 지원현황의 구조만 재현한다. 원본 이름/지원 ID/추적 정보는 보관하지 않는다.
+    const root = fixture(`<div class="list_status">
+      <div class="row _apply_list" data-company_nm="예시 회사" data-rec_division="" data-recruittitle="개발자" data-recruitapply_idx="100">
+        <div class="col_date">2026.09.27 21:42</div>
+        <div class="col_summary"><div class="recruit"><a href="/zf_user/jobs/relay/view?rec_idx=100">
+          <div class="TipBox"><span>개발자</span><div class="TipCont"><div class="TipTxt">해당 공고는 삭제되었습니다</div></div></div>
+        </a></div><div class="status"><em class="txt_status">지원완료</em><span class="txt_sub">점핏 제공 공고</span></div></div>
+        <div class="col_btns"><div class="action"><span class="date_end"></span></div></div>
+      </div></div>`);
+    const [row] = parseSaramin(root);
+    expect(row.appliedAt).toBe('2026.09.27 21:42');
+    expect(row).not.toHaveProperty('deadlineAt');
+    expect(convertToApplication(row)).not.toHaveProperty('deadlineAt');
+    expect(convertToApplication(row).status).toBe('applied');
+  });
+
   it('일반 행을 파싱한다', () => {
     const root = fixture(`
       <div class="row _apply_list" data-company_nm="㈜플레이웍스" data-rec_division="프론트엔드 개발자" data-recruitapply_idx="1001">

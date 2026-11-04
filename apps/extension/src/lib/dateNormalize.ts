@@ -23,6 +23,27 @@ export function normalizeDate(raw: string): string {
   return `${year}-${month}-${day}T00:00:00.000Z`;
 }
 
+// 마감일은 웹앱이 상태 자동 분류에 사용하므로 문자열 전체를 검증한다.
+// 파서는 먼저 해당 지원 건의 마감일 요소임을 확인해야 한다. 본문 전체에서 날짜를
+// 찾거나 D-day/연도 없는 날짜/지원일로 마감일을 추정하지 않는다.
+const DEADLINE_PATTERN = /^(\d{4})([-./])\s*(\d{1,2})\2\s*(\d{1,2})\.?\s*(?:\([월화수목금토일]\)\s*)?(?:(\d{2}):(\d{2}))?$/;
+const KOREAN_DEADLINE_PATTERN = /^(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*(?:\([월화수목금토일]\)\s*)?(?:(\d{2}):(\d{2}))?$/;
+
+export function normalizeDeadline(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const value = raw.trim();
+  const numeric = value.match(DEADLINE_PATTERN);
+  const korean = numeric ? null : value.match(KOREAN_DEADLINE_PATTERN);
+  if (!numeric && !korean) return undefined;
+
+  const [year, month, day, hour, minute] = numeric
+    ? [numeric[1], numeric[3], numeric[4], numeric[5], numeric[6]]
+    : korean!.slice(1);
+  if (Number(year) < 1000 || !isValidCalendarDate(Number(year), Number(month), Number(day))) return undefined;
+  if (hour !== undefined && (Number(hour) > 23 || Number(minute) > 59)) return undefined;
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
 // appliedAtExact 전용: "YYYY.MM.DD HH:mm" 또는 "YYYY.MM.DD HH:mm:ss" → 시각 포함 ISO.
 // appliedAt(날짜만, wall-clock에 Z를 붙이는 단순화)과 달리 여기는 실제 시각을 담으므로
 // 그대로 Z를 붙이면 안 된다 — 사이트가 주는 시각은 KST(UTC+9) wall-clock인데 그걸 UTC라고

@@ -1,6 +1,9 @@
 console.log('[JobDiary] background 서비스워커 로드됨');
 import { EXTERNAL_COLLECT_MESSAGE_TYPE, type ExternalCollectRequest, type ExternalCollectResponse } from '../lib/messages';
 import { getAllApplications } from '../lib/storage';
+import { registerSaraminMobileHandler } from './saraminMobile';
+
+registerSaraminMobileHandler();
 
 // manifest.config.ts의 externally_connectable.matches와 반드시 같은 origin 목록을 유지한다.
 // externally_connectable이 1차로 걸러주지만(등록 안 된 origin은 애초에 메시지를 못 보냄),

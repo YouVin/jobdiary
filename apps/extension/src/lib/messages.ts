@@ -4,6 +4,15 @@ import type { Application } from '@/types/application';
 // 양쪽(popup, 각 사이트 content script)이 이 파일을 import해서 쓴다.
 export const COLLECT_MESSAGE_TYPE = 'COLLECT' as const;
 
+export const SARAMIN_MOBILE_MESSAGE_TYPE = 'SARAMIN_MOBILE_DEADLINES' as const;
+
+export type SaraminMobileResponse = { ok: true, html: string } | { ok: false };
+
+export interface DeadlineSummary {
+  matchedCount: number;
+  lookupFailed: boolean;
+}
+
 export interface CollectMessage {
   type: typeof COLLECT_MESSAGE_TYPE;
 }
@@ -18,6 +27,8 @@ export interface CollectResponse {
   // 페이지네이션이 정상 종료가 아니라 fetch 실패/렌더 타임아웃/상한 도달로 중간에 멈췄을 때 true.
   // applications/count는 그때까지 모은 값이지만, 사이트에 더 있을 수 있다는 뜻이라 유저에게 알려야 한다.
   truncated?: boolean;
+  // PC 지원내역과 별개인 선택적 마감일 조회 결과. 웹앱 응답에는 포함하지 않는다.
+  deadlines?: DeadlineSummary;
 }
 
 // 웹앱 → 익스텐션 pull 요청 프로토콜 (chrome.runtime.onMessageExternal, INTEGRATION.md §6).
