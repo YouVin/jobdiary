@@ -59,7 +59,9 @@ npm run dev:web
 ```
 
 Chrome 압축해제 확장은 apps/extension/dist를 사용하며 웹앱은 localhost:3000으로 연다.
-페이지 주입 범위가 바뀌었으므로 확장을 다시 로드한 뒤 기존 채용 사이트 탭도 새로고침한다.
+페이지 주입 범위가 바뀌면 익스텐션 개발 서버를 먼저 종료·재시작한다.
+그 뒤 확장을 다시 로드하고 기존 채용 사이트 탭도 새로고침한다.
+실제로 로드할 apps/extension/dist/manifest.json에 historyBadges 등록이 있는지 확인한다.
 실제 Store 배포본은 이번 개발 코드와 별도다.
 
 ## 구조와 데이터 경계
@@ -245,3 +247,41 @@ node apps/web/scripts/verify-history-browser.mjs
 사용자가 localhost 가져오기 완료를 알려온 뒤, 공고 주소의 DB 저장은 정상임을 확인했다.
 오래된 다른 웹앱 탭의 과거 snapshot 덮어쓰기를 두 탭 브라우저·단위 테스트로 재현해 수정했다.
 원인·최소 조회 비용·실계정과 표본 검증의 경계는 [동기화 후속 기록](APPLICATION_HISTORY_SYNC.md#후속-수정-오래된-웹앱-탭의-비교-캐시-덮어쓰기-119)을 따른다.
+
+## 실행 중인 개발 매니페스트 누락: 연결돼도 배지가 없는 경우 (#121)
+
+2026-11-04 사용자가 연결 공고 수는 표시되지만 입사지원 현황에 배지가 없다고 제보했다.
+실제로 사용 중인 apps/extension/dist/manifest.json을 읽자 수집 스크립트 3개만 등록돼 있었고
+historyBadges의 loader/module 파일은 있어도 content_scripts 등록이 빠져 있었다.
+Vite의 표시 모듈 HTTP 응답도 200이므로 파일 존재·모듈 응답만으로 주입을 증명할 수 없었다.
+
+포트 5173의 프로세스가 모노레포의 Vite임을 확인한 뒤 해당 서버만 재시작했다.
+직후 생성된 실제 개발 매니페스트에는 기존 수집 3개와 표시 1개의 등록 및 정확한 5개 호스트가 있었다.
+이것은 이 세션의 개발 환경 복구이며 모든 CRXJS 환경의 동일한 동작을 단정하는 것은 아니다.
+애플리케이션 파서·배지 로직·권한·주입 범위의 추가 변경은 없다.
+
+앞선 정적 빌드 검증은 실행 중인 개발 dist의 등록 상태를 확인하지 못했다.
+검증 스크립트에 manifest 사전 검사를 넣어 표시 등록이 없으면 브라우저 실행 전 실패시키고,
+DEV_SERVER_ORIGIN으로 실제 Vite 모듈 요청을 허용해 live 개발 확장을 검증하도록 보완했다.
+사이트별 추가 HTTP 요청 수 검사에서는 개발 모듈 요청만 분리한다.
+
+재시작 후 사용자가 로드한 것과 같은 apps/extension/dist를 실제 Chromium에 로드해
+배지 표시·동적 링크·팝업·설정·긴 목록을 포함한 기존 12개 시나리오가 통과했다.
+사이트 HTTP와 비교 이력은 표본이며 사용자 Chrome의 실제 계정 저장소를 읽거나 바꾸지 않았다.
+등록이 빠진 매니페스트 표본에서는 사전 검사가 실패하는 것도 확인했다.
+이번 변경은 검증 스크립트·문서여서 앱 단위 테스트와 앱 빌드는 다시 실행하지 않았다.
+
+```powershell
+# npm run dev:extension이 실행 중인 저장소 루트에서
+$env:EXTENSION_PATH = (Resolve-Path apps/extension/dist).Path
+$env:DEV_SERVER_ORIGIN = 'http://localhost:5173'
+node apps/extension/scripts/verify-history-badges-browser.mjs
+```
+
+BROWSER_EXECUTABLE·PLAYWRIGHT_MODULE이 필요한 환경은 기존 브라우저 검증 문서를 따른다.
+기본 실행은 종전의 별도 정적 개발 빌드를 사용하며 DEV_SERVER_ORIGIN은 live 검증 때만 지정한다.
+로컬 live-dev.log, dev-restart.*.log, missing-manifest.log와 browser-report.json에 근거를 보존한다.
+
+사용자 Chrome은 생성된 매니페스트를 다시 읽어야 하므로 chrome://extensions에서 취준일기를
+새로고침한 뒤 잡코리아 페이지도 새로고침한다. 이 복구에 지원내역 재수집·웹앱 재가져오기는 필요하지 않다.
+사용자 실계정 화면의 확인 결과는 표본 Chrome 통과와 별도로 기록한다.
