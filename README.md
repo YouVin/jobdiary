@@ -51,6 +51,7 @@ npm run build:extension
 
 - [작업 문서 인덱스](docs/README.md)
 - [모노레포 이전 기록과 배포 경로](docs/MONOREPO_MIGRATION.md)
+- [GitHub·호스팅·이력서 링크 전환 체크리스트](docs/MONOREPO_HANDOFF.md)
 - [단계별 진행 계획](docs/IMPLEMENTATION_ROADMAP.md)
 - [웹앱 안내](apps/web/README.md)
 - [익스텐션 안내](apps/extension/README.md)

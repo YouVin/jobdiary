@@ -6,6 +6,7 @@
 설치 명령은 루트의 `npm ci`를 사용한다. `supabase/`와 이 문서 폴더는 저장소 루트에 유지한다.
 
 - [이전 기록·실행·배포 경로](MONOREPO_MIGRATION.md)
+- [전환 정리와 외부 링크 체크리스트](MONOREPO_HANDOFF.md)
 - [단계별 진행 계획](IMPLEMENTATION_ROADMAP.md)
 - [익스텐션 문서](../apps/extension/docs/PLANNING.md)
 

@@ -48,4 +48,4 @@ permalink: /
 ## 개인정보 및 문의
 
 - [개인정보처리방침](./privacy/)
-- [GitHub 저장소](https://github.com/YouVin/jobdiary-extension)
+- [GitHub 저장소](https://github.com/YouVin/jobdiary)
