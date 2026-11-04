@@ -4,6 +4,7 @@
 url: https://youvin.github.io
 baseurl: /jobdiary-extension
 exclude:
+  - DEADLINES.md
   - RELEASE_1.0.3.md
   - ARCHITECTURE.md
   - INTEGRATION.md

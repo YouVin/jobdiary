@@ -7,7 +7,7 @@
 ```
 manifest.json      익스텐션 설정 (권한, 진입점)
 content script     지원현황 페이지에 주입 → DOM 파싱 (사이트별)
-service worker     백그라운드 로직 (저장, 메시지 중계)
+service worker     웹앱 요청 응답 및 사람인 모바일 보충 요청
 popup              아이콘 클릭 시 뜨는 UI (React)
 ```
 
@@ -18,14 +18,22 @@ popup              아이콘 클릭 시 뜨는 UI (React)
    content script (사이트별 파서)
       ↓ 지원 목록 파싱 (SELECTORS.md 기준)
    ScrapedApplication[] 생성
-      ↓ chrome.runtime.sendMessage
-   service worker
+      ↓ 사람인만 background 고정 모바일 URL 요청 → 지원 ID/공고 ID 일치 날짜 보충
+      ↓ content/collectHandler.ts → lib/adapter.ts에서 Application으로 변환
       ↓ chrome.storage.local에 사이트별 슬롯으로 누적 저장 (saramin/jobkorea/wanted,
       ↓ 같은 사이트 재수집 시 해당 슬롯만 덮어씀)
-   [popup] 전체 복사(TSV+HTML) | 웹앱 전달
+   [popup] 건수 표시·전체 복사(TSV+HTML)·웹앱 열기
+   [웹앱] JOBDIARY_COLLECT 요청 → service worker → 저장 데이터 응답
 ```
 
-> 상태 매핑 + 날짜 정규화(Application 변환)를 저장 시점에 할지 전달 시점에 할지는 미확정이다. 변환은 한 곳에서만 수행한다는 원칙만 확정돼 있고, 정확한 위치는 실제 연동 구현(E-5)에서 정한다. 익스텐션은 웹앱 함수를 직접 호출할 수 없어 메시지 전달 경로를 거치며, 최종 중복 판별 + 저장은 웹앱의 `addApplicationsFromExtension`이 담당한다 (상세: [INTEGRATION.md](./INTEGRATION.md)).
+> 상태 매핑과 날짜 정규화는 content script의 공통 수집 핸들러가 저장 직전에
+> `convertToApplication`으로 한 번 수행한다. 선택적 `deadlineAt`은 날짜 문자열로
+> 정규화한다. 사람인은 모바일 한 페이지의 명시 날짜를 일치하는 PC 행에 보충한다.
+> 잡코리아는 연결된 공개 공고의 표시 날짜/구조화 날짜와 공고 ID를 교차 검증해 보충한다.
+> 원티드는 마감일 출처가 없어 생략한다.
+> 모바일 요청의 실제 로그인 환경 검증은 아직 남아 있다
+> ([DEADLINES.md](./DEADLINES.md)). 최종 중복 판별과 웹앱 저장은
+> 웹앱의 `addApplicationsFromExtension`이 담당한다([INTEGRATION.md](./INTEGRATION.md)).
 >
 > 전체 복사 출구는 웹앱을 거치지 않으므로 `addApplicationsFromExtension`도, 중복 판별도 적용되지 않는다 — 익스텐션은 두 출구 모두에서 사이트별 슬롯 덮어쓰기 이상의 중복 판별 로직을 갖지 않는다 (상세: [PLANNING.md](./PLANNING.md#7-데이터-정합성--저장-전략)).
 
@@ -33,10 +41,10 @@ popup              아이콘 클릭 시 뜨는 UI (React)
 
 ```
 jobdiary-extension/
+├── manifest.config.ts           # manifest 정의 (CRXJS)
 ├── src/
-│   ├── manifest.ts              # manifest 정의 (CRXJS)
-│   │
 │   ├── content/                 # content scripts (사이트별)
+│   │   ├── collectHandler.ts    # 파서 결과 변환·저장·응답 공통 핸들러
 │   │   ├── saramin.ts
 │   │   ├── jobkorea.ts
 │   │   ├── wanted.ts
@@ -44,7 +52,6 @@ jobdiary-extension/
 │   │   │   ├── saramin.ts
 │   │   │   ├── jobkorea.ts
 │   │   │   └── wanted.ts
-│   │   └── injectButton.ts      # "가져오기" 버튼 삽입 공통
 │   │
 │   ├── background/
 │   │   └── index.ts             # service worker
@@ -71,13 +78,17 @@ jobdiary-extension/
 
 | 요소 | 역할 |
 |------|------|
-| content/{site}.ts | 해당 사이트에서 파싱 실행, 버튼 삽입 |
+| content/{site}.ts | 해당 사이트 지원현황 파싱·페이지 순회 및 공통 수집 핸들러 등록 |
+| content/collectHandler.ts | 파서 결과를 어댑터로 변환한 뒤 직접 저장하고 팝업에 응답 |
 | content/selectors/ | 사이트별 셀렉터 상수 (깨지면 여기만 수정) |
-| background/index.ts | 메시지 수신, chrome.storage 저장·전달 (Application 변환을 이 단계에서 할지는 미확정 — INTEGRATION.md 참고). 중복 판별은 하지 않음 — 웹앱 전담 |
+| background/index.ts | 웹앱 pull 요청의 origin·타입 검증 후 저장된 데이터 응답 |
+| background/saraminMobile.ts | 사람인 PC 최상위 탭 요청만 검증하고 고정 모바일 지원현황 한 페이지 조회 |
+| content/saraminDeadlines.ts | 모바일 HTML의 명시된 마감일 추출, 지원 ID+공고 ID로 PC 결과에 보충. 실패 시 원본 유지 |
+| content/jobkoreaDeadlines.ts | 연결된 공개 공고의 메타 날짜·JobPosting 날짜·공고 ID 교차 검증, 제한된 추가 조회. 실패 시 원본 유지 |
 | popup/App.tsx | 수집·복사·초기화·웹앱 열기, 로딩/오류 안내 및 접근성 상태 메시지 |
 | popup/useSiteCounts.ts | 저장 현황 조회와 local 저장소 변경 구독. 늦은 응답 무시 및 팝업 종료 시 구독 해제 |
 | lib/statusMapping.ts | "지원완료" → applied, "취소" 포함 → canceled 등 |
-| lib/dateNormalize.ts | 각 사이트 날짜 → 자정 기준 ISO (시분 버림) |
+| lib/dateNormalize.ts | 지원일은 자정 ISO, 정확한 시각은 KST→UTC, 선택적 마감일은 유효성 검사 후 YYYY-MM-DD |
 | lib/storage.ts | chrome.storage.local 사이트별 슬롯(saramin/jobkorea/wanted) 누적 저장·조회. 재수집 시 해당 슬롯만 덮어씀, "초기화" 버튼 호출 시에만 전체 비움 |
 
 ## 5. MV3 주의사항
@@ -113,7 +124,10 @@ jobdiary-extension/
 }
 ```
 
-> `permissions`의 `"storage"`는 **chrome.storage.local 접근(사이트별 슬롯 누적 저장)에만** 필요한 권한이다. 전체 복사(`navigator.clipboard.write`/`writeText`)는 별도 manifest 권한이 필요 없다 — 사용자 클릭(user gesture) 맥락의 확장 팝업에서 호출되는 표준 Clipboard API라 그 자체로 동작한다(실제로 복사 기능은 이미 권한 추가 없이 동작 중). 실제 `manifest.config.ts`는 아직 누적 저장 기능을 구현하기 전이라 `permissions`가 빈 배열이며, 누적 저장 구현 시 `"storage"`만 추가할 예정이다.
+> 위 JSON은 역할 설명용 축약 예시다. 실제 권한·경로 제한은 `manifest.config.ts`와
+> `src/lib/platformDetect.ts`가 기준이다. 현재 `storage` 권한을 사용하며 전체 복사는
+> 사용자 클릭 맥락의 표준 Clipboard API를 사용한다. 마감일 계약 준비로 권한이나
+> content script 주입 범위를 추가하지 않는다.
 
 ## 7. 개발 규칙 (웹앱과 동일)
 

@@ -1,5 +1,5 @@
 import type { Application, ScrapedApplication } from '@/types/application';
-import { normalizeDate, normalizeDateExact } from './dateNormalize';
+import { normalizeDate, normalizeDateExact, normalizeDeadline } from './dateNormalize';
 import { mapStatus } from './statusMapping';
 
 // docs/INTEGRATION.md의 어댑터. 변환은 이 함수(익스텐션)에서만 일어난다.
@@ -7,12 +7,14 @@ import { mapStatus } from './statusMapping';
 export function convertToApplication(
   scraped: ScrapedApplication,
 ): Omit<Application, 'id' | 'updatedAt'> {
+  const deadlineAt = normalizeDeadline(scraped.deadlineAt);
   return {
     company: scraped.company,
     position: scraped.position,
     platform: scraped.platform,
     status: mapStatus(scraped.status),
     appliedAt: normalizeDate(scraped.appliedAt),
+    ...(deadlineAt ? { deadlineAt } : {}),
     externalId: scraped.externalId,
     viewed: scraped.viewed,
     appliedAtExact: normalizeDateExact(scraped.appliedAtExact),

@@ -1,3 +1,9 @@
+> **개발 위치 이전 안내**
+>
+> 웹앱과 익스텐션 개발은 [취준일기 모노레포](https://github.com/YouVin/jobdiary)의
+> `apps/web`, `apps/extension`에서 이어갑니다. 이 저장소는 기존 이슈·릴리스와
+> 공개 안내·개인정보처리방침 주소를 유지합니다. 아래 단독 저장소 개발 안내는 이전 구조의 기록입니다.
+
 <div align="center">
 
 <img src="./public/logo-128.png" alt="취준일기 로고" width="72" height="72">

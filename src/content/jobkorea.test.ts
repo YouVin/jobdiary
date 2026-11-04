@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseJobkorea } from './jobkorea';
+import { convertToApplication } from '../lib/adapter';
 
 function fixture(html: string): HTMLDivElement {
   const container = document.createElement('div');
@@ -8,6 +9,55 @@ function fixture(html: string): HTMLDivElement {
 }
 
 describe('parseJobkorea', () => {
+  it('지원 행의 extra만 마감 원문으로 읽고 추천공고 날짜를 섞지 않는다', () => {
+    // 사용자 제공 실물 DOM에서 회사·ID·지원 데이터 등을 예시값으로 치환하고
+    // 수집과 무관한 이력서 링크/메시지/추적 속성은 제외했다.
+    const root = fixture(`
+      <table><tbody>
+        <tr>
+          <td rowspan="2"><div class="apply-status"><div class="inner">
+            <div class="item status">지원완료</div><div class="item date">2026.10.21</div>
+          </div></div></td>
+          <td><div class="apply-board"><div class="inner">
+            <div class="company"><a>지원 회사</a></div>
+            <div class="description"><a href="/Recruit/GI_Read/100">개발자 (~10/31)</a></div>
+          </div></div></td>
+          <td><div class="apply-progress"><div class="inner">
+            <div class="status">진행중</div><div class="extra">(~10/31)</div>
+          </div></div></td>
+          <td><div class="reading"><div class="inner">열람<div class="date">2026.10.22</div></div></div></td>
+          <td><button data-memname="지원 회사" data-gititle="개발자" data-applydate="20261021120000" data-idx="100">지원취소</button></td>
+        </tr>
+        <tr><td colspan="4"><div class="similar"><ul><li>
+          <div class="company"><a>추천 회사</a></div>
+          <div class="description"><a>추천 공고</a></div>
+          <div class="deadline">~11.30(월)</div>
+        </li></ul></div></td></tr>
+      </tbody></table>
+    `);
+    const rows = parseJobkorea(root);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].deadlineAt).toBe('(~10/31)');
+    expect(rows[0].position).toBe('개발자');
+    // 지원일에는 연도가 있어도 마감일의 연도라고 단정할 수 없다.
+    expect(convertToApplication(rows[0])).not.toHaveProperty('deadlineAt');
+    expect(convertToApplication(rows[0]).status).toBe('applied');
+  });
+
+  it.each(['(상시)', '(~11/22)', ''])('구형 행의 마감 표시 %s에서도 날짜를 추정하지 않는다', (deadline) => {
+    const root = fixture(`<table><tbody><tr>
+      <td><div class="company"><a>예시 회사</a></div>
+      <div class="description"><a>예시 공고 (~12/31)</a></div></td>
+      <td class="apply-status"><span class="item status">지원완료</span><span class="date">2026.10.01</span></td>
+      <td class="apply-progress"><div class="extra">${deadline}</div></td>
+      <td><button class="devBtnOldDel" data-idx="200">지원취소</button></td>
+    </tr></tbody></table>`);
+    const [row] = parseJobkorea(root);
+    if (deadline) expect(row.deadlineAt).toBe(deadline);
+    else expect(row).not.toHaveProperty('deadlineAt');
+    expect(convertToApplication(row)).not.toHaveProperty('deadlineAt');
+  });
+
   it('최신 형식(버튼 data 속성)을 파싱하고 applydate를 변환한다', () => {
     const root = fixture(`
       <table><tbody>

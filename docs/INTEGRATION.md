@@ -1,184 +1,125 @@
-# 🔗 웹앱 연동 (Integration)
+# 웹앱 연동 (Integration)
 
-> **이 문서는 "보내는 쪽(익스텐션)" 변환 로직을 정의한다.** "받는 쪽" 계약(`Application` 타입, `addApplicationsFromExtension` 시그니처, 최종 중복 판정 로직)의 진실은 웹앱 레포의 `docs/INTEGRATION.md`이며, 이 문서 내용이 웹앱 문서와 어긋나면 웹앱 문서를 따른다.
+> 보내는 쪽 구현과 메시지 계약을 설명한다. 받는 쪽의 최종 기준은
+> [웹앱 docs/INTEGRATION.md](https://github.com/YouVin/jobdiary/blob/dev/docs/INTEGRATION.md)다.
+> 과거에 검토한 postMessage/CustomEvent 방식은 현재 사용하지 않는다.
 
-익스텐션이 수집한 데이터를 취준일기 웹앱으로 전달하기 위해 필요한 변환(어댑터) 로직과, 구조상 확정된 전달 제약, 전달 방식 후보를 정리한다. 누적 저장된 데이터가 클립보드 복사와 웹앱 전달, 두 출구로 나가는 것도 함께 정리한다.
+## 데이터 흐름
 
----
+1. 팝업이 현재 지원현황 탭의 content script에 `COLLECT`를 보낸다.
+2. 사이트 파서가 `ScrapedApplication[]`을 만든다.
+3. 사람인은 PC 수집 후 background에 모바일 지원현황 한 페이지를 요청해 두 ID가
+   일치하는 명시 마감일을 보충한다. 조회 실패 시 PC 결과를 유지한다.
+   잡코리아는 수집된 지원의 공개 공고 상세에서 메타 날짜와 구조화 날짜가 일치하는 경우만 보충한다.
+4. `registerCollectHandler`가 `convertToApplication`으로 변환한 뒤
+   `chrome.storage.local`의 사이트별 슬롯에 직접 저장한다.
+5. 팝업은 저장된 건수와 선택적 마감일 조회 결과를 표시하고 전체 복사 또는 웹앱 열기를 제공한다.
+6. 웹앱이 `JOBDIARY_COLLECT`를 보내면 service worker가 저장된 결과로 응답한다.
+   이 요청은 사이트를 새로 수집하지 않는다.
+7. 웹앱이 응답을 검증하고 자기 로그인 세션으로 중복 판별·저장을 수행한다.
 
-## status 매핑
+변환은 익스텐션의 어댑터에서 한 번만 수행한다. 팝업이 닫혀도 content script의
+수집·저장은 계속될 수 있다. 익스텐션이 웹앱 함수나 DB를 직접 호출하지 않는다.
 
-각 사이트의 상태 원문 → 웹앱 `Status` 타입으로 변환한다. 매핑은 익스텐션의 `mapStatus()`가 수행한다.
+## 전달 형식
 
-| 원문 (사이트)                                | status         |
-| --------------------------------------------- | -------------- |
-| 사람인 "지원완료"                             | `applied`      |
-| 잡코리아 "지원완료"                           | `applied`      |
-| 원티드 "접수"                                 | `applied`      |
-| "취소" 포함 텍스트 (사람인 "지원취소완료", 잡코리아 "지원취소") | `canceled` |
-| "불합격", "탈락" 포함 텍스트                  | `rejected`     |
-| "최종합격" 포함 텍스트                        | `offer`        |
-| "서류합격", "서류통과" 포함 텍스트            | `screening`    |
-| "면접완료" 포함 텍스트                        | `interviewed`  |
-| "면접" 포함 텍스트                            | `interview`    |
-| 그 외 매핑 실패                               | `applied` (기본값) |
+타입의 기준은 `src/types/application.ts`, 메시지 형식은 `src/lib/messages.ts`다.
 
-- 모든 판정은 **부분 일치**(`.includes`)다. `mapStatus`의 체크 순서는 더 구체적인 문자열을 먼저 검사하도록 고정돼 있다: 취소 → 불합격/탈락 → 최종합격 → 서류합격/서류통과 → 면접완료 → 면접 → (기본값) applied. 예: "최종합격"은 "서류합격"보다 먼저, "면접완료"는 "면접"보다 먼저 검사해야 오분류를 막는다.
-- 3개 사이트 모두 실제 DOM 검증 결과 이 상태 문자열들을 원문으로 제공하는 사이트도 있고 아닌 사이트도 있다 — 원문에 없으면 자연히 매핑되지 않고 유저가 웹앱에서 직접 상태를 변경해 관리한다.
-
----
-
-## 날짜 변환 (normalizeDate)
-
-각 사이트 원본 날짜 텍스트에서 **연·월·일만** 추출해 **자정(00:00:00.000) 기준 UTC ISO 문자열**로 변환한다. 시·분·초는 버린다.
-
-```text
-"2026.06.09 20:27" (사람인)        → "2026-06-09T00:00:00.000Z"
-"20260601235538" (잡코리아, data)  → "2026-06-01T00:00:00.000Z"
-"2026. 7. 11" (원티드)             → "2026-07-11T00:00:00.000Z"
-```
-
-사이트마다 시분 표기 유무가 들쭉날쭉하고 timezone도 명확하지 않으므로, 애초에 날짜 단위로만 다뤄 timezone 문제를 원천 제거한다. 3사이트 모두 동일 규칙을 적용한다.
-
----
-
-## 중복 방지 전략
-
-- **판별 키: `platform` + `externalId` 조합.** `externalId`는 사이트별로 독립 발급되는 값이라, `platform`이 다르면 값이 같아도 다른 지원 건으로 취급한다.
-  - 사람인: `recruitapply_idx`
-  - 잡코리아: `data-idx`
-- **원티드는 `externalId`가 없음** → `platform` + `company` + `position` + `appliedAt`(날짜, 시분 버린 값) 조합으로 유사 판별한다.
-- 판별과 저장은 **웹앱의 `addApplicationsFromExtension` 내부**에서 처리한다. 익스텐션은 중복 판별 로직을 갖지 않는다.
-- 이 판별은 **웹앱 전달 경로에만 적용**된다. 클립보드 복사 경로와 익스텐션의 로컬 누적 저장(사이트별 슬롯 덮어쓰기)에는 적용되지 않는다 — 아래 "두 출구" 참고.
-
----
-
-## 두 출구: 클립보드 복사 vs 웹앱 전달
-
-익스텐션은 chrome.storage.local에 사이트별 슬롯(`{ saramin, jobkorea, wanted }`)으로 수집 결과를 누적 저장한다(같은 사이트 재수집 시 그 슬롯만 덮어씀, 상세: docs/PLANNING.md "데이터 정합성 / 저장 전략"). 이 누적 데이터가 밖으로 나가는 경로는 두 가지다.
-
-1. **클립보드 복사(E-6, 확정)**: "전체 복사" 버튼이 누적된 3사이트 슬롯을 합쳐 TSV + HTML로 클립보드에 쓴다. 이 경로는 웹앱을 거치지 않는다 — `addApplicationsFromExtension`도 호출되지 않고, 웹앱의 중복 판별도 적용되지 않는다. 유저가 직접 어딘가(노션/시트 등)에 붙여넣는 대상이라 판별이 필요 없다.
-2. **웹앱 전달(E-5, 미확정)**: 아래 "전달 제약"·"전달 방식" 참고. `addApplicationsFromExtension`을 거치는 경로는 이것뿐이고, 중복 판별도 이 경로에서만 일어난다.
-
-두 출구 모두에서 **익스텐션은 중복 판별 로직을 갖지 않는다.** 익스텐션이 하는 일은 사이트별 슬롯 덮어쓰기로 최신 상태를 유지하는 것뿐이며, 진짜 중복 지원 판별은 오직 웹앱 전달 경로에서 `addApplicationsFromExtension`이 수행한다.
-
----
-
-## 데이터 변환 (ScrapedApplication → Application)
-
-역할 분리 (확정 — E-5에서도 바뀌지 않는다):
-
-- **익스텐션**: `ScrapedApplication[]`을 `Application` 형식으로 변환한다(어댑터). **변환은 오직 익스텐션에서만, 한 곳에서만 일어나며 이중 변환은 없다.** `id`, `updatedAt`은 웹앱이 채우므로 익스텐션은 만들지 않는다.
-- **웹앱**: 이미 변환이 끝난 `Application[]`을 `addApplicationsFromExtension(apps)`로 받아 중복 판별과 저장만 수행한다. **웹앱은 변환하지 않는다.**
-
-즉 웹앱 경계를 넘어가는 payload는 항상 변환이 끝난 `Application` 형식이다. 이 경계 규칙과 변환 주체는 미확정이 아니다 — E-5에서 정하는 것은 저장 표현과 전송 경로의 세부일 뿐이다 (아래 "전달 방식" 참고).
+- 필수: `company`, `position`, `platform`, `status`, `appliedAt`
+- 선택: `externalId`, `viewed`, `appliedAtExact`, `url`, `deadlineAt`
+- `id`, `updatedAt`, 상태 변경 출처 `statusSource`는 웹앱이 관리한다.
+- `viewed`와 `appliedAtExact`는 익스텐션에서 보관·응답하지만 현재 웹앱
+  수신 계약에서는 저장하지 않는다. 마감일 자동 분류에 열람 여부를 사용하지 않는다.
 
 ```typescript
-function convertToApplication(
-  scraped: ScrapedApplication
-): Omit<Application, "id" | "updatedAt"> {
-  return {
-    company: scraped.company,
-    position: scraped.position,
-    platform: scraped.platform, // 'saramin' | 'wanted' | 'jobkorea'
-    status: mapStatus(scraped.status), // 원문 → Status (canceled 포함)
-    appliedAt: normalizeDate(scraped.appliedAt), // → 자정 기준 ISO
-    externalId: scraped.externalId, // 원티드는 undefined
-    viewed: scraped.viewed, // 열람 여부. 원티드는 undefined
-    appliedAtExact: normalizeDateExact(scraped.appliedAtExact), // 시각 포함 ISO. 시각 정보 없으면 undefined
-    url: scraped.url, // 공고 절대 URL. 원티드는 undefined
-  };
-}
+// 웹앱 → service worker
+{ type: 'JOBDIARY_COLLECT' }
+
+// service worker → 웹앱
+{ ok: true, applications: Array<Omit<Application, 'id' | 'updatedAt'>> }
+// 실패
+{ ok: false, error: string }
 ```
 
-`appliedAtExact`는 `appliedAt`(날짜만, wall-clock에 그대로 `Z`를 붙이는 단순화)과 달리 실제 시각을 담으므로 그대로 `Z`를 붙이지 않는다. 3사이트 모두 한국 사이트라 사이트가 주는 시각을 KST(UTC+9) wall-clock으로 가정하고, 실제 UTC로 변환한 뒤 `Z`를 붙인다(`normalizeDateExact`). 단순히 Z만 붙이면 실제보다 9시간 어긋난 시각으로 읽히므로 이 변환은 필수다.
+실제 응답은 배열 자체가 아니라 `{ ok, applications?, error? }` 객체다.
+기존 클라이언트와 메시지 이름·외부 응답 구조는 유지한다.
 
-> `apps`가 웹앱에 닿기까지의 구체적 경로(직접 호출이 불가능한 이유 포함)는 아래 "전달 제약"과 "전달 방식" 참고.
+## 날짜 변환
 
-> `Application` 타입 정의와 `addApplicationsFromExtension` 시그니처의 최종 진실은 웹앱 레포 `docs/INTEGRATION.md`다.
+| 필드 | 원본 예시 | 전달 값 |
+| --- | --- | --- |
+| 지원일 `appliedAt` | `2026.06.09 20:27` | `2026-06-09T00:00:00.000Z` |
+| 정확한 지원 시각 `appliedAtExact` | `2026.06.09 20:27` | `2026-06-09T11:27:00.000Z` |
+| 선택적 마감일 `deadlineAt` | `2026.10.28(수) 23:59` | `2026-10-28` |
 
----
+지원일은 날짜만 남겨 자정 UTC ISO로 표현한다. 정확한 시각은 KST로 해석해 실제
+UTC 시각으로 변환한다. 마감일은 시간대 변환 없이 날짜 문자열만 전달한다.
 
-## 전달 제약 (확정)
+### 마감일 수집 상태 — #63 / 상위 #60
 
-아래는 미확정이 아니라 실행 컨텍스트 구조상 확정된 제약이다.
+`ScrapedApplication.deadlineAt`은 파서가 마감일 요소에서 분리한 원문,
+`Application.deadlineAt`은 `normalizeDeadline`이 검증한 `YYYY-MM-DD`다.
+사람인은 모바일 `/apply/state`의 제목 끝 `(~YYYY-MM-DD)`를 읽어 PC 행에 보충한다.
+지원 ID와 공고 ID가 모두 일치해야 하며, 첫 응답의 확인 가능한 항목만 처리한다.
+내부 메시지 `SARAMIN_MOBILE_DEADLINES`는 고정 URL 조회용이며 외부 웹앱에 공개하지 않는다.
+모바일 조회 실패는 기존 PC 수집을 실패 처리하지 않고 선택적 마감일만 생략한다.
+팝업 수집 응답의 선택적 `deadlines`(matchedCount/lookupFailed)는 표시용이며
+웹앱으로 보내는 외부 응답에는 포함하지 않는다.
+잡코리아는 실물 DOM에서 확인한 `.apply-progress .extra` 원문을 읽는다.
+원문 `(~10/31)`로 연도를 추정하지 않고 해당 공고 ID의 공개 상세를 조회한다.
+메타 description의 명시된 날짜와 JobPosting.validThrough 날짜, 두 공고 식별자가
+모두 일치할 때만 보충한다. 상시는 구조화 날짜가 있더라도 생략한다. 요청은 쿠키 없이
+최대 10개 공고·동시 2건·각 4초이며 실패 시 지원내역을 유지한다.
+원티드는 마감일 요소가 없어 채우지 않는다. 실제 PC Chrome 로그인으로 모바일
+HTML을 받을 수 있는지는 수동 확인이 필요하다. 상세 기준은 [DEADLINES.md](./DEADLINES.md) 참조.
 
-- content script는 웹앱 페이지에 주입되더라도 **격리된 별도 JS 실행 컨텍스트(isolated world)**에서 돈다. 웹앱 페이지의 main world에 정의된 `addApplicationsFromExtension` 같은 함수를 **직접 호출할 수 없다.**
-- 따라서 전달은 반드시 **메시지 전달 경로**를 거친다: 익스텐션이 `window.postMessage` 또는 DOM 커스텀 이벤트(`CustomEvent`)로 변환된 데이터를 웹앱 페이지에 보내고, 웹앱이 그 message/event 리스너 **안에서** `addApplicationsFromExtension`을 호출한다.
-- 이 문서에서 "`addApplicationsFromExtension` 호출"이라고 쓴 부분은 전부 이 경로를 거친 뒤 **웹앱 쪽 리스너가** 호출한다는 뜻이며, 익스텐션이 직접 호출한다는 뜻이 아니다.
-- 메시지로 건너가는 데이터는 **익스텐션이 이미 변환을 마친 `Application` 형식**이다 (변환 주체: 위 "데이터 변환" 참고). 웹앱 쪽 리스너는 변환하지 않고 `addApplicationsFromExtension`으로 판별·저장만 한다.
+- 연·월·일이 명시되고 달력상 유효한 날짜만 허용한다.
+- 숫자 날짜(`YYYY-MM-DD`, 점/슬래시 구분), 한국어 연월일, 선택적 요일 및
+  유효한 `HH:mm`을 검증한다. 시간은 최종 값에서 제외한다.
+- 상시채용, 채용 시 마감, D-day, 연도 없는 날짜, 기간 전체, 무효 날짜는
+  필드 자체를 생략한다. 빈 문자열이나 임의의 오늘 날짜로 대체하지 않는다.
+- 지원일·취소일·열람일로 마감일을 추정하지 않는다.
+- 익스텐션은 마감일을 근거로 `status`를 바꾸지 않는다.
+- 웹앱은 한국 날짜 기준 마감 다음 날의 지원완료 중 사용자 수동 상태 변경 이력이
+  없는 건만 자동 분류한다. 이는 기업의 공식 불합격 통보가 아니다.
+- 기존 저장 형식에 선택 필드를 추가하므로 슬롯 키 변경이나 데이터 초기화가 필요 없다.
+  마감일 없는 이전 데이터는 기존 방식으로 읽고 응답한다.
 
----
+## 상태 매핑
 
-## 수신부 검증 계약 (필수)
+`src/lib/statusMapping.ts`의 부분 일치 판정 순서를 따른다. 구체적인 상태가 먼저다.
 
-`window.postMessage`/`CustomEvent`는 같은 페이지에 떠 있는 **다른 스크립트**(다른 확장 프로그램, 삽입된 서드파티 스크립트 등)도 똑같이 보낼 수 있는 경로다. 즉 "메시지가 왔다"는 사실만으로는 그게 우리 익스텐션이 보낸 것인지 보장되지 않는다. 그래서 웹앱이 `addApplicationsFromExtension`을 호출하기 **전에** 아래 네 가지를 반드시 검증해야 한다. 이는 전달 방식(A: `postMessage` vs B: `CustomEvent` vs 그 외) 선택과 무관하게 **필수**다:
+| 순서 | 원문 포함 조건 | 결과 |
+| --- | --- | --- |
+| 1 | 취소 | canceled |
+| 2 | 불합격 / 탈락 | rejected |
+| 3 | 최종합격 | offer |
+| 4 | 서류합격 / 서류통과 | screening |
+| 5 | 면접완료 | interviewed |
+| 6 | 면접 | interview |
+| 7 | 그 외 | applied |
 
-1. **origin/source 확인**: `postMessage`라면 `event.origin`이 신뢰할 수 있는 값(웹앱 자기 자신의 origin)인지 확인한다. `CustomEvent`라면 신뢰할 수 있는 컨텍스트에서 dispatch됐는지 확인할 별도 수단을 둔다.
-2. **메시지 타입 확인**: 익스텐션과 미리 약속한 식별자(예: `type: 'JOBDIARY_COLLECTED'`)가 정확히 일치하는지 확인한다. 다른 목적의 메시지를 실수로 처리하지 않도록 한다.
-3. **payload 스키마 검증**: 수신한 값이 실제로 `Application[]` 구조(company/position/platform/status/appliedAt 등 필드 타입과 값 범위)를 만족하는지 검증한다. 구조가 맞지 않으면 폐기하고 `addApplicationsFromExtension`을 호출하지 않는다.
-4. **사용자 동작(user gesture) 기반 전달인지 확인**: 사용자가 실제로 "웹앱 열기"/수집 버튼 등을 눌러 시작된 흐름에서 온 메시지인지 확인한다 — 예상치 못한 시점에 자동으로 날아온 메시지는 처리하지 않는다.
+## 저장·재수집·복사
 
-> ⚠️ 이 검증 없이 `addApplicationsFromExtension`을 호출하면, 같은 페이지의 다른 스크립트가 임의의 지원내역을 만들어 웹앱 데이터에 주입할 수 있다. 전달 방식 자체는 여전히 E-5에서 확정하지만, 어떤 방식을 고르든 위 네 가지 검증은 필수 준수 사항이다.
+- 저장 키 `jobdiary:collected` 아래 `{ saramin, jobkorea, wanted }` 슬롯을 둔다.
+- 같은 사이트 재수집 시 해당 슬롯을 교체한다. 복사 후에도 데이터는 유지한다.
+- 전체 복사는 기존 여섯 열(회사·포지션·상태·지원일·플랫폼·열람)의 TSV/HTML 표다.
+  이번 계약 준비에서는 마감일 열을 추가하지 않는다.
+- 웹앱의 기존 지원은 재수집해도 업데이트하지 않는 수신 계약을 따른다.
+  향후 익스텐션이 마감일을 수집하더라도 새로 가져오는 지원부터 제공되며,
+  이미 웹앱에 저장된 지원의 마감일을 자동 보충하지 않는다.
+- 실질적인 중복 판별·수동 상태 보존은 웹앱 `addApplicationsFromExtension`의 책임이다.
+  웹앱은 플랫폼+외부 ID를 우선하고, 없으면 정규화한 플랫폼+회사명+공고명을 사용한다.
+  익스텐션에 별도의 웹앱 중복 판별을 추가하지 않는다.
 
-이 검증의 최종 구현은 웹앱 쪽 책임이며, 웹앱 레포 `docs/INTEGRATION.md`가 그 진실이다. 여기서는 익스텐션이 선택하는 전달 방식(postMessage/CustomEvent)이 구조적으로 요구하는 최소 검증 계약을 명시한다.
+## 전달 보안과 실행 컨텍스트
 
----
-
-## 전달 방식 (미확정)
-
-> ⚠️ 아직 실제 연동 구현으로 검증되지 않았다. 아래 후보는 위 "전달 제약"을 만족하는 안들이다. **변환 주체(익스텐션), 웹앱 경계 payload 형식(변환 완료된 `Application`), 그리고 "수신부 검증 계약" 준수는 이미 확정**이며 (위 "데이터 변환"·"수신부 검증 계약" 참고), 실제 연동 구현(E-5)에서 정하는 것은 다음 두 가지뿐이다:
->
-> - **저장 표현**: chrome.storage.local에 원본 `ScrapedApplication`을 저장해뒀다가 웹앱 전송 직전에 변환할지, 변환된 `Application`을 미리 저장해둘지. 어느 쪽이든 **변환은 익스텐션이 수행**하며 웹앱으로 나가는 payload는 항상 변환 완료 상태다.
-> - **전송 경로**: 구체적 전달 경로(`postMessage` vs DOM 커스텀 이벤트 vs `chrome.runtime.sendMessage` 조합)와 웹앱 수신 지점의 정확한 위치.
-
-### 후보 1단계: localStorage 공유 방식 (MVP)
-
-웹앱이 아직 localStorage 기반이므로, 익스텐션도 이에 맞추는 안. 두 방식 모두 "전달 제약"에 따라 메시지 전달 경로를 거친다 — content script가 웹앱 함수를 직접 부르지 않는다.
-
-#### 방식 A: window.postMessage
-
-```text
-1. 익스텐션이 수집 → chrome.storage.local에 저장 (원본 ScrapedApplication으로 저장할지,
-   변환된 Application으로 저장할지는 E-5 확정 — 어느 쪽이든 변환은 익스텐션이 수행)
-2. popup에서 "취준일기 열기" 클릭 → 웹앱 탭 열림/포커스
-3. 익스텐션이 웹앱 페이지(jobdiary.vercel.app)에 content script 주입
-4. content script가 저장된 데이터를 (변환 전이면 convertToApplication으로 변환한 뒤)
-   window.postMessage로 웹앱 페이지에 전송
-5. 웹앱이 message 이벤트 리스너 안에서 addApplicationsFromExtension 호출 (판별·저장만, 변환 없음)
-6. 웹앱이 칸반에 반영
-```
-
-#### 방식 B: DOM 커스텀 이벤트
-
-```text
-1~3. 방식 A와 동일
-4. content script가 저장된 데이터를 (변환 전이면 convertToApplication으로 변환한 뒤)
-   CustomEvent에 담아 document에 dispatch
-5. 웹앱이 해당 이벤트 리스너 안에서 addApplicationsFromExtension 호출 (판별·저장만, 변환 없음)
-6. 웹앱이 칸반에 반영
-```
-
-### 후보 2단계: 서버 연동 방식 (로그인 후)
-
-Supabase 도입 후.
-
-```text
-1. 웹앱 로그인 → 토큰 발급
-2. 익스텐션이 웹앱과 토큰 공유 (또는 별도 로그인)
-3. 변환된 데이터를 웹앱 API로 직접 POST
-4. DB 저장 → 여러 기기 동기화
-```
-
----
-
-## 연동 개발 순서
-
-```text
-1. 익스텐션: 사람인 수집 → chrome.storage 저장까지
-2. 익스텐션: convertToApplication 어댑터 구현 (status/날짜 매핑 포함)
-3. 웹앱: addApplicationsFromExtension 수신 로직 구현 (수신부 검증 계약 준수 후 판별 + 저장)
-4. 익스텐션: 웹앱으로 전달 (저장 표현/전송 경로는 E-5에서 확정, 변환은 항상 익스텐션이 사전에 완료)
-5. 실제 연동 테스트 (사람인 → 웹앱 칸반 반영 확인)
-6. 잡코리아, 원티드 확장
-```
+- `externally_connectable.matches`로 웹앱의 요청 origin을 제한한다.
+- service worker는 `sender.origin` 허용 목록과 `JOBDIARY_COLLECT` 타입을 재검증한다.
+- 프로덕션 manifest는 `https://jobdiary.vercel.app/*`만 허용한다.
+  개발 빌드에서만 localhost를 추가한다. 구체적인 값은 `manifest.config.ts`를 따른다.
+- 웹앱은 고정된 익스텐션 ID로 요청하고 응답 스키마를 검증한다.
+  자신의 로그인 세션으로 저장하며, 익스텐션은 인증 정보·토큰을 받지 않는다.
+- 웹앱 페이지에 content script를 주입하거나 inline script를 실행하지 않는다.
+  postMessage/CustomEvent를 통한 전달도 사용하지 않는다.
+- service worker의 실행 상태는 영구적이지 않으므로 응답 시 저장소에서 읽는다.

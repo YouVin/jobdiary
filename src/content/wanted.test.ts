@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { clickPaginationButtonAndWait, parseWanted } from './wanted';
 import { WANTED_PAGINATION_SELECTORS } from './selectors/wanted';
+import { convertToApplication } from '../lib/adapter';
 
 function fixture(html: string): HTMLDivElement {
   const container = document.createElement('div');
@@ -9,6 +10,22 @@ function fixture(html: string): HTMLDivElement {
 }
 
 describe('parseWanted', () => {
+  it('실물 행의 지원일을 마감일로 사용하지 않는다', () => {
+    const root = fixture(`<li class="List_List_table_tr__fYmQ9"><div role="presentation">
+      <span class="List_List_table_td_company_name__u5tEF">예시 회사</span>
+      <span class="List_List_table_td_position__noXIK">프론트엔드 엔지니어</span>
+      <span class="List_List_table_td_create_time__srwiA">2026. 10. 22</span>
+      <span class="List_List_table_td_status__sFQdf">접수</span>
+      <span class="List_List_table_td_recommendation__zeGW4">추천인 없음</span>
+      <span class="List_List_table_td_reward__jINlQ"></span>
+    </div></li>`);
+    const [row] = parseWanted(root);
+    expect(row.appliedAt).toBe('2026.10.22');
+    expect(row.url).toBeUndefined();
+    expect(row).not.toHaveProperty('deadlineAt');
+    expect(convertToApplication(row)).not.toHaveProperty('deadlineAt');
+  });
+
   it('행을 파싱하고 지원일을 정규화한다(월/일 한 자리 → 0 채움)', () => {
     const root = fixture(`
       <ul>

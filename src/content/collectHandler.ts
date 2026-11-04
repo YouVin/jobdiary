@@ -1,6 +1,6 @@
 import type { Platform, ScrapedApplication } from '../types/application';
 import { convertToApplication } from '../lib/adapter';
-import { COLLECT_MESSAGE_TYPE, type CollectMessage, type CollectResponse } from '../lib/messages';
+import { COLLECT_MESSAGE_TYPE, type CollectMessage, type CollectResponse, type DeadlineSummary } from '../lib/messages';
 import { saveSiteApplications } from '../lib/storage';
 
 // 팝업은 포커스를 잃으면 자동으로 닫혀 응답을 못 받을 수 있다(특히 원티드처럼 여러 페이지를
@@ -14,6 +14,7 @@ import { saveSiteApplications } from '../lib/storage';
 interface CollectResult {
   rows: ScrapedApplication[];
   truncated: boolean;
+  deadlines?: DeadlineSummary;
 }
 
 export function registerCollectHandler(
@@ -41,13 +42,13 @@ export function registerCollectHandler(
 
     isCollecting = true;
     collect()
-      .then(async ({ rows: scraped, truncated }) => {
+      .then(async ({ rows: scraped, truncated, deadlines }) => {
         console.log(`[${platform}] ${scraped.length}건 파싱됨`);
         console.table(scraped);
 
         const applications = scraped.map(convertToApplication);
         await saveSiteApplications(platform, applications);
-        respond(sendResponse, { applications, count: applications.length, truncated });
+        respond(sendResponse, { applications, count: applications.length, truncated, ...(deadlines ? { deadlines } : {}) });
       })
       .catch((error: unknown) => {
         console.error(`[${platform}] 수집 실패`, error);

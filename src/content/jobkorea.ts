@@ -5,6 +5,8 @@ import { toSafeUrl } from '../lib/url';
 import { collectAllPages, getCurrentPageNumber } from './paginate';
 import { registerCollectHandler } from './collectHandler';
 import { buildRowKey } from './rowKey';
+import { supplementJobkoreaDeadlines } from './jobkoreaDeadlines';
+import type { DeadlineSummary } from '../lib/messages';
 
 // "20260601235538" (YYYYMMDDHHmmss, 14자리 숫자) → "2026.06.01 23:55" (사람인 포맷과 통일)
 function formatApplyDate(raw: string | undefined): string {
@@ -53,6 +55,8 @@ export function parseJobkorea(root: ParentNode = document): ScrapedApplication[]
     const href = row.querySelector<HTMLAnchorElement>(JOBKOREA_SELECTORS.url)?.getAttribute('href');
     const url = toSafeUrl(href, location.origin);
     const viewed = parseViewed(row.querySelector(JOBKOREA_SELECTORS.viewed)?.textContent?.trim());
+    // 표시 원문만 읽는다. (~10/31)에서 지원일/현재 연도로 마감 연도를 추정하지 않는다.
+    const deadlineAt = row.querySelector(JOBKOREA_SELECTORS.deadline)?.textContent?.trim() || undefined;
 
     if (dataButton) {
       // 최신 형식(devBtnDel/devBtnCancel): 버튼 data 속성 그대로 사용 — 기존 동작 그대로 유지.
@@ -61,6 +65,7 @@ export function parseJobkorea(root: ParentNode = document): ScrapedApplication[]
         position: dataButton.dataset[JOBKOREA_SELECTORS.positionAttr] ?? '',
         platform: 'jobkorea',
         appliedAt: formatApplyDate(dataButton.dataset[JOBKOREA_SELECTORS.appliedAtAttr]),
+        ...(deadlineAt ? { deadlineAt } : {}),
         status: row.querySelector(JOBKOREA_SELECTORS.status)?.textContent?.trim() ?? '',
         externalId: dataButton.dataset[JOBKOREA_SELECTORS.externalIdAttr],
         viewed,
@@ -82,6 +87,7 @@ export function parseJobkorea(root: ParentNode = document): ScrapedApplication[]
       position: row.querySelector(JOBKOREA_SELECTORS.positionFallback)?.textContent?.trim() ?? '',
       platform: 'jobkorea',
       appliedAt: row.querySelector(JOBKOREA_SELECTORS.appliedAtFallback)?.textContent?.trim() ?? '',
+      ...(deadlineAt ? { deadlineAt } : {}),
       status: row.querySelector(JOBKOREA_SELECTORS.status)?.textContent?.trim() ?? '',
       externalId: oldDataButton?.dataset[JOBKOREA_SELECTORS.externalIdAttr],
       viewed,
@@ -105,7 +111,7 @@ function buildJobkoreaPageUrl(pageNum: number): string {
 // 뒤에서 현재 페이지를 다시 fetch해 같은 행이 중복으로도 들어간다.
 // 2..N은 같은 쿼리(유저 필터 그대로)로 Page만 바꿔가며 fetch + DOMParser로 파싱한다.
 // 파싱된 유효행이 0개면 그 페이지에서 종료.
-async function collectJobkoreaAllPages(): Promise<{ rows: ScrapedApplication[], truncated: boolean }> {
+async function collectJobkoreaAllPages(): Promise<{ rows: ScrapedApplication[], truncated: boolean, deadlines?: DeadlineSummary }> {
   const { rows, pageCount, truncated } = await collectAllPages({
     currentPageNumber: getCurrentPageNumber(JOBKOREA_SELECTORS.pageParam),
     currentPageRows: parseJobkorea(document),
@@ -115,7 +121,7 @@ async function collectJobkoreaAllPages(): Promise<{ rows: ScrapedApplication[], 
     isSiteTerminal: rows => rows.length === 0,
   });
   console.log(`[잡코리아 파서] 총 ${pageCount}페이지, ${rows.length}건 수집${truncated ? ' (일부 중단됨)' : ''}`);
-  return { rows, truncated };
+  return { ...await supplementJobkoreaDeadlines(rows), truncated };
 }
 
 registerCollectHandler('jobkorea', collectJobkoreaAllPages);
