@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "@jobdiary/shared": "*"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.4.0",

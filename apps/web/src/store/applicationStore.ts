@@ -12,6 +12,7 @@ import {
 } from '@/lib/applicationsApi';
 import { saveApplications } from '@/lib/storage';
 import { Application, Status } from '@/types/application';
+import { buildApplicationUrlRepairs } from '@/utils/applicationUrlRepairs';
 import { buildExtensionImportPlan } from '@/utils/extensionImportPlan';
 
 // addApplicationsFromExtension 처리 결과 요약 (UI 안내 문구용, 예: "4건 중 2건 추가, 1건 중복")
@@ -27,6 +28,7 @@ interface ApplicationState {
   sessionVersion: number;
   applications: Application[];
   isLoading: boolean;
+  historyReady: boolean;
   error: string | null;
   loadApplications: () => Promise<void>;
   addApplication: (app: Omit<Application, 'id' | 'updatedAt'>) => Promise<boolean>;
@@ -64,6 +66,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
   sessionVersion: 0,
   applications: [],
   isLoading: false,
+  historyReady: false,
   error: null,
 
   // Supabase에서 현재 사용자의 지원 내역 전체 조회
@@ -79,7 +82,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       return;
     }
 
-    set({ applications, isLoading: false, error: deadlineResult.error?.message ?? null });
+    set({ applications, historyReady: true, isLoading: false, error: deadlineResult.error?.message ?? null });
   }, undefined),
 
   // 추가: 서버 저장에 성공했을 때만 로컬 state에 반영
@@ -115,8 +118,20 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       set({ error: error.message });
       return { addedCount: 0, duplicateCount: 0, skippedCount: 0, error: error.message };
     }
-    set({ applications });
-    const { toInsert, addedCount, duplicateCount, skippedCount } = buildExtensionImportPlan(applications, apps);
+    let resolvedApplications = applications;
+    // 공고 URL만 보완한다. 상태·메모·일기는 UPDATE에 포함하지 않는다.
+    for (const repair of buildApplicationUrlRepairs(applications, apps)) {
+      const result = await apiUpdateApplication(repair.id, { url: repair.url }, context, repair.expectedUpdatedAt);
+      if (!context.isCurrent()) return canceledImport;
+      if (result.error || !result.application) {
+        const message = result.error?.message ?? '공고 주소를 보완하지 못했습니다. 다시 시도해주세요.';
+        set({ applications: resolvedApplications, historyReady: true, error: message });
+        return { addedCount: 0, duplicateCount: 0, skippedCount: 0, error: message };
+      }
+      resolvedApplications = resolvedApplications.map((item) => item.id === repair.id ? result.application! : item);
+    }
+    set({ applications: resolvedApplications, historyReady: true });
+    const { toInsert, addedCount, duplicateCount, skippedCount } = buildExtensionImportPlan(resolvedApplications, apps);
 
     if (toInsert.length === 0) {
       return { addedCount, duplicateCount, skippedCount, error: null };
@@ -194,14 +209,14 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
 
   // 로그아웃 시 호출 — 다음 사용자에게 이전 사용자 데이터가 보이지 않도록 로컬 state 초기화
   resetApplications: () => {
-    set((state) => ({ userId: null, sessionVersion: state.sessionVersion + 1, applications: [], isLoading: false, error: null }));
+    set((state) => ({ userId: null, sessionVersion: state.sessionVersion + 1, applications: [], historyReady: false, isLoading: false, error: null }));
     saveApplications([]);
   },
 
   // 인증 상태를 공개하기 전에 동기 실행한다. 토큰 갱신만 발생하면 데이터를 유지한다.
   setUser: (userId) => {
     if (get().userId === userId) return;
-    set((state) => ({ userId, sessionVersion: state.sessionVersion + 1, applications: [], isLoading: false, error: null }));
+    set((state) => ({ userId, sessionVersion: state.sessionVersion + 1, applications: [], historyReady: false, isLoading: false, error: null }));
     saveApplications([]);
   },
 

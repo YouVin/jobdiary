@@ -1,4 +1,5 @@
-export type Platform = 'saramin' | 'wanted' | 'jobkorea';
+import type { JobPlatform as Platform, ApplicationStatus as Status } from '@jobdiary/shared';
+export type { Platform, Status };
 
 export interface ScrapedApplication {
   company: string; // 회사명
@@ -14,15 +15,6 @@ export interface ScrapedApplication {
 }
 
 // 웹앱과 공유하는 계약. 최종 진실은 웹앱 레포 docs/INTEGRATION.md (docs/INTEGRATION.md 참고).
-export type Status =
-  | 'applied'
-  | 'screening'
-  | 'interview'
-  | 'interviewed'
-  | 'offer'
-  | 'rejected'
-  | 'canceled';
-
 export interface Application {
   id: string;
   company: string;

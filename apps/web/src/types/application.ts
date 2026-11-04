@@ -1,13 +1,6 @@
-export type Platform = 'saramin' | 'wanted' | 'jobkorea' | 'manual';
-
-export type Status =
-  | 'applied'
-  | 'screening'
-  | 'interview'
-  | 'interviewed'
-  | 'offer'
-  | 'rejected'
-  | 'canceled';
+import type { JobPlatform, ApplicationStatus } from '@jobdiary/shared';
+export type Platform = JobPlatform | 'manual';
+export type Status = ApplicationStatus;
 
 export interface DiaryEntry {
   id: string;

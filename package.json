@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "apps/web",
-    "apps/extension"
+    "apps/extension",
+    "packages/shared"
   ],
   "engines": {
     "node": ">=22.12.0 <25",
