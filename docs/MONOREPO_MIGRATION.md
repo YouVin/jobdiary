@@ -86,8 +86,36 @@ Pretendard는 이제 루트에 설치되므로 `apps/web/src/app/layout.tsx`의 
 
 ## 검증
 
-통합 설치 후 전체 lint·테스트·빌드, 소스·이력·환경 제외 검증을 진행한다.
-최종 결과는 검증이 끝나면 이 절에 기록한다.
+별도 복제본에서 검증한 뒤 실제 `C:\jobdiary`의 `chore/monorepo` 브랜치에서도 확인했다.
+
+| 검증 | 결과 |
+| --- | --- |
+| 루트 잠금 파일 기준 `npm ci` | 통과 |
+| 실제 폴더의 `npm ls --workspaces --depth=0` | 통과 |
+| 실제 폴더의 `npm run lint` | ESLint·UI 스타일 규칙 통과 |
+| 실제 폴더의 `npm test` | 웹앱 77개·익스텐션 166개 통과 |
+| 실제 폴더의 `npm run build` | Next.js 타입 검사·빌드, 익스텐션 타입 검사·빌드·ZIP 생성 통과 |
+| 기존 웹앱 CI의 `npm audit --omit=dev --workspace=jobdiary` | 취약점 0건 |
+| 공개 화면 실행 | 로그인·개인정보·약관 HTTP 200, 브라우저 페이지 오류 0건 |
+| 폰트·모바일 | 로컬 폰트 HTTP 200, 모바일 로그인 가로 넘침 없음 |
+| 익스텐션 개발 서버 | 팝업 HTML HTTP 200, CRXJS 엔트리 준비 HTTP 204 |
+| 소스 보존 | 웹앱 소스·자산·스크립트·테스트 110개는 폰트 경로 한 곳만 변경, 익스텐션 src 50개 일치 |
+| 이력 보존 | 웹앱 main/dev와 익스텐션 main의 기존 커밋이 모두 현재 HEAD의 조상 |
+| 환경·인프라 | 실제 환경 파일·개인키·산출물 미추적, Supabase 파일 변경 없음 |
+
+검증 시 Node v22.13.1, npm 11.7.0을 사용했다. GitHub Actions와 Vercel Node 24 환경에서의
+원격 실행은 아직 수행하지 않았다. 개발 서버에는 기존 CRXJS의 Vite `server.hmr` 관련
+폐기 예정 API 경고가 남아 있으며, 빌드와 개발 엔트리 응답은 정상이다.
+
+실제 폴더의 로그는 `C:\jobdiary\release\monorepo-migration\logs`에 있다.
+복제본 검증·브라우저 결과와 스크린샷은 2단계 준비 공간의 `logs/monorepo-*`에 보존했다.
+검증용 의존성을 실제 폴더로 옮기고 workspace 연결을 새 경로에 맞췄으며,
+기존 의존성은 `C:\jobdiary\release\pre-monorepo-2026-11-04\node_modules`에 남겼다.
+기존 선택적 브라우저 도구는 `apps/web/node_modules/.release-tools`로 옮겨 보존했다.
+로컬 `.claude/`와 기존 루트 환경 파일도 유지했다. 이 자료들은 Git에 포함하지 않는다.
+
+이전 코드 커밋은 `8e2e6e9`이며, 완료 기록은 별도 문서 커밋에 포함한다.
+원격 푸시·main/dev 반영·Vercel 설정 변경·배포·웹스토어 제출은 수행하지 않았다.
 
 ## 다음 단계
 
