@@ -11,19 +11,20 @@
 - [x] lint, 웹앱 테스트 77개, 익스텐션 테스트 166개, 양쪽 빌드를 검증했다.
 - [x] 공개 웹앱·익스텐션 안내·개인정보처리방침·웹스토어 주소의 HTTP 200을 확인했다.
 - [x] 실행 코드·허용 origin·스토어/개발 ID·Vercel Git 연결과 저장소 주소를 [점검](MONOREPO_LINK_AUDIT.md)했다.
-- [ ] 통합 브랜치 원격 푸시와 PR 생성.
+- [x] 통합 브랜치 원격 푸시와 [PR #112](https://github.com/YouVin/jobdiary/pull/112) 생성.
 - [ ] 원격 CI, Preview, dev/main 반영 및 Vercel 경로 전환.
 - [ ] 기존 저장소 안내와 이력서·포트폴리오 링크 갱신.
 
-모노레포 코드는 현재 로컬 브랜치에만 있다. 이 문서를 작성하면서 푸시·병합·배포·
-Vercel 설정 변경·기존 저장소 변경·외부 문서 수정을 수행하지 않았다.
+모노레포 통합은 [PR #112](https://github.com/YouVin/jobdiary/pull/112)에서 추적한다.
+기존 익스텐션은 [PR #64](https://github.com/YouVin/jobdiary-extension/pull/64)를 dev에 병합하고
+로컬 dev도 동기화했다. 운영 main·프로젝트 공통 설정·스토어·외부 문서는 별도 후속 작업이다.
 
 ## 진행 순서
 
 ### 1. GitHub 반영 준비와 검증
 
-- [ ] 최신 원격 dev/main을 다시 확인하고 `chore/monorepo`를 푸시한다.
-- [ ] 기본 브랜치 `dev`를 대상으로 PR을 작성한다.
+- [x] 최신 원격 dev/main을 확인하고 `chore/monorepo`를 푸시했다.
+- [x] 기본 브랜치 `dev`를 대상으로 PR #112를 작성했다.
 - [ ] 웹앱과 익스텐션의 CI job이 모두 통과하는지 확인한다.
 - [ ] 브랜치 보호 규칙에 이전 CI 이름이 지정되어 있으면 새 job 이름에 맞춘다.
   현재 workflow 이름은 `Web lint, test and build`, `Extension test and build`다.
@@ -41,17 +42,17 @@ Vercel 설정 변경·기존 저장소 변경·외부 문서 수정을 수행하
 | 설정 | 전환 시 확인할 값 |
 | --- | --- |
 | Git 저장소 | `YouVin/jobdiary` 유지 |
-| Root Directory | `apps/web` |
+| Root Directory | 저장소 루트 유지 (`vercel.json`에서 앱 빌드 경로 지정) |
 | Install Command | workspace 루트 잠금 파일 기준 `npm ci` |
-| Build Command | 앱 폴더의 `npm run build` |
-| Framework / Output | Next.js / 기본 `.next` |
+| Build Command | 루트의 `npm run build:web` |
+| Framework / Output | Next.js / `apps/web/.next` |
 | 루트 밖 소스 포함 | workspace 의존성을 읽을 수 있도록 허용 |
 | 환경 변수·도메인·운영 브랜치 | 현재 값 유지·확인 |
-| Node.js | 기존 프로젝트는 `24.x`; 로컬·CI는 Node 22이므로 실제 배포 환경도 검증 |
+| Node.js | `>=22.12.0 <25`; 로컬·CI는 22, Vercel은 24 계열로 제한 |
 
 - [ ] 현재 프로젝트 설정을 기록하고 새 경로의 Preview 검증 방법을 정한다.
-- [ ] Root Directory는 프로젝트 공통 설정이므로 이전 구조의 브랜치와 혼용하는 기간을 고려한다.
-  필요하면 별도 Preview 프로젝트에서 새 구조를 먼저 검증하고, 기존 프로젝트의 전환은 main 반영과 조율한다.
+- [x] 운영 프로젝트의 Root Directory를 변경하는 대신 브랜치의 루트 `vercel.json`에 빌드·출력 경로를 지정했다.
+  기존 main에는 이 파일이 없으므로 이전 구조와 혼용하는 기간에도 프로젝트 공통 설정을 유지할 수 있다.
 - [ ] 새 구조 배포의 공개 화면·정적 자산·로그인·기존 저장 데이터 조회를 확인한다.
 - [ ] 운영 반영 후 도메인과 주요 링크를 다시 확인한다.
 
@@ -63,7 +64,7 @@ Vercel 설정 변경·기존 저장소 변경·외부 문서 수정을 수행하
 
 ### 3. 기존 익스텐션 저장소와 공개 문서
 
-- [ ] 모노레포 원격 반영 후 `YouVin/jobdiary-extension` README/About에 새 개발 위치를 안내한다.
+- [x] 기존 익스텐션 dev README에 새 개발 위치를 안내했다. About 수정 여부는 별도로 확인한다.
 - [ ] 이전 이슈·릴리스·공개 정책 주소를 유지한다. 과거 이슈 링크를 새 저장소의 같은 번호로 바꾸지 않는다.
 - [ ] Pages 게시 방식을 정리하기 전에는 기존 저장소를 삭제하거나 아카이브하지 않는다.
 - [ ] 향후 정책을 갱신할 때 `apps/extension/docs`의 내용을 기존 공개 주소에 게시할 방법을 정한다.

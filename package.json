@@ -1,8 +1,14 @@
 {
   "name": "jobdiary-monorepo",
   "private": true,
-  "workspaces": ["apps/web", "apps/extension"],
-  "engines": { "node": ">=22.12.0", "npm": ">=11" },
+  "workspaces": [
+    "apps/web",
+    "apps/extension"
+  ],
+  "engines": {
+    "node": ">=22.12.0 <25",
+    "npm": ">=11"
+  },
   "packageManager": "npm@11.7.0",
   "scripts": {
     "dev": "npm run dev:web",

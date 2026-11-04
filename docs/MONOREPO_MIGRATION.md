@@ -53,13 +53,19 @@ jobdiary/
 기존 Vercel `jobdiary` 프로젝트를 유지한다. 점검 시 프로젝트의 Node 버전은 `24.x`였다.
 이번 단계에서 운영 프로젝트 설정은 변경하지 않는다.
 
-운영 반영 전에 Root Directory를 `apps/web`로 지정하고 다음 설정을 확인한다.
+기존 Root Directory는 저장소 루트로 유지하고, 브랜치의 루트 `vercel.json`으로 다음을 지정한다.
 
-- 저장소 루트의 workspace 잠금 파일을 사용하는 설치 (`npm ci`).
-- 앱 폴더에서의 빌드 `npm run build`, Next.js 기본 출력 `.next`.
-- 프로젝트 루트 바깥의 workspace 소스를 빌드에 포함하도록 허용.
-- 기존 환경 변수, 저장소 연결, 운영 브랜치, 도메인 유지.
-- Root Directory는 Vercel 프로젝트 설정이다. `vercel.json`에 `rootDirectory` 키를 추가하지 않는다.
+- 설치: `npm ci`.
+- 웹앱만 빌드: `npm run build:web`.
+- Next.js 산출물: `apps/web/.next`.
+- 환경 변수, 저장소 연결, 운영 브랜치와 도메인은 유지한다.
+- 루트 package.json의 Node 범위는 `>=22.12.0 <25`로 지정해 검증하지 않은 새 major로 자동 변경되지 않게 한다.
+
+PR의 첫 자동 Preview는 루트 `.next`를 찾다가 실패했다. 실제 빌드는 성공했으나 산출물이
+`apps/web/.next`에 있기 때문이다. 또한 열린 Node 범위로 26이 선택된 것이 로그에 확인됐다.
+프로젝트 공통 설정을 바꾸는 대신 소스에 빌드·출력 경로를 지정하고 Node 범위를 제한했다.
+이 설정은 모노레포 브랜치에만 있으며 기존 운영 main의 설정은 유지한다.
+향후 Root Directory를 별도로 `apps/web`로 옮기면 이 루트 설정을 함께 재검토한다.
 
 Next.js의 `turbopack.root`와 `outputFileTracingRoot`는 저장소 루트를 가리킨다.
 상위 폴더의 다른 저장소 잠금 파일을 선택하지 않으며, hoist된 의존성과 향후 공통 패키지를 해석할 수 있다.
