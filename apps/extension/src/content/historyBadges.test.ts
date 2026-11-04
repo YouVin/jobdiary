@@ -19,7 +19,7 @@ beforeEach(() => {
   document.body.innerHTML = '<a href="https://www.jobkorea.co.kr/Recruit/GI_Read/101">개발자</a>';
   stored = { [key]: cache }; listeners = new Set();
   get = vi.fn(async () => structuredClone(stored));
-  vi.stubGlobal('chrome', { storage: { local: { get }, onChanged: {
+  vi.stubGlobal('chrome', { runtime: { id: 'test-extension' }, storage: { local: { get }, onChanged: {
     addListener: (fn: Listener) => listeners.add(fn), removeListener: (fn: Listener) => listeners.delete(fn),
   } } });
 });
@@ -102,4 +102,77 @@ it('숨겨진 탭은 저장소 구독·조회도 중단하고 복귀 시 최신 
     if (original) Object.defineProperty(document, 'visibilityState', original);
     else Reflect.deleteProperty(document, 'visibilityState');
   }
+});
+
+it('저장소 API가 이미 사라진 탭에서는 예외 없이 중단한다', async () => {
+  const original = chrome;
+  try {
+    vi.stubGlobal('chrome', { runtime: { id: undefined } });
+    await expect(import('./historyBadges')).resolves.toBeDefined();
+    await flush();
+    expect(get).not.toHaveBeenCalled();
+    expect(document.querySelector('[data-jobdiary-history]')).toBeNull();
+  } finally { vi.stubGlobal('chrome', original); }
+});
+
+it('확장 연결이 끊긴 뒤 pagehide는 캡처한 구독을 정리하고 반복 종료에도 안전하다', async () => {
+  const original = chrome;
+  const add = vi.spyOn(window, 'addEventListener');
+  try {
+    await import('./historyBadges'); await flush();
+    const hide = add.mock.calls.find(([name]) => name === 'pagehide')![1] as EventListener;
+    vi.stubGlobal('chrome', { runtime: { id: undefined } });
+    expect(() => hide(new Event('pagehide'))).not.toThrow();
+    expect(listeners.size).toBe(0);
+    expect(document.querySelector('[data-jobdiary-history]')).toBeNull();
+    expect(() => hide(new Event('pagehide'))).not.toThrow();
+  } finally { vi.stubGlobal('chrome', original); add.mockRestore(); }
+});
+
+it('컨텍스트가 사라진 뒤 도착한 캐시 응답으로 배지를 되살리지 않는다', async () => {
+  const original = chrome;
+  let resolve!: (value: Record<string, unknown>) => void;
+  get.mockImplementationOnce(() => new Promise(done => { resolve = done; }));
+  try {
+    await import('./historyBadges');
+    vi.stubGlobal('chrome', { runtime: { id: undefined } });
+    resolve({ [key]: cache }); await flush();
+    expect(document.querySelector('[data-jobdiary-history]')).toBeNull();
+    expect(listeners.size).toBe(0);
+  } finally { vi.stubGlobal('chrome', original); }
+});
+
+it('구독 등록이 무효 컨텍스트 오류를 던져도 종료하고 다시 시작하지 않는다', async () => {
+  const add = vi.spyOn(chrome.storage.onChanged, 'addListener').mockImplementation(() => { throw new Error('Extension context invalidated.'); });
+  try {
+    await expect(import('./historyBadges')).resolves.toBeDefined();
+    window.dispatchEvent(new Event('pageshow')); await flush();
+    expect(add).toHaveBeenCalledTimes(1);
+    expect(get).not.toHaveBeenCalled();
+  } finally { add.mockRestore(); }
+});
+
+it('구독 해제가 오류를 던져도 DOM과 이벤트를 정리하고 늦은 변경을 무시한다', async () => {
+  const add = vi.spyOn(window, 'addEventListener');
+  let remove: ReturnType<typeof vi.spyOn> | undefined;
+  try {
+    await import('./historyBadges'); await flush();
+    const hide = add.mock.calls.find(([name]) => name === 'pagehide')![1] as EventListener;
+    remove = vi.spyOn(chrome.storage.onChanged, 'removeListener').mockImplementation(() => { throw new Error('Extension context invalidated.'); });
+    const calls = get.mock.calls.length;
+    expect(() => hide(new Event('pagehide'))).not.toThrow();
+    expect(document.querySelector('[data-jobdiary-history]')).toBeNull();
+    await emit({ [key]: { newValue: cache } });
+    window.dispatchEvent(new Event('pageshow')); await flush();
+    expect(get).toHaveBeenCalledTimes(calls);
+  } finally { remove?.mockRestore(); add.mockRestore(); }
+});
+
+it('조회가 컨텍스트 무효화로 거절되면 구독을 종료하고 다시 조회하지 않는다', async () => {
+  get.mockRejectedValueOnce(new Error('Extension context invalidated.'));
+  await import('./historyBadges'); await flush();
+  expect(listeners.size).toBe(0);
+  expect(document.querySelector('[data-jobdiary-history]')).toBeNull();
+  window.dispatchEvent(new Event('pageshow')); await flush();
+  expect(get).toHaveBeenCalledTimes(1);
 });
