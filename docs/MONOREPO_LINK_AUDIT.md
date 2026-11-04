@@ -1,7 +1,9 @@
 # 모노레포 주소·연동 점검
 
 점검일: 2026-11-04
-점검 대상: `C:\jobdiary`, `chore/monorepo` 브랜치
+최초 점검 대상: `C:\jobdiary`, `chore/monorepo` 브랜치. 이후 PR #112로 dev에 병합했다.
+현재 통합 상태와 근거는 [전환 사례](MONOREPO_CASE_STUDY.md),
+직접 로그인 검증은 [4단계 체크리스트](DEADLINE_VALIDATION.md)를 따른다.
 
 ## 범위와 결론
 

@@ -2,7 +2,9 @@
 
 작업일: 2026-11-04
 통합 저장소: `YouVin/jobdiary`
-작업 브랜치: `chore/monorepo`
+이전 작업 브랜치: `chore/monorepo`
+통합 결과: [PR #112](https://github.com/YouVin/jobdiary/pull/112)를 dev에 병합, 병합 커밋 `f3db5f9`.
+의사결정·문제 해결·포트폴리오 근거는 [전환 사례](MONOREPO_CASE_STUDY.md)에 기록한다.
 
 ## 소스와 이력
 
@@ -32,7 +34,7 @@ jobdiary/
 
 ## 설치·명령·산출물
 
-- Node.js 22.12 이상, npm 11 이상을 사용한다. CI는 Node.js 22를 사용한다.
+- Node.js 22.12 이상 25 미만, npm 11 이상을 사용한다. CI는 Node.js 22를 사용한다.
 - 설치는 루트에서 `npm ci`로 수행한다. 앱별 잠금 파일을 추가하지 않는다.
 - 두 앱의 기존 잠금 버전·다운로드 위치·무결성 값을 바탕으로 루트 잠금 파일을 생성했다.
   새 레지스트리 버전이나 직접 의존성 버전 변경이 없는지 별도로 확인했다.
@@ -87,7 +89,8 @@ Pretendard는 이제 루트에 설치되므로 `apps/web/src/app/layout.tsx`의 
 기존 공개 정책 주소 `https://youvin.github.io/jobdiary-extension/privacy/`를 유지한다.
 익스텐션 문서의 Jekyll 설정과 이미지·상대 링크는 `apps/extension/docs` 내부에 보존했다.
 새 모노레포의 루트 `docs/`는 기존 익스텐션 Pages의 게시 대상과 같지 않다.
-기존 저장소·Pages를 삭제하거나 설정을 바꾸지 않았으므로 현재 공개 문서는 이전 게시본을 계속 사용한다.
+기존 저장소·Pages를 유지했고, 해당 저장소 dev 병합 후 Pages 자동 게시가 성공했다.
+모노레포 변경이 기존 Pages로 자동 전달되는 새 워크플로는 추가하지 않았다.
 정책 변경을 공개할 때 기존 게시 경로를 유지해 갱신할지, 별도 게시 워크플로를 만들지 7단계에서 처리한다.
 
 ## 검증
@@ -109,8 +112,10 @@ Pretendard는 이제 루트에 설치되므로 `apps/web/src/app/layout.tsx`의 
 | 이력 보존 | 웹앱 main/dev와 익스텐션 main의 기존 커밋이 모두 현재 HEAD의 조상 |
 | 환경·인프라 | 실제 환경 파일·개인키·산출물 미추적, Supabase 파일 변경 없음 |
 
-검증 시 Node v22.13.1, npm 11.7.0을 사용했다. GitHub Actions와 Vercel Node 24 환경에서의
-원격 실행은 아직 수행하지 않았다. 개발 서버에는 기존 CRXJS의 Vite `server.hmr` 관련
+로컬 검증 시 Node v22.13.1, npm 11.7.0을 사용했다. 이후 GitHub Actions Node 22에서
+[최종 PR CI](https://github.com/YouVin/jobdiary/actions/runs/41776466593)와
+[병합 후 dev CI](https://github.com/YouVin/jobdiary/actions/runs/41776784781)가 모두 성공했다.
+Vercel Node 24 환경의 최종 PR·dev Preview도 READY를 확인했다. 개발 서버에는 기존 CRXJS의 Vite `server.hmr` 관련
 폐기 예정 API 경고가 남아 있으며, 빌드와 개발 엔트리 응답은 정상이다.
 
 실제 폴더의 로그는 `C:\jobdiary\release\monorepo-migration\logs`에 있다.
@@ -121,10 +126,16 @@ Pretendard는 이제 루트에 설치되므로 `apps/web/src/app/layout.tsx`의 
 로컬 `.claude/`와 기존 루트 환경 파일도 유지했다. 이 자료들은 Git에 포함하지 않는다.
 
 이전 코드 커밋은 `8e2e6e9`이며, 완료 기록은 별도 문서 커밋에 포함한다.
-원격 푸시·main/dev 반영·Vercel 설정 변경·배포·웹스토어 제출은 수행하지 않았다.
+이후 원격 푸시와 PR #112의 dev 병합을 완료했고, 양쪽 저장소의 로컬 dev를 원격과 동기화했다.
+병합된 [dev Preview](https://jobdiary-5ng0tdsu9-youvins-projects.vercel.app)는 READY다.
+Vercel 프로젝트 공통 설정은 변경하지 않고 브랜치 소스로 배포 경로를 지정했다.
+기존 익스텐션 저장소는 dev 병합 후 CI와 Pages 자동 게시가 성공했다.
+운영 main 반영과 Chrome 웹스토어 제출은 수행하지 않았다.
 
 ## 다음 단계
 
 공통 메시지 계약과 자동 표시 구현은 아직 추가하지 않았다.
-먼저 [전환 정리 체크리스트](MONOREPO_HANDOFF.md)의 GitHub·호스팅·외부 링크를 정리한다.
-정리 후 4단계에서 실제 Chrome 로그인 환경의 마감일 수집·실패 시 보존·웹앱 전달을 검증한다.
+GitHub dev 통합과 Preview 배포 경로 확인은 완료했다. 남은 운영·외부 링크 작업은
+[전환 정리 체크리스트](MONOREPO_HANDOFF.md)에 유지한다.
+사용자 요청으로 4단계를 재개했으며 자동 브라우저 검증과 실제 Chrome 로그인 확인은
+[마감일 검증 기록](DEADLINE_VALIDATION.md)에서 구분해 추적한다.
