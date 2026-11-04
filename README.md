@@ -15,7 +15,9 @@
 | `supabase` | 기존 데이터베이스 마이그레이션과 Edge Functions |
 
 공통 연동 계약과 웹앱 지원 이력의 비교 캐시 동기화를 구현했다.
-[동작·검증·제한](docs/APPLICATION_HISTORY_SYNC.md)을 참고한다. 실제 채용 페이지의 자동 표시는 후속 단계다.
+[동기화 계약](docs/APPLICATION_HISTORY_SYNC.md)을 참고한다. 잡코리아·사람인의 정확한 공고 ID가 일치하면
+지원/취소 이력을 자동 표시한다. [지원 범위·성능·사용법](docs/APPLICATION_HISTORY_BADGES.md)을 참고한다.
+이 기능은 dev 구현 기준이며 운영 웹앱·스토어 반영은 별도다.
 모노레포로 바꾼 배경·이력 보존·문제 해결·검증 근거는 [전환 사례](docs/MONOREPO_CASE_STUDY.md),
 현재 진행 중인 마감일 검증은 [직접 확인 체크리스트](docs/DEADLINE_VALIDATION.md)를 참고한다.
 

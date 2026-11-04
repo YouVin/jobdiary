@@ -73,5 +73,12 @@ export default defineManifest((env) => ({
       'https://www.wanted.co.kr/status/*',
       'https://wanted.co.kr/status/*',
     ],
+  }, {
+    // 표시 전용 스크립트. 수집은 위 지원현황 경로에서 사용자가 누를 때만 실행한다.
+    js: ['src/content/historyBadges.ts'],
+    matches: [
+      'https://www.jobkorea.co.kr/*', 'https://jobkorea.co.kr/*',
+      'https://www.saramin.co.kr/*', 'https://saramin.co.kr/*', 'https://m.saramin.co.kr/*',
+    ],
   }],
 }))

@@ -9,6 +9,8 @@ import { applicationsToHtml, applicationsToTsv } from '@/lib/tsv'
 import { Button } from './components/Button'
 import { PLATFORM_LABEL, PlatformBadge } from './components/PlatformBadge'
 import { useSiteCounts } from './useSiteCounts'
+import { useHistoryDisplay } from './useHistoryDisplay'
+import { HistoryDisplayPanel } from './components/HistoryDisplayPanel'
 
 const UNSUPPORTED_MESSAGE = '지원현황 페이지에서 눌러주세요'
 const COLLECT_FAILED_MESSAGE = '수집에 실패했어요. 새로고침 후 다시 시도해 주세요'
@@ -85,6 +87,7 @@ export function App() {
   const [collectState, setCollectState] = useState<CollectState>({ status: 'idle' })
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const { state: countsState, refresh: refreshSiteCounts } = useSiteCounts()
+  const historyDisplay = useHistoryDisplay()
   const [resetConfirming, setResetConfirming] = useState(false)
   const [recovering, setRecovering] = useState(false)
   const [platformLoading, setPlatformLoading] = useState(true)
@@ -240,7 +243,7 @@ export function App() {
   }
 
   return (
-    <div className="w-90 bg-page text-text-primary">
+    <div className="max-h-150 w-90 overflow-y-auto bg-page text-text-primary">
       <header className="flex items-center gap-2 border-b border-card-border bg-card px-4 py-3">
         <img src="/logo-128.png" alt="취준일기 로고" className="h-6 w-6 rounded" />
         <h1 className="text-base font-semibold">취준일기</h1>
@@ -347,13 +350,17 @@ export function App() {
         </>}
       </section>
 
+      <HistoryDisplayPanel state={historyDisplay.state} saving={historyDisplay.saving} error={historyDisplay.error}
+        onToggle={enabled => void historyDisplay.setEnabled(enabled)} onRefresh={() => void historyDisplay.refresh()}
+        onOpenHistory={() => void chrome.tabs.create({ url: WEBAPP_URL })} />
+
       <section className="flex flex-col gap-2 border-b border-card-border px-4 py-3">
         <Button variant="secondary" onClick={handleCopyAll} disabled={!hasAnyData || resetting}>
           {COPY_BUTTON_LABEL[copyState]}
         </Button>
         {hasAnyData && (
           <Button variant="secondary" onClick={handleReset} disabled={resetting || collectState.status === 'loading'} className="text-status-rejected!">
-            {resetting ? '초기화 중…' : resetConfirming ? '정말요? 다시 누르면 전체 삭제' : '초기화'}
+            {resetting ? '초기화 중…' : resetConfirming ? '다시 누르면 수집 내역 삭제' : '수집 내역 초기화'}
           </Button>
         )}
         <p role="status" aria-atomic="true" className="sr-only">{copyState === 'idle' ? '' : COPY_BUTTON_LABEL[copyState]}</p>
@@ -361,7 +368,7 @@ export function App() {
       </section>
 
       <section className="px-4 py-3">
-        <Button variant="secondary" onClick={handleOpenJobdiary}>취준일기 열기</Button>
+        <Button variant="secondary" onClick={handleOpenJobdiary}>취준일기로 가져오기</Button>
       </section>
     </div>
   )
