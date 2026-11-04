@@ -334,3 +334,43 @@ BROWSER_EXECUTABLE·PLAYWRIGHT_MODULE이 필요한 환경은 기존 브라우저
 공개 HTML 원문·실패 재현 로그·최종 테스트/빌드/브라우저 로그와 jobkorea-single-card.png는
 로컬 release/badge-validation에 보존하며 공개 HTML과 사용자 화면 원문을 Git에 추가하지 않는다.
 검증 선택자는 확인한 검색 카드 구조에 한정하며 모든 사이트의 임의 카드 구조 지원을 주장하지 않는다.
+
+
+## 확장 재로드 후 오래된 컨텍스트와 개발 worker 오류 (#129, 2026-11-05)
+
+### 사용자 제보와 재현
+
+흑백 팝업 적용 후 사용자가 잡코리아 /User/ApplyMng에서 Cannot read properties of undefined (reading onChanged), Extension context invalidated, __LIVE_RELOAD__ is not defined를 제보했다. 확장만 새로고침한 뒤 열린 사이트 탭에는 이전 content script가 남을 수 있는데, 이전 구현은 chrome.storage.onChanged를 직접 다시 읽어 구독·해제했다. 구독 성공 전에 listening=true로 바꾸고 해제 실패가 DOM 정리까지 중단시키는 문제도 있었다.
+
+수정 전 새 회귀 테스트 5개가 실패했다. 초기 storage API 소실, 재로드 후 pagehide 해제, 무효화 뒤 늦은 캐시 응답, 구독 등록 예외, 구독 해제 예외다. 첫 테스트에서 제보와 같은 onChanged TypeError와 동일한 진입점 경로를 재현했다. 추가로 저장소 조회가 Extension context invalidated로 거절되는 경우도 확인했다.
+
+### 수정과 유지하는 동작
+
+- 진입·복귀·탐색·조회 전후에 runtime.id와 필요한 storage API를 확인한다. 이미 무효화됐다면 기존 인스턴스는 종료하며 자동 재시작하지 않는다.
+- 등록에 사용한 onChanged 이벤트 객체를 보관한다. 종료 시 현재의 chrome.storage를 다시 읽지 않고 해당 객체에서 해제하며, 해제 예외가 나더라도 배지·observer·예약 작업과 페이지 이벤트 정리를 계속한다.
+- 종료는 여러 번 호출해도 안전하며, 요청 세대를 무효화해 늦은 읽기 응답이 배지를 되살리지 못하게 한다. 종료 뒤 이벤트가 늦게 도착해도 새 조회를 하지 않는다.
+- 일반 저장소 일시 실패는 기존처럼 빈 표시로 두고 후속 정상 변경을 받을 수 있다. 실제 컨텍스트 무효화와 구분한다.
+- 숨김/BFCache 구독 중단·복귀 시 최신 캐시 확인, 계정 변경·로그아웃과 기존 정확한 공고 비교는 유지한다. 컨텍스트 확인을 위한 주기적 폴링·추가 권한·사용자 탭 자동 새로고침은 넣지 않는다.
+
+### 별도로 확인된 CRXJS 개발 오류
+
+설치된 CRXJS 2.7.1의 dist/index.mjs에서 workerHmrClient의 __LIVE_RELOAD__ 토큰을 String.replace로 첫 등장만 치환하는 코드를 확인했다. 실제 localhost:5173/@crx/client-worker 응답에도 미치환 토큰이 1개 남았고 소켓 재연결 경로에서 읽힐 수 있었다.
+
+apps/extension/dev/crxLiveReload.ts에 serve 전용·post 변환을 추가했다. 정확한 /@crx/client-worker 모듈에 남은 토큰만 CRXJS와 동일한 liveReload 옵션으로 모두 치환한다. 다른 모듈·이미 치환된 코드·운영 빌드에는 적용하지 않는다. 의존성 소스나 lockfile을 수정하지 않았고, upstream에서 해결되면 실제 worker 검증을 유지하며 이 호환 변환을 제거할 수 있다.
+
+변환 후 실제 서버 응답의 미치환 토큰은 0개다. 그 응답을 VM에서 가짜 WebSocket과 함께 실행해 runtime-reload 메시지와 비정상 소켓 종료 후 재연결 두 경로가 미정의 변수 없이 reload를 호출함을 확인했다. 실제 Vite 서버를 죽였다 재실행한 네트워크 장애 시험과는 구분한다.
+
+### 검증과 범위
+
+- 익스텐션 220개 테스트 통과: 기존 211개에 무효 컨텍스트 6개·개발 변환 3개를 추가했다. 타입 검사·운영 빌드와 별도 개발 정적 빌드도 통과했다.
+- 기존 실제 live MV3 Chrome 14개 시나리오 통과. 흑백 팝업·설정·실제 표본 수집/초기화·동적 배지와 저장 경계의 회귀를 확인했다.
+- 새 verify-extension-reload-browser.mjs의 2개 검증 통과: 실제 제공된 worker 코드의 두 reload 경로 실행, 실제 Chrome MV3 self-reload 후 기존 탭의 pageshow/visibilitychange/popstate가 오류 없이 배지를 정리하는 경로다.
+- 새 브라우저 검증은 별도 임시 프로필에만 CDP unpacked 로드를 사용한다. 해당 headless 프로필은 self-reload 뒤 확장을 disabled로 보고해 같은 프로필의 재활성화·페이지 새로고침 복구는 검증 범위에서 제외했다. 신규 주입 상태는 기존 14개 회귀에서 별도로 검증했으며 사용자 실제 Chrome을 자동 조작하지 않았다.
+- 새 스크립트는 EXTENSION_PATH=release/reload-validation/development, DEV_SERVER_ORIGIN=http://localhost:5173과 BROWSER_EXECUTABLE을 지정해 실행한다. 실제 Chrome 재로드는 HMR 없는 정적 개발 빌드, worker 응답 검증은 실행 중인 Vite를 사용한다. 두 산출물을 혼동하지 않는다.
+- 결과는 커밋 제외 release/reload-validation/browser-report.json 및 release/badge-validation/browser-report.json이다. 활성 apps/extension/dist와 별도 빌드 출력을 분리했다.
+
+### 사용자가 새 코드로 확인하는 순서
+
+확장 관리에서 취준일기 새로고침 → 열려 있던 잡코리아 페이지 새로고침 순서로 새 content script를 로드한다. 과거 오류 목록은 기록이므로 기존 항목을 지운 뒤 새 오류가 쌓이는지 본다. 이미 주입된 수정 전 스크립트를 새 파일 수정만으로 바꿀 수 있다고 안내하지 않는다. 참고: [Chrome 확장 개발 흐름](https://github.com/GoogleChrome/developer.chrome.com/blob/main/site/en/docs/extensions/mv3/getstarted/development-basics/index.md), [오류 기록 정리](https://developer.chrome.com/docs/extensions/get-started/tutorial/debug).
+
+저장된 수집 슬롯·웹앱 이력·팝업 디자인·main/스토어 배포는 이번 수정에서 변경하지 않았다.
