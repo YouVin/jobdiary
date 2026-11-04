@@ -1,11 +1,11 @@
 import type { ButtonHTMLAttributes } from 'react'
 
-type ButtonVariant = 'primary' | 'secondary' | 'text'
+type ButtonVariant = 'primary' | 'secondary' | 'compact'
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
   primary: 'diary-button-primary',
   secondary: 'diary-button-secondary',
-  text: 'diary-button-text',
+  compact: 'diary-button-compact',
 }
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

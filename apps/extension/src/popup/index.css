@@ -32,7 +32,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .diary-button-primary { @apply min-h-10 w-full border border-diary-ink bg-diary-ink text-sm text-diary-paper enabled:hover:bg-diary-hover enabled:active:bg-diary-hover; }
 .diary-button-secondary { @apply min-h-10 w-full border border-diary-line bg-diary-paper text-sm text-diary-ink enabled:hover:bg-diary-tint enabled:active:bg-diary-tint; }
 .diary-button-primary:has(.diary-action-icon), .diary-button-secondary:has(.diary-action-icon) { @apply px-8; }
-.diary-button-text { @apply min-h-8 max-w-full px-0 py-1 text-xs text-diary-secondary enabled:hover:text-diary-ink enabled:hover:underline; }
+.diary-button-compact { @apply min-h-9 w-full border border-diary-line bg-diary-paper px-2 py-1 text-xs text-diary-ink enabled:hover:bg-diary-tint enabled:active:bg-diary-tint; }
 .diary-action-icon { @apply absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2; }
 .diary-collect-status:not(:empty) { @apply mt-2 flex flex-col gap-1; }
 .diary-records { @apply mt-4; }
@@ -43,11 +43,18 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .diary-site-counts li { @apply flex h-7 items-center justify-between border-b border-diary-line text-xs text-diary-secondary; }
 .diary-count { @apply font-medium text-diary-ink; font-variant-numeric: tabular-nums; }
 .diary-count small { @apply ml-1 text-xs font-normal text-diary-secondary; }
-.diary-tools { @apply mt-1 flex flex-wrap items-center justify-between gap-x-3; }
-.diary-history { @apply mt-3 mb-3 border-t border-diary-line pt-3; }
-.diary-history-summary { @apply flex min-h-6 cursor-pointer list-none items-center justify-between gap-2 text-xs; }
+.diary-tools { @apply mt-2 grid grid-cols-2 gap-2; }
+.diary-tools > :only-child { @apply col-span-2; }
+.diary-history { @apply my-3; }
+.diary-history details { @apply overflow-visible rounded-md border border-diary-line; }
+.diary-history-summary { @apply flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-3 py-2 text-xs text-diary-ink hover:bg-diary-tint; }
+.diary-history-summary-end { @apply flex items-center gap-2 text-diary-secondary; }
+.diary-history-chevron { @apply h-4 w-4; }
+.diary-history details[open] .diary-history-summary { @apply rounded-b-none border-b border-diary-line bg-diary-tint; }
+.diary-history details[open] .diary-history-chevron { @apply rotate-180; }
 .diary-history-summary::-webkit-details-marker { display: none; }
-.diary-history-details { @apply mt-2 flex flex-col gap-1 text-xs text-diary-secondary; }
+.diary-history-details { @apply flex flex-col gap-1 px-3 py-2 text-xs text-diary-secondary; }
+.diary-history-meta { @apply flex flex-wrap items-center gap-x-2 gap-y-1; }
 /* 설정이나 수집 안내가 보이면 날짜를 한 줄로 접어 600px 안의 작업 공간을 확보한다. */
 .diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-calendar { @apply hidden; }
 .diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-date { @apply py-2; }

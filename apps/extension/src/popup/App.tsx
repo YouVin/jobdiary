@@ -348,11 +348,11 @@ export function App() {
             </ul>
           </>}
           <div className="diary-tools">
-            <Button variant="text" onClick={handleCopyAll} disabled={!hasAnyData || resetting}>
+            <Button variant="compact" onClick={handleCopyAll} disabled={!hasAnyData || resetting}>
               {COPY_BUTTON_LABEL[copyState]}
             </Button>
             {hasAnyData && (
-              <Button variant="text" onClick={handleReset} disabled={resetting || collectState.status === 'loading'}>
+              <Button variant="compact" onClick={handleReset} disabled={resetting || collectState.status === 'loading'}>
                 {resetting ? '초기화 중…' : resetConfirming ? '다시 누르면 수집 내역 삭제' : '수집 내역 초기화'}
               </Button>
             )}
