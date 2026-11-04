@@ -247,11 +247,11 @@ export function App() {
       <header className="flex items-center gap-2 border-b border-card-border bg-card px-4 py-2">
         <img src="/logo-128.png" alt="취준일기 로고" className="h-6 w-6 rounded" />
         <h1 className="text-base font-semibold">취준일기</h1>
-        <div className="ml-auto">
-          {platformLoading ? <span className="text-xs text-text-muted">확인 중…</span>
-            : platform ? <PlatformBadge platform={platform} /> : null}
-        </div>
       </header>
+
+      <section className="border-b border-card-border bg-column px-4 py-2">
+        {platformLoading ? <p className="text-xs text-text-muted">현재 페이지 확인 중…</p> : <PlatformBadge platform={platform} />}
+      </section>
 
       <section className="flex flex-col gap-2 border-b border-card-border px-4 py-3">
         <Button
@@ -336,9 +336,9 @@ export function App() {
             {totalCount}
             건
           </p>
-          <ul className="grid grid-cols-3 gap-2">
+          <ul className="flex flex-col gap-1">
             {PLATFORM_ORDER.map(p => (
-              <li key={p} className="flex items-center justify-between gap-1 text-xs text-text-secondary">
+              <li key={p} className="flex items-center justify-between text-sm text-text-secondary">
                 <span>{PLATFORM_LABEL[p]}</span>
                 <span>
                   {countsState.counts[p]}
@@ -350,11 +350,7 @@ export function App() {
         </>}
       </section>
 
-      <HistoryDisplayPanel state={historyDisplay.state} saving={historyDisplay.saving} error={historyDisplay.error}
-        onToggle={enabled => void historyDisplay.setEnabled(enabled)} onRefresh={() => void historyDisplay.refresh()}
-        onOpenHistory={() => void chrome.tabs.create({ url: WEBAPP_URL })} />
-
-      <section className="grid grid-cols-2 gap-2 border-b border-card-border px-4 py-2">
+      <section className="flex flex-col gap-2 border-b border-card-border px-4 py-2">
         <Button variant="secondary" onClick={handleCopyAll} disabled={!hasAnyData || resetting}>
           {COPY_BUTTON_LABEL[copyState]}
         </Button>
@@ -364,10 +360,14 @@ export function App() {
           </Button>
         )}
         <p role="status" aria-atomic="true" className="sr-only">{copyState === 'idle' ? '' : COPY_BUTTON_LABEL[copyState]}</p>
-        <p role="alert" className="col-span-2 text-sm text-status-rejected">{resetError ? '초기화하지 못했어요. 다시 시도해 주세요.' : ''}</p>
+        {resetError && <p role="alert" className="text-sm text-status-rejected">초기화하지 못했어요. 다시 시도해 주세요.</p>}
       </section>
 
-      <section className="px-4 py-3">
+      <HistoryDisplayPanel state={historyDisplay.state} saving={historyDisplay.saving} error={historyDisplay.error}
+        onToggle={enabled => void historyDisplay.setEnabled(enabled)} onRefresh={() => void historyDisplay.refresh()}
+        onOpenHistory={() => void chrome.tabs.create({ url: WEBAPP_URL })} />
+
+      <section className="px-4 py-2">
         <Button variant="secondary" onClick={handleOpenJobdiary}>취준일기로 가져오기</Button>
       </section>
     </div>
