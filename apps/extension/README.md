@@ -144,6 +144,7 @@ content script가 바뀌면 확장과 해당 사이트 탭을 함께 새로고�
 | 문서 | 내용 |
 | --- | --- |
 | [팝업 디자인·사용성](../../docs/EXTENSION_POPUP_DESIGN.md) | 일기장 시안 선택, 흑백 UI, 보조 버튼과 설정 개선, 실제 높이 |
+| [통합 검증과 다음 출시](../../docs/EXTENSION_RELEASE_CHECK.md) | 실제 계정 확인·운영 ZIP·버전·정책/스토어 순서 |
 | [지원 이력 자동 표시](../../docs/APPLICATION_HISTORY_BADGES.md) | ID 비교·중복 배지·동적 DOM·숨김/BFCache·재로드·성능 |
 | [웹앱 동기화](../../docs/APPLICATION_HISTORY_SYNC.md) | 최소 비교 캐시, 계정/탭 간 순서, 오래된 탭 방지 |
 | [셀렉터](docs/SELECTORS.md) | 사이트별 DOM 근거와 수집 제약 |

@@ -5,14 +5,14 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
-const output = path.join(root, 'release/badge-validation');
+const output = path.resolve(root, process.env.BADGE_REPORT_DIR || 'release/badge-validation');
 const extension = process.env.EXTENSION_PATH || path.join(output, 'extension-development');
 const devOrigin = process.env.DEV_SERVER_ORIGIN ? new URL(process.env.DEV_SERVER_ORIGIN).origin : null;
 const manifest = JSON.parse(fs.readFileSync(path.join(extension, 'manifest.json'), 'utf8'));
 assert(manifest.content_scripts?.some(script => script.js?.some(file => file.includes('historyBadges'))),
   '로드할 확장의 manifest에 historyBadges가 없습니다. dev:extension을 재시작한 뒤 확장과 사이트를 다시 로드하세요.');
 const { chromium } = await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE || path.join(root, 'apps/web/node_modules/.release-tools/node_modules/playwright/index.mjs')).href);
-const key = 'jobdiary:application-history:v1:http://localhost:3000';
+const key = 'jobdiary:application-history:v1:' + (process.env.HISTORY_ORIGIN || 'http://localhost:3000');
 const settingsKey = 'jobdiary:history-display:v1';
 const marker = '[data-jobdiary-history]';
 const origin = 'https://www.jobkorea.co.kr';
@@ -373,4 +373,4 @@ try {
   report.passed = true;
   report.browser = context.browser().version();
 } catch (error) { report.passed = false; report.error = error.message; console.error(error.stack); process.exitCode = 1; }
-finally { await context?.close(); fs.writeFileSync(path.join(output, 'browser-report.json'), JSON.stringify(report, null, 2)); console.log('Report: release/badge-validation/browser-report.json'); }
+finally { await context?.close(); fs.writeFileSync(path.join(output, 'browser-report.json'), JSON.stringify(report, null, 2)); console.log('Report: ' + path.relative(root, path.join(output, 'browser-report.json'))); }

@@ -42,3 +42,5 @@ jobs:
       - run: npm ci
       - run: npm run test:extension
       - run: npm run build:extension
+      - name: Verify production ZIP matches the build
+        run: node apps/extension/scripts/verify-release-package.mjs
