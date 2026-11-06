@@ -14,6 +14,7 @@
 - [익스텐션 흑백 일기장 팝업·사용자 선택·날짜·화면 검증](EXTENSION_POPUP_DESIGN.md)
 - [GitHub 소개·스크린샷 출처·재제작 기록](GITHUB_SHOWCASE.md)
 - [실행 코드·설정·GitHub 주소 연결 점검](MONOREPO_LINK_AUDIT.md)
+- [익스텐션 통합 검증·실계정 체크·1.1.0 출시 준비](EXTENSION_RELEASE_CHECK.md)
 - [단계별 진행 계획](IMPLEMENTATION_ROADMAP.md)
 - [익스텐션 문서](../apps/extension/docs/PLANNING.md)
 

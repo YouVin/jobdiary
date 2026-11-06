@@ -6,6 +6,7 @@ baseurl: /jobdiary-extension
 exclude:
   - DEADLINES.md
   - RELEASE_1.0.3.md
+  - RELEASE_1.1.0.md
   - ARCHITECTURE.md
   - INTEGRATION.md
   - PLANNING.md
