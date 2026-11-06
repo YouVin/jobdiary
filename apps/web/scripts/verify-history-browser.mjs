@@ -6,11 +6,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const { chromium } = await import(pathToFileURL(process.env.PLAYWRIGHT_MODULE || path.join(root, 'apps/web/node_modules/.release-tools/node_modules/playwright/index.mjs')).href);
-const output = path.join(root, 'release/history-validation');
+const output = path.resolve(root, process.env.HISTORY_REPORT_DIR || 'release/history-validation');
 const extension = process.env.EXTENSION_PATH || path.join(output, 'extension-development');
-const origin = 'http://localhost:3000';
+const origin = new URL(process.env.TEST_ORIGIN || 'http://localhost:3000').origin;
 const cacheKey = 'jobdiary:application-history:v1:' + origin;
-const extensionId = 'dckfpbmglbagcpnkkkdcnbnpjdpfjcde';
+let extensionId = 'dckfpbmglbagcpnkkkdcnbnpjdpfjcde';
+const expectedStoreId = 'afnboeihbppogfinbickjaaadcgjkmil';
+const adaptStoreId = process.env.ADAPT_STORE_ID === '1';
+if (origin !== 'http://localhost:3000') assert(adaptStoreId, '운영 주소 테스트는 독립 프로필의 ID 어댑터를 명시해야 한다');
 const env = fs.readFileSync(path.join(root, 'apps/web/.env.local'), 'utf8');
 const publicUrl = env.match(/^NEXT_PUBLIC_SUPABASE_URL\s*=\s*["']?([^"'\r\n]+)/m)?.[1].trim();
 assert(publicUrl, '웹앱 환경 파일에 공개 Supabase URL 필요');
@@ -97,6 +100,18 @@ try {
     }
   }, { origin, key: authKey, value: session(users[0]) });
   const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
+  if (adaptStoreId) {
+    extensionId = new URL(worker.url()).host;
+    // 운영 페이지의 고정 스토어 ID 호출을 독립 프로필의 실제 unpacked 확장으로 연결한다.
+    // 제품 코드/ZIP을 바꾸지 않으며 실제 스토어 설치·업데이트를 검증한 것으로 표현하지 않는다.
+    await context.addInitScript(({ origin, expectedStoreId, actualId }) => {
+      if (location.origin !== origin || !globalThis.chrome?.runtime?.sendMessage) return;
+      const runtime = globalThis.chrome.runtime;
+      const send = runtime.sendMessage.bind(runtime);
+      runtime.sendMessage = (id, ...args) => send(id === expectedStoreId ? actualId : id, ...args);
+    }, { origin, expectedStoreId, actualId: extensionId });
+  }
+
   const read = () => worker.evaluate(async key => (await chrome.storage.local.get(key))[key] ?? null, cacheKey);
   const waitFor = async predicate => {
     for (let i = 0; i < 100; i++) {
@@ -184,7 +199,7 @@ try {
   });
   await check('페이지 오류·예상 밖 외부 요청 없음', async () => { assert.deepEqual(errors, []); });
   fs.writeFileSync(path.join(output, 'browser-report.json'), JSON.stringify({ passed: true, at: new Date().toISOString(), browser: context.browser().version(), checks,
-    scope: 'Actual local Next.js and MV3; synthetic Auth/DB HTTP. No real account/DB writes.' }, null, 2));
+    origin, extensionIdAdapter: adaptStoreId, scope: 'Actual web UI and MV3; synthetic Auth/DB HTTP. Optional ID-only adapter maps store ID to isolated unpacked extension. No real account/DB writes; no store installation/update verification.' }, null, 2));
 } catch (error) {
   fs.writeFileSync(path.join(output, 'browser-report.json'), JSON.stringify({ passed: false, at: new Date().toISOString(), checks, error: error.message }, null, 2));
   console.error(error.stack);
