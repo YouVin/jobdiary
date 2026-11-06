@@ -1,0 +1,27 @@
+import type { JobPlatform, ApplicationStatus } from '@jobdiary/shared';
+export type Platform = JobPlatform | 'manual';
+export type Status = ApplicationStatus;
+
+export interface DiaryEntry {
+  id: string;
+  content: string; // 일기 내용
+  mood?: string; // 감정 (선택)
+  createdAt: string;
+}
+
+export interface Application {
+  id: string;
+  company: string; // 회사명
+  position: string; // 공고명
+  platform: Platform; // 어느 사이트
+  status: Status; // 현재 상태
+  statusSource?: 'extension' | 'created' | 'manual' | 'deadline'; // 수동 이동과 자동 분류를 구분
+  appliedAt: string; // 지원일 (ISO)
+  deadlineAt?: string; // 공고 마감일 (YYYY-MM-DD). 없으면 상시/미확인
+  updatedAt: string;
+  memo?: string;
+  diary?: DiaryEntry[]; // 일기 목록
+  interviewDate?: string;
+  url?: string;
+  externalId?: string; // 각 사이트의 지원건 고유 ID (중복 판별용, 원티드는 없어서 optional)
+}

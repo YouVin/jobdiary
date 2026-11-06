@@ -1,0 +1,127 @@
+console.log('[JobDiary] 잡코리아 파서 로드됨');
+import { JOBKOREA_SELECTORS } from './selectors/jobkorea';
+import type { ScrapedApplication } from '../types/application';
+import { toSafeUrl } from '../lib/url';
+import { collectAllPages, getCurrentPageNumber } from './paginate';
+import { registerCollectHandler } from './collectHandler';
+import { buildRowKey } from './rowKey';
+import { supplementJobkoreaDeadlines } from './jobkoreaDeadlines';
+import type { DeadlineSummary } from '../lib/messages';
+
+// "20260601235538" (YYYYMMDDHHmmss, 14자리 숫자) → "2026.06.01 23:55" (사람인 포맷과 통일)
+function formatApplyDate(raw: string | undefined): string {
+  if (!raw || !/^\d{14}$/.test(raw)) return '';
+  const year = raw.slice(0, 4);
+  const month = raw.slice(4, 6);
+  const day = raw.slice(6, 8);
+  const hour = raw.slice(8, 10);
+  const minute = raw.slice(10, 12);
+  return `${year}.${month}.${day} ${hour}:${minute}`;
+}
+
+// formatApplyDate와 같은 원본이지만 초까지 살려 exact용으로 쓴다. "2026.06.01 23:55:38"
+function formatApplyDateExact(raw: string | undefined): string | undefined {
+  if (!raw || !/^\d{14}$/.test(raw)) return undefined;
+  const year = raw.slice(0, 4);
+  const month = raw.slice(4, 6);
+  const day = raw.slice(6, 8);
+  const hour = raw.slice(8, 10);
+  const minute = raw.slice(10, 12);
+  const second = raw.slice(12, 14);
+  return `${year}.${month}.${day} ${hour}:${minute}:${second}`;
+}
+
+// '.reading'은 열람 행에서 "열람\n2026.04.03"처럼 열람일자가 함께 붙어 완전일치가 실패한다.
+// 시작 문자로 판별한다 — "미열람"이 "열람"을 포함하므로 반드시 미열람을 먼저 검사한다.
+function parseViewed(readingText: string | undefined): boolean | undefined {
+  if (!readingText) return undefined;
+  if (readingText.startsWith('미열람')) return false;
+  if (readingText.startsWith('열람')) return true;
+  return undefined;
+}
+
+export function parseJobkorea(root: ParentNode = document): ScrapedApplication[] {
+  const rows = root.querySelectorAll<HTMLElement>(JOBKOREA_SELECTORS.container);
+  const results: ScrapedApplication[] = [];
+
+  rows.forEach((row) => {
+    // 잡코리아는 지원 행 다음에 추천공고 목록만 담은 별도 tr을 렌더링한다.
+    // 이 행에도 .company a와 .description a가 있어 구형 형식 fallback에
+    // 걸릴 수 있으므로 지원 내역으로 파싱하지 않는다.
+    if (row.querySelector(JOBKOREA_SELECTORS.similarRecommendations)) return;
+
+    const dataButton = row.querySelector<HTMLElement>(JOBKOREA_SELECTORS.dataButton);
+    // url/viewed는 버튼 유무와 무관하게 행 본문에서 읽는다(두 형식 모두 동일 위치).
+    const href = row.querySelector<HTMLAnchorElement>(JOBKOREA_SELECTORS.url)?.getAttribute('href');
+    const url = toSafeUrl(href, location.origin);
+    const viewed = parseViewed(row.querySelector(JOBKOREA_SELECTORS.viewed)?.textContent?.trim());
+    // 표시 원문만 읽는다. (~10/31)에서 지원일/현재 연도로 마감 연도를 추정하지 않는다.
+    const deadlineAt = row.querySelector(JOBKOREA_SELECTORS.deadline)?.textContent?.trim() || undefined;
+
+    if (dataButton) {
+      // 최신 형식(devBtnDel/devBtnCancel): 버튼 data 속성 그대로 사용 — 기존 동작 그대로 유지.
+      results.push({
+        company: dataButton.dataset[JOBKOREA_SELECTORS.companyAttr] ?? '',
+        position: dataButton.dataset[JOBKOREA_SELECTORS.positionAttr] ?? '',
+        platform: 'jobkorea',
+        appliedAt: formatApplyDate(dataButton.dataset[JOBKOREA_SELECTORS.appliedAtAttr]),
+        ...(deadlineAt ? { deadlineAt } : {}),
+        status: row.querySelector(JOBKOREA_SELECTORS.status)?.textContent?.trim() ?? '',
+        externalId: dataButton.dataset[JOBKOREA_SELECTORS.externalIdAttr],
+        viewed,
+        appliedAtExact: formatApplyDateExact(dataButton.dataset[JOBKOREA_SELECTORS.appliedAtAttr]),
+        url,
+      });
+      return;
+    }
+
+    // 오래된 형식(devBtnOldDel 등) 또는 공고가 삭제된 행: 버튼에 memname/gititle/applydate가
+    // 없어 본문 텍스트로 폴백한다. data-idx를 가진 요소도, 회사명 텍스트도 둘 다 없으면
+    // 빈 tr 등 지원 행이 아닌 것으로 보고 스킵한다.
+    const oldDataButton = row.querySelector<HTMLElement>(JOBKOREA_SELECTORS.oldDataButton);
+    const company = row.querySelector(JOBKOREA_SELECTORS.companyFallback)?.textContent?.trim() ?? '';
+    if (!oldDataButton && !company) return;
+
+    results.push({
+      company,
+      position: row.querySelector(JOBKOREA_SELECTORS.positionFallback)?.textContent?.trim() ?? '',
+      platform: 'jobkorea',
+      appliedAt: row.querySelector(JOBKOREA_SELECTORS.appliedAtFallback)?.textContent?.trim() ?? '',
+      ...(deadlineAt ? { deadlineAt } : {}),
+      status: row.querySelector(JOBKOREA_SELECTORS.status)?.textContent?.trim() ?? '',
+      externalId: oldDataButton?.dataset[JOBKOREA_SELECTORS.externalIdAttr],
+      viewed,
+      // 폴백 경로의 appliedAt은 시각이 없는 날짜 텍스트("2026.04.01")라 exact로 쓸 게 없다.
+      appliedAtExact: undefined,
+      url,
+    });
+  });
+
+  return results;
+}
+
+function buildJobkoreaPageUrl(pageNum: number): string {
+  const url = new URL(location.href);
+  url.searchParams.set(JOBKOREA_SELECTORS.pageParam, String(pageNum));
+  return url.toString();
+}
+
+// 유저가 1페이지가 아닌 곳(URL의 Page 파라미터가 2 이상)에서 눌렀다면, 진짜 1페이지를
+// collectAllPages가 내부에서 따로 fetch해 시작점으로 삼는다 — 안 그러면 앞쪽 페이지가 누락되고,
+// 뒤에서 현재 페이지를 다시 fetch해 같은 행이 중복으로도 들어간다.
+// 2..N은 같은 쿼리(유저 필터 그대로)로 Page만 바꿔가며 fetch + DOMParser로 파싱한다.
+// 파싱된 유효행이 0개면 그 페이지에서 종료.
+async function collectJobkoreaAllPages(): Promise<{ rows: ScrapedApplication[], truncated: boolean, deadlines?: DeadlineSummary }> {
+  const { rows, pageCount, truncated } = await collectAllPages({
+    currentPageNumber: getCurrentPageNumber(JOBKOREA_SELECTORS.pageParam),
+    currentPageRows: parseJobkorea(document),
+    buildPageUrl: buildJobkoreaPageUrl,
+    parseRows: doc => parseJobkorea(doc),
+    getRowKey: buildRowKey,
+    isSiteTerminal: rows => rows.length === 0,
+  });
+  console.log(`[잡코리아 파서] 총 ${pageCount}페이지, ${rows.length}건 수집${truncated ? ' (일부 중단됨)' : ''}`);
+  return { ...await supplementJobkoreaDeadlines(rows), truncated };
+}
+
+registerCollectHandler('jobkorea', collectJobkoreaAllPages);
