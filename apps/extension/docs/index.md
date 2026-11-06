@@ -9,7 +9,7 @@ permalink: /
 
 여러 채용 사이트에 남긴 지원 기록을 한곳에 모으세요.
 
-> **다음 버전 출시 준비안**입니다. 아래 흑백 화면·마감일 보충·지원 이력 자동 표시는 dev 구현 기준이며, 기존 웹스토어 버전과 다를 수 있습니다. 소스 버전은1.1.0이며 실제 게시는 [출시 점검](https://github.com/YouVin/jobdiary/blob/dev/docs/EXTENSION_RELEASE_CHECK.md) 결과에 따라 진행합니다.
+> **1.1.0 기능 안내**입니다. 현재 소스와 운영 웹앱을 기준으로 하며, Chrome 웹스토어 심사·배포는 별도입니다. 설치한 버전에 따라 흑백 화면·마감일 보충·지원 이력 자동 표시의 사용 가능 여부가 다를 수 있습니다.
 
 [Chrome 웹스토어](https://chromewebstore.google.com/detail/afnboeihbppogfinbickjaaadcgjkmil) · [취준일기 웹앱](https://jobdiary.vercel.app)
 
