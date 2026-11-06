@@ -31,6 +31,22 @@ const report = { at: new Date().toISOString(), checks: [], metrics: {}, cpu: os.
 let context;
 const errors = [];
 const requests = [];
+async function inspectBadge(page, index) {
+  // CDP가 닫힌 Shadow DOM을 검사한다. 제품에서는 closed 상태를 유지한다.
+  const session = await context.newCDPSession(page);
+  try {
+    const { root } = await session.send('DOM.getDocument');
+    const { nodeIds } = await session.send('DOM.querySelectorAll', { nodeId: root.nodeId, selector: marker });
+    const { node } = await session.send('DOM.describeNode', { nodeId: nodeIds[index], depth: 3, pierce: true });
+    const label = node.shadowRoots[0].children.find(child => child.nodeName === 'SPAN');
+    const { object } = await session.send('DOM.resolveNode', { backendNodeId: label.backendNodeId });
+    const { result } = await session.send('Runtime.callFunctionOn', {
+      objectId: object.objectId, returnByValue: true,
+      functionDeclaration: 'function() { const css = getComputedStyle(this); const rect = this.getBoundingClientRect(); const symbol = this.querySelector(".symbol"); return { text: this.textContent, background: css.backgroundColor, color: css.color, fontSize: css.fontSize, borderStyle: css.borderStyle, width: rect.width, height: rect.height, left: rect.left, right: rect.right, symbolHidden: symbol?.getAttribute("aria-hidden") }; }',
+    });
+    return result.value;
+  } finally { await session.detach(); }
+}
 const check = async (name, run) => { await run(); report.checks.push(name); console.log('PASS ' + name); };
 fs.mkdirSync(output, { recursive: true });
 try {
@@ -78,6 +94,41 @@ try {
     assert.deepEqual(await page.locator('button').first().boundingBox(), before);
     assert.equal(requests.length, networkCount, '배지 표시로 사이트 HTTP 요청이 추가되지 않음');
     await page.screenshot({ path: path.join(output, 'jobkorea-list.png') });
+  });
+  await check('흑백 배지 대비·기호·24px 높이·좁은 목록과 강제 색상을 확인한다', async () => {
+    const applied = await inspectBadge(page, 0);
+    const canceled = await inspectBadge(page, 1);
+    assert.equal(applied.background, 'rgb(24, 24, 27)');
+    assert.equal(applied.color, 'rgb(255, 255, 255)');
+    assert.equal(canceled.background, 'rgb(255, 255, 255)');
+    assert.equal(canceled.color, 'rgb(82, 82, 91)');
+    for (const label of [applied, canceled]) {
+      assert.equal(label.fontSize, '12px'); assert.equal(label.height, 24);
+      assert.equal(label.symbolHidden, 'true');
+    }
+    const contrast = (one, two) => {
+      const luminance = rgb => rgb.match(/\d+/g).map(Number).map(value => {
+        const channel = value / 255; return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+      const values = [luminance(one), luminance(two)].sort((a, b) => b - a);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    };
+    report.metrics.badgeAppearance = { applied, canceled, appliedContrast: contrast(applied.color, applied.background), canceledContrast: contrast(canceled.color, canceled.background) };
+    assert(report.metrics.badgeAppearance.appliedContrast > 7);
+    assert(report.metrics.badgeAppearance.canceledContrast > 7);
+    await page.locator('a').first().focus();
+    assert(await page.locator('a').first().evaluate(anchor => document.activeElement === anchor));
+    await page.screenshot({ path: path.join(output, 'badges-monochrome-desktop.png') });
+    await page.setViewportSize({ width: 390, height: 800 });
+    const narrow = await inspectBadge(page, 0);
+    const button = await page.locator('button').first().boundingBox();
+    assert(narrow.left >= 0 && narrow.right <= button.x);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+    await page.screenshot({ path: path.join(output, 'badges-monochrome-narrow.png') });
+    await page.emulateMedia({ forcedColors: 'active' });
+    assert.equal((await inspectBadge(page, 1)).borderStyle, 'dashed');
+    await page.emulateMedia({ forcedColors: 'none' });
+    await page.setViewportSize({ width: 1280, height: 800 });
   });
   await check('동적 추가·가상 목록 href 변경·삭제·정상 재삽입을 반영한다', async () => {
     await page.evaluate(() => {

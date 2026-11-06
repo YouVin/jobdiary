@@ -69,3 +69,8 @@
 ## 익스텐션 흑백 일기장 테마 (#127, 2026-11-05)
 
 사용자가 승인한 흑백 시안을 익스텐션 팝업에만 적용한다. apps/extension/tailwind.config.ts의 diary 토큰(paper/ink/hover/secondary/line/tint)을 사용하고 웹앱 브랜드 토큰은 유지한다. 본문은 기존 시스템 sans-serif, 월 이름은 시스템 serif와 diary-month(44/48), 읽기 전용 보조 달력은 diary-calendar(9/12) 토큰을 사용한다. 작은 달력은 클릭 대상이 아니며 오늘은 큰 날짜 표시와 time으로 함께 제공한다. 간격은 정수 Tailwind 단위, 장식 SVG는 확장의 public/icons 파일, 색은 공통 토큰으로 관리한다. [사용자 선택과 화면 검증](EXTENSION_POPUP_DESIGN.md)을 참고한다.
+
+
+### 익스텐션 지원 이력 배지 (#135)
+
+사용자 요청에 따라 흑백 일기장 테마를 지원 이력 배지에도 적용한다. diary ink/paper/secondary 토큰, 12px 굵은 본문·24px 높이·4px 간격을 사용한다. 지원은 체크와 어두운 배경, 취소는 되돌림 기호와 밝은 테두리로 구분한다. 웹앱의 색상 체계는 변경하지 않는다. [비교·접근성·성능 검증](APPLICATION_HISTORY_BADGES.md)을 따른다.
