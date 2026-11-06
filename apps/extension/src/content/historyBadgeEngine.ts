@@ -1,6 +1,6 @@
 import { getPostingReference, type HistoryCache, type HistoryEntry } from '@jobdiary/shared';
 import type { Platform } from '../types/application';
-import { HISTORY_BADGE_CSS, HISTORY_BADGE_LABEL } from '../lib/historyBadgeStyle';
+import { HISTORY_BADGE_CSS, HISTORY_BADGE_LABEL, HISTORY_BADGE_SYMBOL } from '../lib/historyBadgeStyle';
 import { HISTORY_BADGE_SELECTORS } from './selectors/historyBadges';
 import { JOBKOREA_HISTORY_SELECTORS } from './selectors/jobkorea';
 
@@ -78,8 +78,13 @@ export function createHistoryAnnotator(
       shadow.append(style);
     }
     const label = doc.createElement('span');
+    label.className = 'badge';
     label.dataset.state = state;
-    label.textContent = HISTORY_BADGE_LABEL[state];
+    const symbol = doc.createElement('span');
+    symbol.className = 'symbol';
+    symbol.setAttribute('aria-hidden', 'true');
+    symbol.textContent = HISTORY_BADGE_SYMBOL[state];
+    label.append(symbol, doc.createTextNode(HISTORY_BADGE_LABEL[state]));
     shadow.append(label);
     target.prepend(host);
     tracked.set(target, { host, key, state, kind });
