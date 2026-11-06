@@ -15,6 +15,7 @@
 - [GitHub 소개·스크린샷 출처·재제작 기록](GITHUB_SHOWCASE.md)
 - [실행 코드·설정·GitHub 주소 연결 점검](MONOREPO_LINK_AUDIT.md)
 - [익스텐션 통합 검증·실계정 체크·1.1.0 출시 준비](EXTENSION_RELEASE_CHECK.md)
+- [2026-11-06 운영 배포·공개 정책 게시 기록](PRODUCTION_RELEASE_2026-11-06.md)
 - [단계별 진행 계획](IMPLEMENTATION_ROADMAP.md)
 - [익스텐션 문서](../apps/extension/docs/PLANNING.md)
 
