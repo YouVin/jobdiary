@@ -21,7 +21,7 @@ for (const item of capture.captures) {
   assert.equal(item.scroll, false);
 }
 const files = ['README.md', 'apps/web/README.md', 'apps/extension/README.md',
-  'apps/extension/scripts/store-screenshots/README.md', 'apps/extension/docs/store-screenshots/README.md', 'docs/GITHUB_SHOWCASE.md'];
+  'apps/extension/scripts/store-screenshots/README.md', 'apps/extension/docs/store-screenshots/README.md', 'docs/GITHUB_SHOWCASE.md', 'docs/EXTENSION_RELEASE_CHECK.md', 'apps/extension/docs/RELEASE_1.1.0.md', 'apps/extension/docs/STORE_LISTING.md'];
 let checked = 0;
 for (const file of files) {
   const source = fs.readFileSync(path.join(root, file), 'utf8');

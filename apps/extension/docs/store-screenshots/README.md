@@ -13,3 +13,6 @@
 [제작 도구와 재생성 방법](../../scripts/store-screenshots/README.md) · [GitHub 갱신 기록](../../../../docs/GITHUB_SHOWCASE.md)
 
 raw/capture-manifest.json은 UI 출처·데이터·촬영 상태를, render-manifest.json은 이미지 파일·규격을 기록한다. 실제 계정·지원정보는 포함하지 않는다.
+
+
+2026-11-06 (#137): PR #136의 흑백 지원/취소 배지를 반영해 실제 UI를 재촬영했다. 최신 출처는 raw/capture-manifest.json이다.
