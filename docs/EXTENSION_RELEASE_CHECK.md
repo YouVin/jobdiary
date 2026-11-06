@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 1. 라벨 가독성 | 개발·자동 검증 완료 | [PR #136](https://github.com/YouVin/jobdiary/pull/136), 흑백·기호·대비·390px·키보드·강제 색상 |
 | 2. 통합 흐름 | 표본 자동 검증 완료 / 일부 실사용 확인 | 수집/마감일 8개, 웹앱 10개, 개발·운영 표시 각각15개 |
-| 3. 출시 준비 | 운영 ZIP·자료 준비 / 공개 반영 전 | outDir ZIP 수정·바이트 일치·개발 ZIP 거부·사용 안내·정책 초안 |
+| 3. 출시 준비 | 웹앱 운영·공개 정책 반영 / 스토어 제출 전 | outDir ZIP 수정·바이트 일치·개발 ZIP 거부·사용 안내·정책 초안 |
 | 버전 | 소스1.1.0 반영 / 스토어 제출 전 | 사용자 관찰 결과와 자동 검증을 기록했다. 남은 실계정/운영 확인을 전체 성공으로 확대하지 않는다 |
 
 수집 버튼 → 사이트 content script → 수집 슬롯 → 웹앱 가져오기 → 웹앱 자체 로그인/중복 판별/저장 → 비교 캐시 → 같은 공고 배지 흐름을 검증했다. 실제 Chrome MV3·실제 로컬 Next.js UI를 쓰되 사이트 HTTP·Auth/DB는 예시 응답으로 대체했다. 실제 계정/DB가 통과했다고 표현하지 않는다.
@@ -66,7 +66,7 @@ node apps/extension/scripts/verify-release-package.mjs ../../release/extension-r
 1. 사용자 관찰 결과를 기록하고 package.json과 루트 lock의 확장 버전만1.1.0으로 갱신했다. 웹앱은0.1.0을 유지한다. 미검증 실계정 항목과 운영 검증은 공개 전에 확인한다.
 2. [스토어 설명](../apps/extension/docs/STORE_LISTING.md)·[사용 안내](../apps/extension/docs/index.md)·[개인정보처리방침](../apps/extension/docs/PRIVACY_POLICY.md)·[권한 설명](../apps/extension/docs/STORE_PERMISSIONS_JUSTIFICATION.md)과 버전을 대조한다.
 3. 기존 youvin.github.io/jobdiary-extension/와 /privacy/ URL은 유지한다. apps/extension/docs를 그 공개 소스로 반영하는 게시 작업을 별도로 진행하고 HTTP200뿐 아니라 비교 캐시·기본 자동 표시·끄기·로그아웃 정리·사이트 범위의 실제 본문까지 확인한다. 기존 저장소를 아카이브하거나 정책 주소를 먼저 바꾸지 않는다.
-4. 웹앱 dev→main PR로 모노레포/새 연동을 운영 반영하고 실제 스토어 ID의 설치 확장과 가져오기·동기화를 확인한다. 운영main은 현재 새 확장 기능과 함께 배포되지 않았다.
+4. 웹앱 dev→main PR로 모노레포/새 연동을 운영 반영하고 실제 스토어 ID의 설치 확장과 가져오기·동기화를 확인한다. 2026-11-06 PR #143으로 새 연동을 포함한 운영main을 배포했고 실제 운영 주소의 표본 통합 검증을 통과했다. 실제 스토어 설치/업데이트는 별도다.
 5. 새1.1.0 운영 ZIP을 생성·검증하고 그 SHA를 기록한다. 최신1280×800 소개5장과 스토어 설명·개인정보 공개 항목을 기존 스토어 항목에 반영한 뒤 심사를 제출한다. 기존 항목/ID를 유지한다.
 6. 심사 승인·실제 설치 업데이트 후 Chrome 확장 상세 버전과 공개 동작을 확인한다. GitHub 버전/태그만으로 스토어 업데이트를 완료했다고 표현하지 않는다.
 
@@ -82,3 +82,8 @@ node apps/extension/scripts/verify-release-package.mjs ../../release/extension-r
 사용자 확인을 받은 뒤 확장만1.1.0으로 갱신했다. 채용 사이트 로그아웃과 웹앱 로그아웃의 차이를 사용 안내 FAQ에 추가했다. 버전 반영 전 운영 빌드와 비교해 manifest.version 외 모든 파일은 동일하다. 1.1.0 TypeScript·운영 빌드·ZIP 파일 단위 검증이 통과했다.
 
 최종 ZIP apps/extension/release/crx-jobdiary-extension-1.1.0.zip · 30개 파일 · 104881바이트 · SHA256 564f3f09ff9e99e95c92ea1284cd3c9c19a1eeb276f59fb9b7c64335b89d8cea. 결과는 release/extension-release-validation/package-report.json에 남긴다. [변경 내역과 검증 범위](../apps/extension/docs/RELEASE_1.1.0.md)를 따른다. 소스 버전 갱신과 운영/스토어 반영은 별개다.
+
+
+## 운영 및 공개 정책 반영 (#141)
+
+2026-11-06 main b8e7e96을 Vercel 운영에 배포해 READY·jobdiary.vercel.app의 동일 배포 연결을 확인했다. 실제 운영 코드로 웹앱/MV3 연동10개·가입/동의/계정 회귀7개가 통과했다. Auth/DB는 예시 응답, 스토어ID는 독립 프로필의 unpacked ID 연결 어댑터를 사용해 개인 DB/계정을 건드리지 않았다. 공개 익스텐션 정책은 기존 URL에서 새 시행일·비교 캐시·자동 표시를 제공한다. 긴 주소의375px 가로 넘침을 발견해 공개 레이아웃을 보완했다. [배포·검증·공개 정책 근거](PRODUCTION_RELEASE_2026-11-06.md)와 이슈 #141에 최종 게시 결과를 기록한다. 스토어 업로드·심사 및 남은 실계정 날짜 확인은 아직 수행하지 않았다.

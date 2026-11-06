@@ -31,7 +31,7 @@
 
 ## 결과
 
-배포·Pages 게시 검증 진행 중. 확인된 PR·커밋·CI·배포ID와 운영/공개 본문 검증 결과를 이슈 #141과 배포 PR에 남긴다.
+PR #143을 통해 main b8e7e96a9eb12cbed12fcd7bc4bfecd215f57d04로 운영 반영했다. Vercel dpl_GKkjWLZk7NDfa68LvcUYk2EhTUvp가 READY이며 jobdiary.vercel.app이 같은 배포/커밋을 가리킴을 확인했다. 검증된 dev와 main의 트리는502a6670e4490354a682234939641e5c7da3897a로 동일하다. [main PR CI 성공](https://github.com/YouVin/jobdiary/actions/runs/42236123304).
 
 
 ## 웹앱 공개 정책과 운영 검증 도구
@@ -39,3 +39,19 @@
 웹앱 /privacy에도 사이트·공고 ID·지원/취소·해시·시각·미확인 건수의 익스텐션 로컬 전달, 데이터 제외 항목, 표시 끄기와 로그아웃 정리를 추가했다. 최초 시행일은 유지하고 최종 수정일을2026-11-06으로 표시했다. 인증·동의 판정/기존 동의 버전·서버 보관 범위·처리위탁 설정은 변경하지 않는다.
 
 기존 실제 웹앱/MV3 검증 도구를 TEST_ORIGIN·HISTORY_REPORT_DIR로 운영 주소에서도 실행할 수 있게 했다. 운영 페이지의 고정 스토어 ID를 별도 프로필에 로드한 실제 운영 ZIP의 unpacked ID로 연결하는 명시적 테스트 어댑터만 사용한다. 호출 payload·외부 메시지 origin 검증·실제 storage·표시 엔진은 그대로 실행한다. 이는 실제 스토어 설치/업데이트 검증이 아니며 Auth/DB는 예시 HTTP로 격리한다.
+
+
+## 실제 운영 주소와 공개 본문 확인
+
+- https://jobdiary.vercel.app에서 실제 웹앱/MV3 연동10개 시나리오가 통과했다. 가져오기→빈 공고 URL 보완/신규 저장→비교 캐시→배지, 오래된 탭·반복 가져오기·수집 초기화·로그아웃·다른 계정·잘못된 메시지 버전을 확인했다. 콘솔 예외와 예상 밖 요청은0개였다.
+- 기존 verify-release-browser.mjs를 같은 운영 주소에서 실행해 정책375/768/1440px, 이메일 미동의 차단/동의, 신규 소셜 동의 재시도, 날짜 검증, 두 탭 편집 충돌, 다중 탭 로그아웃과 이전 계정 지연 응답의7개 시나리오가 통과했다.
+- 두 검증은 실제 배포된 코드와 브라우저를 쓰며 Auth/DB HTTP는 예시로 격리했다. 운영 개인 계정/DB 행은 읽거나 쓰지 않았다. MV3 검증의 고정 스토어 ID는 독립 프로필에 로드한 실제 운영 ZIP의 unpacked ID로만 연결했다. 실제 스토어 설치/업데이트나 실제 OAuth/메일을 검증한 결과가 아니다.
+- 운영 배포ID를 지정한 최근15분 runtime error/fatal 집계는 빈 결과였다. 관찰 기간의 결과이며 향후 모든 장애가 없음을 보장하지 않는다.
+- 기존 공개 정책·안내 URL이 HTTP200이며 시행일2026-11-06·비교 캐시·기본 자동 표시·로그아웃·1.1.0 설치 버전 차이 설명을 실제 제공함을 확인했다. 내부 초안 메모는 공개하지 않았다.
+- 공개 문서는 legacy PR YouVin/jobdiary-extension#66으로 반영했다. dev fbeea6b0707d6960567150952790c83ba58813e4의 [Pages 배포 성공](https://github.com/YouVin/jobdiary-extension/actions/runs/42235809299), [CI 성공](https://github.com/YouVin/jobdiary-extension/actions/runs/42235810197)을 확인했다. 기준 문서2개의 내용은 모노레포와 같다.
+
+## 공개 정책 모바일 가로 넘침 후속 수정
+
+375px 실제 공개 화면에서 모바일 보충 URL의 인라인 CODE가387.14px까지 나와 scrollWidth387px를 재현했다. 본문/시행일 문제와 분리해 기록한다. 기준과 게시용 _layouts/default.html에 overflow-wrap:anywhere만 추가해 긴 주소도 줄바꿈한다. 내용을 자르거나 숨기지 않으며 정책 내용·URL·개인정보 처리 동작은 바꾸지 않는다. 최종 실제 공개 화면 재검증과 후속 PR/배포 정보는 이슈 #141 및 legacy #67에 남긴다.
+
+결과 파일은 release/production-release/history/browser-report.json과 public-browser-report.json, 공개 정책/로그인 예시 화면에 보관한다. 최초 배포 후의 기록·문서 레이아웃 후속 반영은 제품 런타임과 구분하며 현재 운영 SHA는 이슈 #141/배포 PR과 Vercel 도메인으로 확인한다.
