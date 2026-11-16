@@ -33,7 +33,8 @@ export function HeaderActions() {
   return (
     <>
       <div className="flex flex-col items-end gap-1">
-        <div className="flex flex-col items-end gap-2 md:flex-row md:items-center">
+        {/* 모바일은 한 줄에 맞추기 위해 계정 설정·로그아웃을 아이콘만 보여준다. 접근성 이름은 aria-label로 유지한다. */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
@@ -45,19 +46,23 @@ export function HeaderActions() {
 
           <Link
             href="/account"
+            aria-label="계정 설정"
+            title="계정 설정"
             className={buttonClassName('secondary')}
           >
             <Icon name="settings" className="h-4 w-4" />
-            계정 설정
+            <span className="hidden md:inline">계정 설정</span>
           </Link>
 
           <button
             type="button"
             onClick={handleLogout}
+            aria-label="로그아웃"
+            title="로그아웃"
             className={buttonClassName('secondary')}
           >
             <Icon name="logout" className="h-4 w-4" />
-            로그아웃
+            <span className="hidden md:inline">로그아웃</span>
           </button>
         </div>
 
