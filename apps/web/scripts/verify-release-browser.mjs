@@ -143,7 +143,7 @@ try {
   await login(page, 'a');
   // 로그인 후 홈(통계 대시보드)으로 돌아온다. 카드 편집은 지원 보드에서 확인한다.
   await page.waitForFunction(() => location.pathname === '/');
-  await visible(page.getByRole('heading', { name: '전체 지원 수' }));
+  await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
   await page.goto(`${origin}/board`);
   await visible(page.getByText('A 회사', { exact: true }));
   await page.getByRole('button', { name: '지원추가' }).click();
@@ -176,7 +176,7 @@ try {
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
   await login(second, 'b');
   await page.waitForFunction(() => location.pathname === '/');
-  await visible(page.getByRole('heading', { name: '전체 지원 수' }));
+  await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
   await openBoard(page);
   await visible(page.getByText('B 회사', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
@@ -192,7 +192,7 @@ try {
   await second.getByRole('button', { name: '로그아웃', exact: true }).click();
   await login(second, 'b');
   delayed();
-  await visible(page.getByRole('heading', { name: '전체 지원 수' }));
+  await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
   await openBoard(page);
   await visible(page.getByText('B 회사', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
