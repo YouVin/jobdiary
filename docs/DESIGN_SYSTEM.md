@@ -18,7 +18,9 @@
 
 | 토큰 | 크기 / 행간 | 용도 |
 |---|---|---|
-| heading-xl | 28 / 40 | 큰 제목 |
+| diary-day · diary-month · diary-date | 56/56 · 20/28 · 20/24 | 홈 일기장 날짜, `font-diary`(시스템 serif)와 함께만 사용 (#158) |
+| lead | 20 / 32 | 홈 일기장 요약 문장 (#158) |
+| heading-xl | 28 / 40 | 큰 제목, 대시보드 보조 숫자 |
 | heading-lg | 22 / 32 | 페이지 제목 |
 | heading-md | 18 / 28 | 모달·폼 제목 |
 | body | 14 / 20 | 본문·입력·버튼 |
@@ -29,6 +31,7 @@
 | badge | 10 / 12 | 상태·플랫폼 배지 |
 | illustration-xs / illustration-sm | 6 / 8, 8 / 12 | `aria-hidden` 목업 안의 장식 텍스트만 |
 
+- 데이터로 그리는 차트 SVG는 `src/components/charts/`에서만 작성하고 색은 토큰 클래스로 지정한다. 플랫폼 차트 색은 `platform.*.chart` (#149, [HOME_DASHBOARD](HOME_DASHBOARD.md)).
 - 입력·버튼은 `rounded-lg`, 모달·계정 섹션은 `rounded-card`(14px), 칸반 컬럼은 `rounded-section`(10px).
 - 로그인 장식 프레임은 `rounded-2xl`, `rounded-3xl`, `rounded-4xl` 등 정수 px의 기본 토큰을 사용한다.
 - 표면은 `bg-card`, 페이지는 `bg-page`, 브랜드 위 글자는 `text-on-brand`, 모달 배경은 `bg-overlay/50`.

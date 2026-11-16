@@ -5,6 +5,7 @@ import { createSourceLoader } from './loadSource.mjs';
 const load = createSourceLoader();
 const {
   getApplicationOverview, getStageSummary, getPlatformShares, getUpcomingEvents, getRecentApplications, getWeekStart, toDateOnly,
+  getMonthCalendar,
 } = load('@/utils/applicationStats');
 
 const row = (id, changes = {}) => ({
@@ -95,6 +96,58 @@ test('최근 지원은 지원일 최신순, 같은 날이면 최근 수정순이
   const before = structuredClone(rows);
   assert.deepEqual(getRecentApplications(rows, 2).map((item) => item.id), ['new-b', 'new-a']);
   assert.deepEqual(rows, before);
+});
+
+test('지원 달력은 월요일 시작으로 이번 달 지원만 날짜별로 센다', () => {
+  const rows = [
+    row('a', { appliedAt: '2026-11-01T00:00:00.000Z' }),
+    row('b', { appliedAt: '2026-11-16T00:00:00.000Z' }),
+    row('c', { appliedAt: '2026-11-16' }),
+    row('october', { appliedAt: '2026-10-31T00:00:00.000Z' }),
+    row('broken', { appliedAt: 'not-a-date' }),
+  ];
+  const calendar = getMonthCalendar(rows, '2026-11-17');
+  assert.equal(calendar.monthTotal, 3);
+  assert.equal(calendar.weeks.length, 6); // 11/1이 일요일이라 6주
+  assert.deepEqual(calendar.weeks[0].slice(0, 6), [null, null, null, null, null, null]);
+  assert.equal(calendar.weeks[0][6].date, '2026-11-01');
+  const days = calendar.weeks.flat().filter(Boolean);
+  assert.equal(days.length, 30);
+  assert.equal(days.find((day) => day.day === 16).count, 2);
+  assert.equal(days.find((day) => day.day === 17).isToday, true);
+  assert.equal(days.find((day) => day.day === 18).isFuture, true);
+  // 윤년 2월
+  const february = getMonthCalendar([], '2028-02-10');
+  assert.equal(february.weeks.flat().filter(Boolean).length, 29);
+});
+
+test('요일 날짜 표시는 연도 선택과 요일을 함께 쓴다', () => {
+  const { formatDateWithWeekday } = load('@/utils/format');
+  assert.equal(formatDateWithWeekday('2026-11-16'), '11.16 (월)');
+  assert.equal(formatDateWithWeekday('2026-11-22', true), '2026.11.22 (일)');
+});
+
+test('가져오기 시각은 한국 시간 24시간제로 표시한다', () => {
+  const { formatKoreanDateTime } = load('@/utils/format');
+  assert.equal(formatKoreanDateTime('2026-11-15T12:40:00.000Z'), '11.15 21:40');
+  assert.equal(formatKoreanDateTime('2026-11-15T15:05:00.000Z'), '11.16 00:05');
+});
+
+test('마지막 가져오기 시각은 계정별로 저장하고 잘못된 값은 버린다', () => {
+  const store = new Map();
+  globalThis.window = {};
+  globalThis.localStorage = { getItem: (key) => store.get(key) ?? null, setItem: (key, value) => store.set(key, value) };
+  try {
+    const { loadLastImportAt, saveLastImportAt } = load('@/lib/storage');
+    saveLastImportAt('user-a', '2026-11-15T12:40:00.000Z');
+    assert.equal(loadLastImportAt('user-a'), '2026-11-15T12:40:00.000Z');
+    assert.equal(loadLastImportAt('user-b'), null);
+    store.set('jobdiary:lastImportAt:user-b', 'broken');
+    assert.equal(loadLastImportAt('user-b'), null);
+  } finally {
+    delete globalThis.window;
+    delete globalThis.localStorage;
+  }
 });
 
 test('날짜 변환은 UTC 날짜를 쓰고 잘못된 값은 버린다', () => {

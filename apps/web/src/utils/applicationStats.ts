@@ -153,6 +153,52 @@ export function getUpcomingEvents(applications: Application[], today = getTodayI
   return events.sort((a, b) => a.date.localeCompare(b.date) || (a.kind === b.kind ? 0 : a.kind === 'interview' ? -1 : 1));
 }
 
+export interface CalendarDay {
+  date: string; // YYYY-MM-DD
+  day: number;
+  count: number; // 그날 지원한 건수
+  isToday: boolean;
+  isFuture: boolean;
+}
+
+export interface MonthCalendar {
+  year: number;
+  month: number; // 1~12
+  weeks: Array<Array<CalendarDay | null>>; // 월요일 시작, 앞뒤 빈 칸은 null
+  monthTotal: number;
+}
+
+// 오늘이 속한 달의 지원 달력. 익스텐션 팝업 달력과 같이 월요일에 시작한다.
+export function getMonthCalendar(applications: Application[], today = getTodayInKorea()): MonthCalendar {
+  const [year, month] = today.split('-').map(Number);
+  const prefix = today.slice(0, 8); // YYYY-MM-
+  const counts = new Map<string, number>();
+  let monthTotal = 0;
+  for (const application of applications) {
+    const date = toDateOnly(application.appliedAt);
+    if (!date || !date.startsWith(prefix)) continue;
+    counts.set(date, (counts.get(date) ?? 0) + 1);
+    monthTotal += 1;
+  }
+
+  const firstWeekday = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const cellCount = Math.ceil((firstWeekday + lastDay) / 7) * 7;
+  const weeks: MonthCalendar['weeks'] = [];
+  for (let index = 0; index < cellCount; index += 1) {
+    if (index % 7 === 0) weeks.push([]);
+    const day = index - firstWeekday + 1;
+    if (day < 1 || day > lastDay) {
+      weeks[weeks.length - 1].push(null);
+      continue;
+    }
+    const date = `${prefix}${String(day).padStart(2, '0')}`;
+    weeks[weeks.length - 1].push({ date, day, count: counts.get(date) ?? 0, isToday: date === today, isFuture: date > today });
+  }
+
+  return { year, month, weeks, monthTotal };
+}
+
 // 지원일 최신순, 같은 날이면 최근 수정순
 export function getRecentApplications(applications: Application[], limit = 4): Application[] {
   return [...applications]

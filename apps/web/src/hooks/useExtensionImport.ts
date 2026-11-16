@@ -3,6 +3,7 @@
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { JOBDIARY_EXTENSION_ID } from '@/constants/extension';
 import { JOBDIARY_COLLECT_REQUEST, sanitizeCollectResponse } from '@/lib/extensionImport';
+import { loadLastImportAt, saveLastImportAt } from '@/lib/storage';
 import { captureApplicationSession, ImportSummary, useApplicationStore } from '@/store/applicationStore';
 import { useAuthStore } from '@/store/authStore';
 
@@ -25,6 +26,11 @@ export function useExtensionImport() {
   const addApplicationsFromExtension = useApplicationStore((state) => state.addApplicationsFromExtension);
   const [isRequesting, setIsRequesting] = useState(false);
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+  // 마지막 가져오기 성공 시각. AuthGuard가 계정마다 화면을 새로 만들므로 마운트 시점의 계정 기준으로 읽는다.
+  const [lastImportAt, setLastImportAt] = useState<string | null>(() => {
+    const userId = useApplicationStore.getState().userId;
+    return userId ? loadLastImportAt(userId) : null;
+  });
   // 서버에서는 항상 false, 하이드레이션 후 클라이언트에서만 실제 chrome.runtime 존재 여부로 평가 (hydration mismatch 방지).
   const isExtensionAvailable = useSyncExternalStore(
     noopSubscribe,
@@ -76,6 +82,12 @@ export function useExtensionImport() {
       const summary = await addApplicationsFromExtension(result.applications);
       if (!context.isCurrent()) return;
       setImportSummary(summary);
+      // 저장까지 성공했을 때만 시각을 남긴다(건너뛴 건만 있어도 확인은 끝난 것이므로 성공으로 본다).
+      if (!summary.error) {
+        const importedAt = new Date().toISOString();
+        saveLastImportAt(context.userId, importedAt);
+        setLastImportAt(importedAt);
+      }
     } catch (error) {
       if (!context.isCurrent()) return;
       setImportSummary(failedSummary((error as Error).message || '익스텐션과 통신하지 못했습니다.'));
@@ -89,6 +101,7 @@ export function useExtensionImport() {
     isRequesting,
     isExtensionAvailable,
     importSummary,
+    lastImportAt,
     dismissImportSummary: () => setImportSummary(null),
   };
 }
