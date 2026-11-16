@@ -5,6 +5,7 @@ import { ApplicationErrorNotice, ImportSummaryNotice } from '@/components/dashbo
 import { ImportCard } from '@/components/dashboard/ImportCard';
 import { OverviewCard } from '@/components/dashboard/OverviewCard';
 import { RecentCard } from '@/components/dashboard/RecentCard';
+import { RouteCard } from '@/components/dashboard/RouteCard';
 import { UpcomingCard } from '@/components/dashboard/UpcomingCard';
 import { EditApplicationModal } from '@/components/modal/EditApplicationModal';
 import { useApplicationsLoader } from '@/hooks/useApplicationsLoader';
@@ -48,8 +49,9 @@ export function DashboardClient() {
 
   const stats = useMemo(() => {
     const today = getTodayInKorea();
+    const platformShares = getPlatformShares(applications);
     const platformCounts = { saramin: 0, jobkorea: 0, wanted: 0, manual: 0 } as Record<Platform, number>;
-    for (const { platform, count } of getPlatformShares(applications)) platformCounts[platform] = count;
+    for (const { platform, count } of platformShares) platformCounts[platform] = count;
     return {
       today,
       overview: getApplicationOverview(applications, today),
@@ -57,6 +59,7 @@ export function DashboardClient() {
       upcoming: getUpcomingEvents(applications, today),
       recent: getRecentApplications(applications, 4),
       platformCounts,
+      platformShares,
     };
   }, [applications]);
 
@@ -96,6 +99,9 @@ export function DashboardClient() {
         </div>
         <div className="min-w-0 lg:col-span-5">
           <RecentCard applications={stats.recent} onSelect={setEditingId} />
+        </div>
+        <div className="min-w-0 lg:col-span-12">
+          <RouteCard shares={stats.platformShares} total={stats.overview.total} />
         </div>
       </div>
 
