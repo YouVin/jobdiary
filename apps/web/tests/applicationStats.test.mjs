@@ -103,6 +103,29 @@ test('요일 날짜 표시는 연도 선택과 요일을 함께 쓴다', () => {
   assert.equal(formatDateWithWeekday('2026-11-22', true), '2026.11.22 (일)');
 });
 
+test('가져오기 시각은 한국 시간 24시간제로 표시한다', () => {
+  const { formatKoreanDateTime } = load('@/utils/format');
+  assert.equal(formatKoreanDateTime('2026-11-15T12:40:00.000Z'), '11.15 21:40');
+  assert.equal(formatKoreanDateTime('2026-11-15T15:05:00.000Z'), '11.16 00:05');
+});
+
+test('마지막 가져오기 시각은 계정별로 저장하고 잘못된 값은 버린다', () => {
+  const store = new Map();
+  globalThis.window = {};
+  globalThis.localStorage = { getItem: (key) => store.get(key) ?? null, setItem: (key, value) => store.set(key, value) };
+  try {
+    const { loadLastImportAt, saveLastImportAt } = load('@/lib/storage');
+    saveLastImportAt('user-a', '2026-11-15T12:40:00.000Z');
+    assert.equal(loadLastImportAt('user-a'), '2026-11-15T12:40:00.000Z');
+    assert.equal(loadLastImportAt('user-b'), null);
+    store.set('jobdiary:lastImportAt:user-b', 'broken');
+    assert.equal(loadLastImportAt('user-b'), null);
+  } finally {
+    delete globalThis.window;
+    delete globalThis.localStorage;
+  }
+});
+
 test('날짜 변환은 UTC 날짜를 쓰고 잘못된 값은 버린다', () => {
   assert.equal(toDateOnly('2026-11-17T00:00:00.000Z'), '2026-11-17');
   assert.equal(toDateOnly('2026-11-17'), '2026-11-17');

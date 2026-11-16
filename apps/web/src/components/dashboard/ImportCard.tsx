@@ -3,6 +3,7 @@ import { Icon } from '@/components/common/Icon';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { PLATFORM_INFO, PLATFORM_STATUS_PAGES } from '@/constants/platform';
 import type { Platform } from '@/types/application';
+import { formatKoreanDateTime } from '@/utils/format';
 
 type CollectedPlatform = Exclude<Platform, 'manual'>;
 
@@ -11,6 +12,7 @@ interface ImportCardProps {
   onImport: () => void;
   isRequesting: boolean;
   isExtensionAvailable: boolean;
+  lastImportAt: string | null;
 }
 
 // 익스텐션 platform 토큰(배경/글자)을 그대로 쓴 플랫폼 표시. 클래스는 리터럴로 둔다.
@@ -20,9 +22,15 @@ const PLATFORM_ROWS: { platform: CollectedPlatform; mark: string; markClass: str
   { platform: 'wanted', mark: 'W', markClass: 'bg-platform-wanted-bg text-platform-wanted-text' },
 ];
 
-export function ImportCard({ platformCounts, onImport, isRequesting, isExtensionAvailable }: ImportCardProps) {
+export function ImportCard({ platformCounts, onImport, isRequesting, isExtensionAvailable, lastImportAt }: ImportCardProps) {
+  const lastImportText = (
+    <p className="shrink-0 text-caption text-text-secondary tabular-nums">
+      {lastImportAt ? `마지막 가져오기 ${formatKoreanDateTime(lastImportAt)}` : '가져온 기록 없음'}
+    </p>
+  );
+
   return (
-    <DashboardCard title="지원 기록 업데이트" titleId="import-card-title">
+    <DashboardCard title="지원 기록 업데이트" titleId="import-card-title" action={lastImportText}>
       <ul>
         {PLATFORM_ROWS.map(({ platform, mark, markClass }) => {
           const { label } = PLATFORM_INFO[platform];

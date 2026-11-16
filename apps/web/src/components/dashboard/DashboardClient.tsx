@@ -27,7 +27,7 @@ export function DashboardClient() {
   const isReady = useApplicationsLoader();
   const applications = useApplicationStore((state) => state.applications);
   const error = useApplicationStore((state) => state.error);
-  const { requestImport, isRequesting, isExtensionAvailable, importSummary, dismissImportSummary } =
+  const { requestImport, isRequesting, isExtensionAvailable, importSummary, lastImportAt, dismissImportSummary } =
     useExtensionImport();
   // 일정·최근 지원 행을 누르면 칸반 카드와 같은 수정 모달을 연다. 삭제되면 모달도 함께 닫힌다.
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -92,6 +92,7 @@ export function DashboardClient() {
             onImport={requestImport}
             isRequesting={isRequesting}
             isExtensionAvailable={isExtensionAvailable}
+            lastImportAt={lastImportAt}
           />
         </div>
         <div className="min-w-0 lg:col-span-7">
