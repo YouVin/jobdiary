@@ -1,15 +1,24 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ApplicationErrorNotice, ImportSummaryNotice } from '@/components/dashboard/ApplicationNotices';
 import { ImportCard } from '@/components/dashboard/ImportCard';
 import { OverviewCard } from '@/components/dashboard/OverviewCard';
+import { RecentCard } from '@/components/dashboard/RecentCard';
+import { UpcomingCard } from '@/components/dashboard/UpcomingCard';
+import { EditApplicationModal } from '@/components/modal/EditApplicationModal';
 import { useApplicationsLoader } from '@/hooks/useApplicationsLoader';
 import { useExtensionImport } from '@/hooks/useExtensionImport';
 import { useApplicationStore } from '@/store/applicationStore';
 import type { Platform } from '@/types/application';
 import { getTodayInKorea } from '@/utils/applicationDeadline';
-import { getApplicationOverview, getPlatformShares, getStageSummary } from '@/utils/applicationStats';
+import {
+  getApplicationOverview,
+  getPlatformShares,
+  getRecentApplications,
+  getStageSummary,
+  getUpcomingEvents,
+} from '@/utils/applicationStats';
 import { formatDateWithWeekday } from '@/utils/format';
 
 // 홈(/) 통계 대시보드. 칸반·검색·필터는 지원 보드(/board)의 BoardClient가 담당한다.
@@ -19,6 +28,9 @@ export function DashboardClient() {
   const error = useApplicationStore((state) => state.error);
   const { requestImport, isRequesting, isExtensionAvailable, importSummary, dismissImportSummary } =
     useExtensionImport();
+  // 일정·최근 지원 행을 누르면 칸반 카드와 같은 수정 모달을 연다. 삭제되면 모달도 함께 닫힌다.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editingApplication = applications.find((application) => application.id === editingId);
 
   // 익스텐션이 "취준일기 열기"로 붙인 ?import=1 신호를 감지하면 자동으로 가져오기를 실행한다.
   // 처리 전에 먼저 URL에서 신호를 지워, 새로고침해도 다시 트리거되지 않게 한다(중복 방지).
@@ -42,6 +54,8 @@ export function DashboardClient() {
       today,
       overview: getApplicationOverview(applications, today),
       stage: getStageSummary(applications),
+      upcoming: getUpcomingEvents(applications, today),
+      recent: getRecentApplications(applications, 4),
       platformCounts,
     };
   }, [applications]);
@@ -77,7 +91,17 @@ export function DashboardClient() {
             isExtensionAvailable={isExtensionAvailable}
           />
         </div>
+        <div className="min-w-0 lg:col-span-7">
+          <UpcomingCard events={stats.upcoming} onSelect={setEditingId} />
+        </div>
+        <div className="min-w-0 lg:col-span-5">
+          <RecentCard applications={stats.recent} onSelect={setEditingId} />
+        </div>
       </div>
+
+      {editingApplication && (
+        <EditApplicationModal application={editingApplication} isOpen onClose={() => setEditingId(null)} />
+      )}
     </div>
   );
 }

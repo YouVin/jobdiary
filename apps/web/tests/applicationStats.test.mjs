@@ -97,6 +97,12 @@ test('최근 지원은 지원일 최신순, 같은 날이면 최근 수정순이
   assert.deepEqual(rows, before);
 });
 
+test('요일 날짜 표시는 연도 선택과 요일을 함께 쓴다', () => {
+  const { formatDateWithWeekday } = load('@/utils/format');
+  assert.equal(formatDateWithWeekday('2026-11-16'), '11.16 (월)');
+  assert.equal(formatDateWithWeekday('2026-11-22', true), '2026.11.22 (일)');
+});
+
 test('날짜 변환은 UTC 날짜를 쓰고 잘못된 값은 버린다', () => {
   assert.equal(toDateOnly('2026-11-17T00:00:00.000Z'), '2026-11-17');
   assert.equal(toDateOnly('2026-11-17'), '2026-11-17');
