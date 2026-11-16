@@ -41,21 +41,25 @@ lib/storage.ts는 이전 localStorage 구현이며 현재 지원 내역 저장 �
 | 화면/역할 | 위치 |
 |---|---|
 | 보호 페이지 공통 서버 레이아웃 | src/app/(protected)/layout.tsx |
-| 대시보드 서버 페이지 | src/app/(protected)/page.tsx |
+| 홈 통계 대시보드 서버 페이지 | src/app/(protected)/page.tsx |
+| 지원 보드 서버 페이지 | src/app/(protected)/board/page.tsx |
 | 계정 서버 페이지 | src/app/(protected)/account/page.tsx |
-| 로딩·오류·가져오기 | src/components/dashboard/DashboardClient.tsx |
-| 칸반·드래그 | src/components/board/ |
+| 홈 통계·가져오기 | src/components/dashboard/DashboardClient.tsx |
+| 지원 내역 조회(두 페이지 공통) | src/hooks/useApplicationsLoader.ts |
+| 검색·필터·칸반·드래그 | src/components/board/BoardClient.tsx, src/components/board/ |
+| 헤더 탭(대시보드/지원 보드) | src/components/header/HeaderNav.tsx |
 | 지원 추가·편집·삭제 | src/components/modal/ |
 | 헤더 로고·홈 이동 | src/components/header/Header.tsx |
 | 헤더 버튼 동작 | src/components/header/HeaderActions.tsx |
 | 로그인·복구 | src/components/auth/ |
 | 계정 관리 | src/components/account/ |
 
-현재 보드는 1열(모바일), 3열(태블릿), 7열(데스크톱) 그리드다.
-대시보드와 계정 페이지의 공통 헤더에서 로고·서비스명 전체를 누르면 홈(`/`)으로 이동한다 (#79). Next.js Link를 사용하며 키보드 포커스와 Enter 이동을 지원한다.
+홈(`/`)은 통계 대시보드, 지원 보드(`/board`)는 검색·필터와 칸반이다 (#147). 헤더의 대시보드/지원 보드 탭으로 오가며 모바일은 헤더 아래 탭 줄을 쓴다.
+지원 보드는 1열(모바일), 3열(태블릿), 7열(데스크톱) 그리드다.
+홈·지원 보드·계정 페이지의 공통 헤더에서 로고·서비스명 전체를 누르면 홈(`/`)으로 이동한다 (#79). Next.js Link를 사용하며 키보드 포커스와 Enter 이동을 지원한다.
 두 페이지의 공통 셸과 Server/Client 경계는 [RENDERING](RENDERING.md)에 정리한다 (#83).
 카드 클릭 시 지원 정보 편집 모달을 연다. 면접일 입력과 카드 날짜 표시를 지원한다.
-일기 작성·상세 통계·공유·다크 모드는 계획이며 현재 구현으로 간주하지 않는다.
+일기 작성·공유·다크 모드는 계획이며 현재 구현으로 간주하지 않는다.
 
 색·타이포·모서리·그림자는 tailwind.config.ts, 토큰·정수 간격·SVG 적용 규칙은 [DESIGN_SYSTEM](DESIGN_SYSTEM.md)을 따른다. 폼·버튼 스타일은 src/components/common에서 공유한다.
 새 기능 진입점과 검증 명령은 [문서 인덱스](README.md)에 추가한다.
