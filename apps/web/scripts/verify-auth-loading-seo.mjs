@@ -21,7 +21,7 @@ try {
     assert.equal(await page.locator('meta[name="twitter:card"]').getAttribute('content'), 'summary');
   }
   console.log('PASS 공개 페이지 서버 title/description/canonical/OG/Twitter');
-  for (const path of ['/', '/account', '/reset-password', '/update-password']) {
+  for (const path of ['/', '/board', '/account', '/reset-password', '/update-password']) {
     await page.goto(origin + path);
     assert.match(await page.locator('meta[name="robots"]').getAttribute('content'), /noindex/);
   }
@@ -35,6 +35,7 @@ try {
   assert.equal((xml.match(/<loc>/g) || []).length, 3);
   for (const path of ['/login', '/terms', '/privacy']) assert(xml.includes(`${canonicalOrigin}${path}`));
   assert(!xml.includes('/account'));
+  assert(!xml.includes('/board'));
   console.log('PASS 개인/복구 페이지 noindex, robots/sitemap HTTP');
   await page.goto(origin + '/login');
   const skeleton = page.getByRole('status');
