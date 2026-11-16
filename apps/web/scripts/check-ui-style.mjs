@@ -17,11 +17,17 @@ const rules = [
   [/\b(?:bg|text|border|fill|stroke)-\[#[\da-fA-F]+\]/, '색상은 디자인 토큰을 사용하세요.'],
 ];
 
+// 데이터로 모양이 정해지는 차트(도넛 등)는 아이콘 파일로 만들 수 없어 src/components/charts/에서만 SVG 작성을 허용한다.
+// 색은 여전히 토큰 클래스만 쓴다(HEX 규칙은 그대로 적용).
+const SVG_RULE = rules[3];
+const chartDirectory = path.join('src', 'components', 'charts') + path.sep;
+
 let failures = 0;
 for (const filename of listFiles('src').filter((file) => /\.(tsx|ts)$/.test(file))) {
   const lines = fs.readFileSync(filename, 'utf8').split(/\r?\n/);
+  const fileRules = filename.startsWith(chartDirectory) ? rules.filter((rule) => rule !== SVG_RULE) : rules;
   lines.forEach((line, index) => {
-    for (const [pattern, message] of rules) {
+    for (const [pattern, message] of fileRules) {
       if (pattern.test(line)) {
         console.error(`${filename}:${index + 1}: ${message}`);
         failures += 1;
