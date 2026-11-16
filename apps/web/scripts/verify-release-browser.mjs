@@ -92,6 +92,11 @@ await context.route('https://*.supabase.co/**', async route => {
 });
 const page = await context.newPage();
 const visible = async locator => { await locator.waitFor({ state: 'visible' }); };
+// 헤더 탭으로 지원 보드에 들어간다. 클라이언트 이동이라 스토어에 있는 목록을 그대로 보여준다.
+async function openBoard(target) {
+  await target.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: /지원 보드/ }).click();
+  await target.waitForFunction(() => location.pathname === '/board');
+}
 async function login(target, key) {
   await target.goto(`${origin}/login`);
   await target.getByLabel('이메일', { exact: true }).fill(users[key].email);
@@ -136,6 +141,10 @@ try {
   console.log('PASS 신규 소셜 계정 동의·저장 실패·재시도·새로고침 유지');
   await page.getByRole('button', { name: '로그아웃', exact: true }).click();
   await login(page, 'a');
+  // 로그인 후 홈(통계 대시보드)으로 돌아온다. 카드 편집은 지원 보드에서 확인한다.
+  await page.waitForFunction(() => location.pathname === '/');
+  await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
+  await page.goto(`${origin}/board`);
   await visible(page.getByText('A 회사', { exact: true }));
   await page.getByRole('button', { name: '지원추가' }).click();
   await page.getByLabel('회사명 *', { exact: true }).fill('새 지원');
@@ -150,7 +159,7 @@ try {
   console.log('PASS 빈 지원일 API 차단·정상 재저장');
   await page.getByText('A 회사', { exact: true }).click();
   const second = await context.newPage();
-  await second.goto(origin);
+  await second.goto(`${origin}/board`);
   await second.getByText('A 회사', { exact: true }).click();
   await second.getByLabel('상태', { exact: true }).selectOption('rejected');
   await second.getByRole('button', { name: '저장', exact: true }).click();
@@ -166,6 +175,9 @@ try {
   await visible(page.getByLabel('이메일', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
   await login(second, 'b');
+  await page.waitForFunction(() => location.pathname === '/');
+  await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
+  await openBoard(page);
   await visible(page.getByText('B 회사', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
   assert.equal(await page.getByLabel('회사명 *', { exact: true }).count(), 0);
@@ -180,6 +192,8 @@ try {
   await second.getByRole('button', { name: '로그아웃', exact: true }).click();
   await login(second, 'b');
   delayed();
+  await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
+  await openBoard(page);
   await visible(page.getByText('B 회사', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
   assert.deepEqual(errors, []);

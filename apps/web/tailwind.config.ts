@@ -10,6 +10,11 @@ const config: Config = {
       // 토큰으로 정리한 것. text-heading-xl처럼 쓰면 font-size/line-height/font-weight가 함께 적용된다.
       // line-height는 한글 가독성을 고려해 정함(작은 글자일수록 상대적으로 더 넉넉하게).
       fontSize: {
+        // 홈 일기장(#158): 익스텐션 팝업처럼 날짜에만 diary(serif) 글꼴을 쓴다.
+        "diary-day": ["56px", { lineHeight: "56px", fontWeight: "400" }], // 오늘 날짜 숫자
+        "diary-month": ["20px", { lineHeight: "28px", fontWeight: "400" }], // 월 약어 (Nov.)
+        "diary-date": ["20px", { lineHeight: "24px", fontWeight: "400" }], // 일정 타임라인의 날짜
+        lead: ["20px", { lineHeight: "32px", fontWeight: "500" }], // 일기장 요약 문장
         "heading-xl": ["28px", { lineHeight: "40px", fontWeight: "600" }], // 페이지 제목
         "heading-lg": ["22px", { lineHeight: "32px", fontWeight: "500" }], // 섹션 제목
         "heading-md": ["18px", { lineHeight: "28px", fontWeight: "500" }], // 카드/모달 제목
@@ -59,10 +64,13 @@ const config: Config = {
           "offer-text": "#3F6212",
           "screening-text": "#1D4ED8",
         },
+        // bg/text는 익스텐션(apps/extension/tailwind.config.ts)과 같은 값이다. chart는 도넛·플랫폼 표시용 진한 색으로
+        // 세 사이트는 text 색을 그대로 쓴다. manual(직접입력)은 웹앱에만 있는 플랫폼이라 웹앱에서만 정의한다 (#149).
         platform: {
-          saramin: { bg: "#F4F4F5", text: "#3F3F46" },
-          wanted: { bg: "#EEF2FF", text: "#3730A3" },
-          jobkorea: { bg: "#FEF2F2", text: "#991B1B" },
+          saramin: { bg: "#F4F4F5", text: "#3F3F46", chart: "#3F3F46" },
+          wanted: { bg: "#EEF2FF", text: "#3730A3", chart: "#3730A3" },
+          jobkorea: { bg: "#FEF2F2", text: "#991B1B", chart: "#991B1B" },
+          manual: { bg: "#F2F2F4", text: "#71717A", chart: "#A1A1AA" },
         },
         text: {
           primary: "#18181B",
@@ -72,6 +80,13 @@ const config: Config = {
         page: "#FAFAFA",
         column: "#F2F2F4",
         card: "#FFFFFF",
+        // 지원 달력 칸의 지원 건수 단계 (1건 → 4건 이상). 브랜드 인디고 계열 한 색상의 명도 단계다.
+        heat: {
+          1: "#C7D2FE",
+          2: "#A5B4FC",
+          3: "#818CF8",
+          4: "#4F46E5",
+        },
         "on-brand": "#FFFFFF",
         overlay: "#000000",
         "card-border": "#DEDEE2",
@@ -79,6 +94,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-pretendard)"],
+        diary: ["Georgia", "Times New Roman", "serif"], // 익스텐션 diary 글꼴과 같은 시스템 serif
+
       },
     },
   },

@@ -1,6 +1,6 @@
-# 대시보드 검색·필터
+# 지원 보드 검색·필터
 
-관련 이슈: #73. 진입점: `src/components/dashboard/DashboardClient.tsx`.
+관련 이슈: #73. 진입점: `/board`의 `src/components/board/BoardClient.tsx` (#147에서 홈에서 지원 보드로 이동). 홈 통계는 [HOME_DASHBOARD](HOME_DASHBOARD.md).
 
 ## 동작 기준
 

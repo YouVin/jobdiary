@@ -18,7 +18,9 @@
 
 | 토큰 | 크기 / 행간 | 용도 |
 |---|---|---|
-| heading-xl | 28 / 40 | 큰 제목 |
+| diary-day · diary-month · diary-date | 56/56 · 20/28 · 20/24 | 홈 일기장 날짜, `font-diary`(시스템 serif)와 함께만 사용 (#158) |
+| lead | 20 / 32 | 홈 일기장 요약 문장 (#158) |
+| heading-xl | 28 / 40 | 큰 제목, 대시보드 보조 숫자 |
 | heading-lg | 22 / 32 | 페이지 제목 |
 | heading-md | 18 / 28 | 모달·폼 제목 |
 | body | 14 / 20 | 본문·입력·버튼 |
@@ -29,6 +31,7 @@
 | badge | 10 / 12 | 상태·플랫폼 배지 |
 | illustration-xs / illustration-sm | 6 / 8, 8 / 12 | `aria-hidden` 목업 안의 장식 텍스트만 |
 
+- 데이터로 그리는 차트 SVG는 `src/components/charts/`에서만 작성하고 색은 토큰 클래스로 지정한다. 플랫폼 차트 색은 `platform.*.chart` (#149, [HOME_DASHBOARD](HOME_DASHBOARD.md)).
 - 입력·버튼은 `rounded-lg`, 모달·계정 섹션은 `rounded-card`(14px), 칸반 컬럼은 `rounded-section`(10px).
 - 로그인 장식 프레임은 `rounded-2xl`, `rounded-3xl`, `rounded-4xl` 등 정수 px의 기본 토큰을 사용한다.
 - 표면은 `bg-card`, 페이지는 `bg-page`, 브랜드 위 글자는 `text-on-brand`, 모달 배경은 `bg-overlay/50`.
@@ -74,3 +77,10 @@
 ### 익스텐션 지원 이력 배지 (#135)
 
 사용자 요청에 따라 흑백 일기장 테마를 지원 이력 배지에도 적용한다. diary ink/paper/secondary 토큰, 12px 굵은 본문·24px 높이·4px 간격을 사용한다. 지원은 체크와 어두운 배경, 취소는 되돌림 기호와 밝은 테두리로 구분한다. 웹앱의 색상 체계는 변경하지 않는다. [비교·접근성·성능 검증](APPLICATION_HISTORY_BADGES.md)을 따른다.
+
+## 모달 접근성 (#156, 2026-11-16)
+
+- 재현: 지원추가나 지원 카드로 모달을 열면 포커스가 연 버튼에 남고, Tab으로 모달 뒤 헤더·칸반까지 이동했다. 닫은 뒤에는 포커스가 문서 처음으로 돌아갔다. 모달에 `role="dialog"`와 제목 연결이 없어 보조기기가 열림을 알리지 못했다. 홈 대시보드(#148) 확인 중 dialog 역할로 모달을 찾지 못해 발견했다.
+- 원인: 공통 `Modal`이 ESC 닫기만 처리하고 대화상자 역할·포커스 관리를 하지 않았다.
+- 수정: `role="dialog"`, `aria-modal="true"`, `useId`로 만든 제목 `aria-labelledby`. 열릴 때 첫 입력(없으면 첫 버튼)으로 포커스를 옮기고, Tab/Shift+Tab을 모달 안에서 순환하며, 닫히면 연 요소가 화면에 남아 있을 때 포커스를 돌려준다. 제출 중 닫기 막기(`closeDisabled`)는 그대로 유지한다.
+- 검증: 프로덕션 빌드에서 지원 추가 모달을 키보드로 열기 → 첫 입력 포커스 → Tab·Shift+Tab 각 40회 모달 안 유지 → ESC 닫기 후 지원추가 버튼 포커스 복귀, 브라우저 예외 0건. `scripts/verify-release-browser.mjs` 7개 항목 통과. 스크린리더 실제 낭독은 확인하지 않았다.
