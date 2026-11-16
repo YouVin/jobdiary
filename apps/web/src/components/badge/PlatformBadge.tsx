@@ -10,7 +10,7 @@ const PLATFORM_BADGE_CLASS: Record<Platform, string> = {
   saramin: 'bg-platform-saramin-bg text-platform-saramin-text',
   wanted: 'bg-platform-wanted-bg text-platform-wanted-text',
   jobkorea: 'bg-platform-jobkorea-bg text-platform-jobkorea-text',
-  manual: 'bg-platform-saramin-bg text-platform-saramin-text',
+  manual: 'bg-platform-manual-bg text-platform-manual-text',
 };
 
 export function PlatformBadge({ platform }: PlatformBadgeProps) {

@@ -60,10 +60,13 @@ const config: Config = {
           "offer-text": "#3F6212",
           "screening-text": "#1D4ED8",
         },
+        // bg/text는 익스텐션(apps/extension/tailwind.config.ts)과 같은 값이다. chart는 도넛·플랫폼 표시용 진한 색으로
+        // 세 사이트는 text 색을 그대로 쓴다. manual(직접입력)은 웹앱에만 있는 플랫폼이라 웹앱에서만 정의한다 (#149).
         platform: {
-          saramin: { bg: "#F4F4F5", text: "#3F3F46" },
-          wanted: { bg: "#EEF2FF", text: "#3730A3" },
-          jobkorea: { bg: "#FEF2F2", text: "#991B1B" },
+          saramin: { bg: "#F4F4F5", text: "#3F3F46", chart: "#3F3F46" },
+          wanted: { bg: "#EEF2FF", text: "#3730A3", chart: "#3730A3" },
+          jobkorea: { bg: "#FEF2F2", text: "#991B1B", chart: "#991B1B" },
+          manual: { bg: "#F2F2F4", text: "#71717A", chart: "#A1A1AA" },
         },
         text: {
           primary: "#18181B",
