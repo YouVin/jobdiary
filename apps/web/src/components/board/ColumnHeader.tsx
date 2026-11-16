@@ -1,21 +1,10 @@
-import { STATUS_INFO } from '@/constants/status';
+import { STATUS_DOT_CLASS, STATUS_INFO } from '@/constants/status';
 import { Status } from '@/types/application';
 
 interface ColumnHeaderProps {
   status: Status;
   count: number;
 }
-
-// 상태별 점 색상 토큰 매핑 (Tailwind가 클래스명을 정적으로 인식하도록 리터럴로 작성)
-const STATUS_DOT_CLASS: Record<Status, string> = {
-  applied: 'bg-status-applied',
-  screening: 'bg-status-screening',
-  interview: 'bg-status-interview',
-  interviewed: 'bg-status-interview',
-  offer: 'bg-status-offer',
-  rejected: 'bg-status-rejected',
-  canceled: 'bg-status-canceled',
-};
 
 export function ColumnHeader({ status, count }: ColumnHeaderProps) {
   const { label } = STATUS_INFO[status];
