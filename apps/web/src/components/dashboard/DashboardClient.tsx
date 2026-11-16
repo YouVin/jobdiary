@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ApplicationErrorNotice, ImportSummaryNotice } from '@/components/dashboard/ApplicationNotices';
-import { ImportCard } from '@/components/dashboard/ImportCard';
-import { OverviewCard } from '@/components/dashboard/OverviewCard';
+import { CalendarCard } from '@/components/dashboard/CalendarCard';
+import { DiaryHeader } from '@/components/dashboard/DiaryHeader';
+import { JourneyCard } from '@/components/dashboard/JourneyCard';
 import { RecentCard } from '@/components/dashboard/RecentCard';
 import { RouteCard } from '@/components/dashboard/RouteCard';
 import { UpcomingCard } from '@/components/dashboard/UpcomingCard';
@@ -15,14 +16,15 @@ import type { Platform } from '@/types/application';
 import { getTodayInKorea } from '@/utils/applicationDeadline';
 import {
   getApplicationOverview,
+  getMonthCalendar,
   getPlatformShares,
   getRecentApplications,
   getStageSummary,
   getUpcomingEvents,
 } from '@/utils/applicationStats';
-import { formatDateWithWeekday } from '@/utils/format';
 
-// 홈(/) 통계 대시보드. 칸반·검색·필터는 지원 보드(/board)의 BoardClient가 담당한다.
+// 홈(/) 일기장 대시보드 (#158). 칸반·검색·필터는 지원 보드(/board)의 BoardClient가 담당한다.
+// 1줄: 오늘의 일기장(요약·가져오기) / 2줄: 전형 여정 | 지원 경로 / 3줄: 일정 타임라인 | 최근 지원 | 지원 달력
 export function DashboardClient() {
   const isReady = useApplicationsLoader();
   const applications = useApplicationStore((state) => state.applications);
@@ -58,6 +60,7 @@ export function DashboardClient() {
       stage: getStageSummary(applications),
       upcoming: getUpcomingEvents(applications, today),
       recent: getRecentApplications(applications, 4),
+      calendar: getMonthCalendar(applications, today),
       platformCounts,
       platformShares,
     };
@@ -65,44 +68,52 @@ export function DashboardClient() {
 
   if (!isReady) {
     return (
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12" aria-busy="true" aria-label="지원 현황을 불러오는 중">
-        <div className="min-h-60 animate-pulse rounded-card bg-column lg:col-span-7" />
-        <div className="min-h-60 animate-pulse rounded-card bg-column lg:col-span-5" />
+      <div className="flex flex-col gap-4" aria-busy="true" aria-label="지원 현황을 불러오는 중">
+        <div className="min-h-50 animate-pulse rounded-card bg-column" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+          <div className="min-h-60 animate-pulse rounded-card bg-column lg:col-span-7" />
+          <div className="min-h-60 animate-pulse rounded-card bg-column lg:col-span-5" />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-heading-lg font-semibold text-text-primary">안녕하세요, 오늘도 한 걸음</h1>
-        <p className="text-label text-text-secondary tabular-nums">{formatDateWithWeekday(stats.today, true)} 기준</p>
-      </div>
-
+      <h1 className="sr-only">대시보드</h1>
       <ApplicationErrorNotice error={error} />
       <ImportSummaryNotice summary={importSummary} onDismiss={dismissImportSummary} />
 
+      <DiaryHeader
+        today={stats.today}
+        overview={stats.overview}
+        stage={stats.stage}
+        nextEvent={stats.upcoming[0]}
+        platformCounts={stats.platformCounts}
+        lastImportAt={lastImportAt}
+        onImport={requestImport}
+        isRequesting={isRequesting}
+        isExtensionAvailable={isExtensionAvailable}
+      />
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
         <div className="min-w-0 lg:col-span-7">
-          <OverviewCard overview={stats.overview} stage={stats.stage} />
+          <JourneyCard stage={stats.stage} />
         </div>
         <div className="min-w-0 lg:col-span-5">
-          <ImportCard
-            platformCounts={stats.platformCounts}
-            onImport={requestImport}
-            isRequesting={isRequesting}
-            isExtensionAvailable={isExtensionAvailable}
-            lastImportAt={lastImportAt}
-          />
+          <RouteCard shares={stats.platformShares} total={stats.overview.total} />
         </div>
-        <div className="min-w-0 lg:col-span-7">
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="min-w-0">
           <UpcomingCard events={stats.upcoming} onSelect={setEditingId} />
         </div>
-        <div className="min-w-0 lg:col-span-5">
+        <div className="min-w-0">
           <RecentCard applications={stats.recent} onSelect={setEditingId} />
         </div>
-        <div className="min-w-0 lg:col-span-12">
-          <RouteCard shares={stats.platformShares} total={stats.overview.total} />
+        <div className="min-w-0 md:col-span-2 lg:col-span-1">
+          <CalendarCard calendar={stats.calendar} />
         </div>
       </div>
 

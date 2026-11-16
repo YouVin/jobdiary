@@ -11,7 +11,9 @@ interface UpcomingCardProps {
 }
 
 const KIND_LABEL: Record<UpcomingEvent['kind'], string> = { interview: '면접', deadline: '공고 마감' };
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
+// 날짜가 세로로 이어지는 일정 타임라인. 행을 누르면 지원 수정 모달을 연다.
 export function UpcomingCard({ events, onSelect, limit = 4 }: UpcomingCardProps) {
   const visible = events.slice(0, limit);
   const hiddenCount = events.length - visible.length;
@@ -23,33 +25,49 @@ export function UpcomingCard({ events, onSelect, limit = 4 }: UpcomingCardProps)
           다가오는 면접이나 공고 마감이 없습니다. 지원 카드에 면접일이나 공고 마감일을 입력하면 여기에 모입니다.
         </p>
       ) : (
-        <ul>
+        <ul className="relative flex flex-col gap-1">
+          {/* 타임라인 세로선: 버튼 왼쪽 여백(8px) + 날짜 칸(48px) + 점 칸 가운데(12px) */}
+          <span aria-hidden="true" className="absolute top-4 bottom-4 left-17 w-px bg-card-border" />
           {visible.map((event) => {
-            const dday = event.daysLeft === 0 ? 'D-DAY' : `D-${event.daysLeft}`;
+            const isToday = event.daysLeft === 0;
+            const dday = isToday ? 'D-DAY' : `D-${event.daysLeft}`;
             const kind = KIND_LABEL[event.kind];
+            const day = Number(event.date.slice(8, 10));
+            const weekday = WEEKDAYS[new Date(`${event.date}T00:00:00.000Z`).getUTCDay()];
             return (
-              <li key={`${event.applicationId}-${event.kind}`} className="border-b border-card-border last:border-b-0">
+              <li key={`${event.applicationId}-${event.kind}`}>
                 <button
                   type="button"
                   onClick={() => onSelect(event.applicationId)}
                   aria-label={`${dday} ${event.company} ${kind}, ${formatDateWithWeekday(event.date)}. 지원 정보 수정`}
-                  className="flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left hover:bg-page focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
+                  className="relative flex w-full items-center rounded-lg px-2 py-2 text-left hover:bg-page focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
                 >
-                  <span
-                    className={clsx(
-                      'flex w-12 shrink-0 justify-center rounded-md py-1 text-label font-semibold tabular-nums',
-                      event.kind === 'interview' ? 'bg-brand-tint text-brand-text' : 'bg-column text-text-secondary',
-                    )}
-                  >
-                    {dday}
+                  <span className="flex w-12 shrink-0 flex-col items-end pr-1">
+                    <span className="font-diary text-diary-date text-text-primary tabular-nums">{day}</span>
+                    <span className="text-caption text-text-secondary">{isToday ? `${weekday} · 오늘` : weekday}</span>
                   </span>
-                  <span className="min-w-0 flex-1">
+                  <span className="flex w-6 shrink-0 justify-center">
+                    <span
+                      className={clsx(
+                        'h-3 w-3 rounded-full ring-2 ring-card',
+                        event.kind === 'interview' ? 'bg-brand' : 'bg-text-muted',
+                      )}
+                    />
+                  </span>
+                  <span className="min-w-0 flex-1 pl-2">
                     <span className="block truncate text-card-company text-text-primary">{event.company}</span>
                     <span className="block truncate text-caption text-text-secondary">
                       {kind} · {event.position}
                     </span>
                   </span>
-                  <span className="shrink-0 text-caption text-text-secondary tabular-nums">{formatDateWithWeekday(event.date)}</span>
+                  <span
+                    className={clsx(
+                      'ml-2 shrink-0 rounded-full px-2 py-1 text-caption font-semibold tabular-nums',
+                      isToday ? 'bg-text-primary text-on-brand' : event.kind === 'interview' ? 'bg-brand-tint text-brand-text' : 'bg-column text-text-secondary',
+                    )}
+                  >
+                    {dday}
+                  </span>
                 </button>
               </li>
             );

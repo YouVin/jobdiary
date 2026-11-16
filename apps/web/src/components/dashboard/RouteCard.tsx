@@ -39,14 +39,14 @@ export function RouteCard({ shares, total }: RouteCardProps) {
 
   return (
     <DashboardCard title="지원 경로별 비율" titleId="route-card-title" action={<BoardLink label="지원 보드에서 보기" />}>
-      <div className="flex flex-col items-center gap-6 md:flex-row md:gap-10">
+      <div className="flex flex-col items-center gap-6 md:flex-row md:gap-8">
         <DonutChart segments={segments} activeKey={activeKey} onActiveChange={setActiveKey} label={chartLabel}>
           <span className="text-caption text-text-secondary">전체 지원</span>
           <span className="text-heading-xl text-text-primary tabular-nums">{total}</span>
           <span className="text-caption text-text-secondary">건</span>
         </DonutChart>
 
-        <ul className="grid w-full min-w-0 flex-1 grid-cols-1 gap-x-10 md:grid-cols-2">
+        <ul className="flex w-full min-w-0 flex-1 flex-col">
           {shares.map(({ platform, count, share }) => {
             const { mark, tileClass } = PLATFORM_CHART[platform];
             const label = PLATFORM_INFO[platform].label;
@@ -60,7 +60,7 @@ export function RouteCard({ shares, total }: RouteCardProps) {
                 onFocus={() => setActiveKey(platform)}
                 onBlur={() => setActiveKey(null)}
                 className={clsx(
-                  'flex items-center gap-3 rounded-lg border-b border-card-border px-2 py-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand',
+                  'flex items-center gap-3 rounded-lg border-b border-card-border px-2 py-3 last:border-b-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand',
                   activeKey === platform && 'bg-page',
                 )}
               >
