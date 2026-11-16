@@ -10,6 +10,7 @@ const config: Config = {
       // 토큰으로 정리한 것. text-heading-xl처럼 쓰면 font-size/line-height/font-weight가 함께 적용된다.
       // line-height는 한글 가독성을 고려해 정함(작은 글자일수록 상대적으로 더 넉넉하게).
       fontSize: {
+        display: ["48px", { lineHeight: "56px", fontWeight: "700" }], // 홈 대시보드의 대표 숫자 (화면당 하나)
         "heading-xl": ["28px", { lineHeight: "40px", fontWeight: "600" }], // 페이지 제목
         "heading-lg": ["22px", { lineHeight: "32px", fontWeight: "500" }], // 섹션 제목
         "heading-md": ["18px", { lineHeight: "28px", fontWeight: "500" }], // 카드/모달 제목

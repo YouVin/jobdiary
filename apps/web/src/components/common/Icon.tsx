@@ -12,6 +12,8 @@ const ICON_PATHS = {
   eye: '/icons/eye.svg',
   chart: '/icons/chart.svg',
   sparkle: '/icons/sparkle.svg',
+  download: '/icons/download.svg',
+  'arrow-right': '/icons/arrow-right.svg',
 } as const;
 
 interface IconProps {
