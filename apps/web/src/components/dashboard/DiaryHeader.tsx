@@ -86,7 +86,7 @@ export function DiaryHeader({
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
-          <p className="max-w-176 bg-[linear-gradient(to_bottom,transparent_31px,theme(colors.card-border)_31px)] bg-[length:100%_32px] text-lead break-keep text-text-primary text-balance">
+          <p className="max-w-176 text-lead break-keep text-text-primary text-balance">
             <Summary overview={overview} stage={stage} nextEvent={nextEvent} />
           </p>
           <ul className="flex flex-wrap gap-2">
