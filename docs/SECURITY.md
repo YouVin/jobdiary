@@ -11,6 +11,13 @@
 
 근거: [Next.js 릴리즈](https://github.com/vercel/next.js/releases/tag/v16.4.2), [braces 보안 공지](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
 
+### Next.js 16.4.6 (#163, 2026-11-18)
+
+- 문제: 2026-11-17 공개된 [GHSA-mfr8-8qww-v76h](https://github.com/advisories/GHSA-mfr8-8qww-v76h)(중간, Next.js 16.3.0~16.4.4, `use cache` 함수를 `unstable_cache()`로 호출할 때 root params 정보 노출)로 CI의 `npm audit --omit=dev`가 실패해 모든 PR의 웹 검증이 막혔다. 로컬 `next build`도 첫 실행에서 업그레이드 권고를 띄우고 멈췄다.
+- 영향: 이 앱은 `use cache`·`unstable_cache`·`cacheComponents`를 쓰지 않아 해당 경로가 없다. CI 규칙(운영 의존성 취약점 0개)을 지키려고 올렸다.
+- 수정: `next`와 `eslint-config-next`를 16.4.6(2026-11-09 패치 릴리즈, 버그 수정 백포트)으로 맞췄다. lockfile은 Next.js 관련 패키지 버전만 바뀌었다. 빌드 도구가 출력한 업그레이드 명령(`next upgrade --agent=security`)은 쓰지 않고 버전을 직접 지정했다.
+- 검증: `npm audit --omit=dev` 0건, 웹 테스트 110개·익스텐션 테스트 221개, lint·UI 규칙 검사, 웹 빌드(보안 권고로 멈추지 않음), 프로덕션 빌드에서 릴리즈 7·인증 로딩/SEO 4·모달 키보드 4개 항목 통과.
+
 ## 릴리즈 판단 (#96·#97)
 
 계정 격리(#90), 편집 충돌(#93), 날짜 검증(#94)을 dev에 병합했다. #96·#97에서 정책 페이지·동의 확인을 추가하고 마이그레이션 이력 3건을 원격과 맞췄다. 브라우저 검증과 제한은 [RELEASE_CHECK](RELEASE_CHECK.md)에 기록한다. 사용자가 후속 검증과 main 병합까지 승인했으며, CI 통과를 확인한 커밋만 병합한다.
