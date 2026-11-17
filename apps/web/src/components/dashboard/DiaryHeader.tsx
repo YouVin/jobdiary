@@ -77,16 +77,16 @@ export function DiaryHeader({
   return (
     <section aria-label="오늘의 지원 요약" className="overflow-hidden rounded-card border border-card-border bg-card shadow-card">
       <div className="grid grid-cols-1 gap-5 px-5 py-6 md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-8 md:px-8 md:py-7">
-        <div className="flex items-center gap-4 md:flex-col md:items-start md:gap-0 md:border-r md:border-card-border md:pr-8">
+        <div className="flex items-center gap-4 md:flex-col md:items-start md:gap-0 md:border-r md:border-dashed md:border-border-strong md:pr-8">
           <time dateTime={today} aria-label={`${year}년 ${month}월 ${day}일 ${weekday}`} className="flex items-center gap-4 md:flex-col md:items-start md:gap-0">
-            <span className="font-diary text-diary-month text-text-secondary">{MONTH_LABELS[month - 1]}</span>
-            <span className="font-diary text-diary-day text-text-primary tabular-nums">{day}</span>
+            <span className="text-diary-month tracking-widest text-text-secondary uppercase">{MONTH_LABELS[month - 1]}</span>
+            <span className="text-diary-day text-text-primary tabular-nums">{day}</span>
           </time>
           <span className="mt-1 text-label text-text-secondary">{year}년 · {weekday}</span>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
-          <p className="max-w-176 text-lead break-keep text-text-primary text-balance">
+          <p className="max-w-176 bg-[linear-gradient(to_bottom,transparent_31px,theme(colors.card-border)_31px)] bg-[length:100%_32px] text-lead break-keep text-text-primary text-balance">
             <Summary overview={overview} stage={stage} nextEvent={nextEvent} />
           </p>
           <ul className="flex flex-wrap gap-2">
