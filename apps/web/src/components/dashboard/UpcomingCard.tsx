@@ -43,7 +43,7 @@ export function UpcomingCard({ events, onSelect, limit = 4 }: UpcomingCardProps)
                   className="relative flex w-full items-center rounded-lg px-2 py-2 text-left hover:bg-page focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
                 >
                   <span className="flex w-12 shrink-0 flex-col items-end pr-1">
-                    <span className="font-diary text-diary-date text-text-primary tabular-nums">{day}</span>
+                    <span className="text-diary-date text-text-primary tabular-nums">{day}</span>
                     <span className="text-caption text-text-secondary">{isToday ? `${weekday} · 오늘` : weekday}</span>
                   </span>
                   <span className="flex w-6 shrink-0 justify-center">
