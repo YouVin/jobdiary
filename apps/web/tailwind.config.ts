@@ -10,10 +10,10 @@ const config: Config = {
       // 토큰으로 정리한 것. text-heading-xl처럼 쓰면 font-size/line-height/font-weight가 함께 적용된다.
       // line-height는 한글 가독성을 고려해 정함(작은 글자일수록 상대적으로 더 넉넉하게).
       fontSize: {
-        // 홈 일기장(#158): 익스텐션 팝업처럼 날짜에만 diary(serif) 글꼴을 쓴다.
-        "diary-day": ["56px", { lineHeight: "56px", fontWeight: "400" }], // 오늘 날짜 숫자
-        "diary-month": ["20px", { lineHeight: "28px", fontWeight: "400" }], // 월 약어 (Nov.)
-        "diary-date": ["20px", { lineHeight: "24px", fontWeight: "400" }], // 일정 타임라인의 날짜
+        // 홈 일기장(#158, #161): 날짜 크기 토큰. 글꼴은 본문과 같은 Pretendard다.
+        "diary-day": ["56px", { lineHeight: "56px", fontWeight: "700" }], // 오늘 날짜 숫자
+        "diary-month": ["14px", { lineHeight: "20px", fontWeight: "600" }], // 월 약어 (NOV.)
+        "diary-date": ["20px", { lineHeight: "24px", fontWeight: "700" }], // 일정 타임라인의 날짜
         lead: ["20px", { lineHeight: "32px", fontWeight: "500" }], // 일기장 요약 문장
         "heading-xl": ["28px", { lineHeight: "40px", fontWeight: "600" }], // 페이지 제목
         "heading-lg": ["22px", { lineHeight: "32px", fontWeight: "500" }], // 섹션 제목
@@ -94,7 +94,6 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-pretendard)"],
-        diary: ["Georgia", "Times New Roman", "serif"], // 익스텐션 diary 글꼴과 같은 시스템 serif
 
       },
     },
