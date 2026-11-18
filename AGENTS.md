@@ -16,3 +16,5 @@
 - 연동 계약을 바꾸면 보내는 쪽·받는 쪽·관련 문서를 함께 확인한다.
 - 모노레포로 합쳐도 웹앱 인증과 익스텐션 실행 환경은 분리되어 있다.
 - 작업 브랜치는 `feat/*`, `fix/*`, `chore/*`를 사용하며 배포와 스토어 제출은 별도 단계다.
+- 디자인·문서 AI 스킬(frontend-design, ui-ux-pro-max, design-taste-frontend, hallmark, archify 등)은 `docs/AI_SKILLS.md`의 사용처와 우선순위를 따른다.
+  스킬 제안보다 `docs/DESIGN_SYSTEM.md`의 토큰·규칙이 우선한다.
