@@ -18,6 +18,15 @@
 - 수정: `next`와 `eslint-config-next`를 16.4.6(2026-11-09 패치 릴리즈, 버그 수정 백포트)으로 맞췄다. lockfile은 Next.js 관련 패키지 버전만 바뀌었다. 빌드 도구가 출력한 업그레이드 명령(`next upgrade --agent=security`)은 쓰지 않고 버전을 직접 지정했다.
 - 검증: `npm audit --omit=dev` 0건, 웹 테스트 110개·익스텐션 테스트 221개, lint·UI 규칙 검사, 웹 빌드(보안 권고로 멈추지 않음), 프로덕션 빌드에서 릴리즈 7·인증 로딩/SEO 4·모달 키보드 4개 항목 통과.
 
+### 홈 대시보드 운영 반영 전 점검 (#168, 2026-11-18)
+
+main(`b67d7b2`) 이후 dev 변경(#161·#163·#165, 12개 파일)을 운영에 반영하기 전에 확인했다.
+
+- 운영 의존성: `npm audit --omit=dev` 0건. 이번 lockfile 변경은 Next.js 16.4.6 관련 패키지뿐이다.
+- 개발 의존성: `npm audit` 전체 22건(높음 15, 중간 7). vite·vitest·@crxjs/vite-plugin·undici·zod·@typescript-eslint/* 등 빌드·테스트·린트 도구다. 익스텐션 실행 의존성은 react·react-dom·공통 패키지뿐이고 웹앱 운영 audit도 0건이라 배포물에는 포함되지 않는다. `npm audit fix`는 peer 의존성 충돌(ERESOLVE)로 실패하고 eslint-config-next 경로는 `--force`가 14.2.35로 내리는 제안이라 쓰지 않는다. 이번 릴리즈 범위 밖으로 #167에서 추적한다.
+- 비밀값: 변경 diff에서 키·토큰·개인키 패턴 없음. 저장소가 추적하는 환경 파일은 `apps/web/.env.example`뿐이다.
+- 코드: 웹앱·익스텐션 소스에 `dangerouslySetInnerHTML`·`eval`·`new Function`이 없고 `innerHTML`은 테스트에만 있다. 새 탭 링크 3개는 모두 `rel="noopener noreferrer"`다. `/board`는 `(protected)` 레이아웃의 `AuthGuard` 아래에 있고 noindex·사이트맵 제외를 검증 스크립트로 확인한다. 마지막 가져오기 시각은 사용자 ID별 브라우저 키에 시각만 저장한다.
+
 ## 릴리즈 판단 (#96·#97)
 
 계정 격리(#90), 편집 충돌(#93), 날짜 검증(#94)을 dev에 병합했다. #96·#97에서 정책 페이지·동의 확인을 추가하고 마이그레이션 이력 3건을 원격과 맞췄다. 브라우저 검증과 제한은 [RELEASE_CHECK](RELEASE_CHECK.md)에 기록한다. 사용자가 후속 검증과 main 병합까지 승인했으며, CI 통과를 확인한 커밋만 병합한다.
