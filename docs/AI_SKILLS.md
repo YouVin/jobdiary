@@ -21,6 +21,21 @@
 | `hallmark` | [Nutlope/hallmark](https://github.com/Nutlope/hallmark) (MIT) | 기존 화면 점검은 `/hallmark audit <경로>`처럼 이름을 불러야 동작한다. 새 페이지에는 쓰지 않는다 |
 | `archify` | [tt-a1i/archify](https://github.com/tt-a1i/archify) (Apache-2.0) | 익스텐션 → 웹앱 → Supabase 데이터 흐름, 상태 흐름 같은 구조도를 `docs/`용으로 만들 때 |
 | `guizang-ppt-skill` | [op7418/guizang-ppt-skill](https://github.com/op7418/guizang-ppt-skill) (AGPL-3.0) | 포트폴리오·발표용 웹 슬라이드. 저장소 코드에는 포함하지 않는다 |
+| `doc-coauthoring` (#171) | [anthropics/skills](https://github.com/anthropics/skills) `skills/doc-coauthoring` | `docs/` 설계·결정 문서와 긴 PR 설명을 단계별로 함께 쓸 때. 지시문만 있고 실행 스크립트는 없다 |
+
+### 프로젝트 스킬 (저장소에 포함)
+
+| 스킬 | 위치 | 쓰는 곳 |
+|---|---|---|
+| `jobdiary-release` (#171) | `.claude/skills/jobdiary-release/` | 로컬 검증 → 프로덕션 빌드 브라우저 검증 → 보안 점검 → PR·CI → dev→main 릴리즈 → 운영 배포 확인 → 운영 도메인 검증. 병합·배포는 사용자가 요청했을 때만 한다 |
+
+`jobdiary-release`의 `scripts/`에는 3100 포트의 남은 `next start` 정리(`stop-port.sh`), 운영 배포 대기(`wait-production.sh <sha>`), 예시 데이터 48건·빈 계정 화면 촬영과 가로 넘침 확인(`capture-home.mjs <출력폴더>`)이 있다. `.gitignore`는 `.claude/` 안에서 `skills/`만 추적한다. 개인 권한 설정(`settings*.json`)은 계속 제외한다.
+
+이 스킬은 실제로 PR 병합과 운영 배포를 하므로 skill-creator의 자동 비교 실행(시험 에이전트로 여러 번 실행)은 하지 않았다. 절차는 #160·#170 릴리즈에서 실제로 쓴 순서이고, 세 스크립트는 작성 후 직접 실행해 확인했다.
+
+### anthropics/skills 검토 (2026-11-18)
+
+Anthropic 공식 저장소의 18개 스킬(대부분 Apache 2.0) 중 docx·pdf·pptx·xlsx·skill-creator·claude-api는 이미 기본 제공되고 frontend-design은 위에서 설치했다. doc-coauthoring만 추가했다. webapp-testing은 Python Playwright 기준이라 이 저장소의 Node 검증 스크립트와 겹치고, mcp-builder·web-artifacts-builder·theme-factory·canvas-design·algorithmic-art·slack-gif-creator·brand-guidelines(Anthropic 브랜드)·internal-comms·academy-guide·discernment-nudge는 이 프로젝트와 관련이 없어 설치하지 않았다. 쓰지 않는 스킬도 세션마다 설명이 붙어 토큰이 늘기 때문이다.
 
 ### 쓰지 않는 기능
 
@@ -41,7 +56,7 @@ claude plugin marketplace add Nutlope/hallmark
 claude plugin install hallmark@hallmark --scope user
 ```
 
-`archify`(저장소의 `archify/` 폴더)와 `guizang-ppt-skill`(저장소 전체, `.git` 제외)은 마켓플레이스가 없어 `~/.claude/skills/<이름>`에 복사했다. 각 폴더의 `.source-commit`에 설치한 커밋을 남겼다.
+`archify`(저장소의 `archify/` 폴더), `guizang-ppt-skill`(저장소 전체, `.git` 제외), `doc-coauthoring`(anthropics/skills의 `skills/doc-coauthoring`)은 단일 스킬로 쓰기 위해 `~/.claude/skills/<이름>`에 복사했다. 각 폴더의 `.source-commit`에 설치한 커밋을 남겼다.
 
 설치 전 확인한 내용: 네 플러그인 모두 훅·MCP 서버 없이 스킬만 포함한다(`claude plugin details`). 세션마다 항상 붙는 설명 비용은 합계 약 1.6k 토큰이고 본문은 스킬을 부를 때만 읽는다. 외부 스킬은 그대로 따르는 지시문이므로 업데이트할 때도 변경 내용을 먼저 확인한다.
 
