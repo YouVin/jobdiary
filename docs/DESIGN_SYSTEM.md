@@ -18,7 +18,7 @@
 
 | 토큰 | 크기 / 행간 | 용도 |
 |---|---|---|
-| diary-day · diary-month · diary-date | 56/56 · 20/28 · 20/24 | 홈 일기장 날짜, `font-diary`(시스템 serif)와 함께만 사용 (#158) |
+| diary-day · diary-month · diary-date | 56/56 · 14/20 · 20/24 | 홈 일기장 날짜. 글꼴은 Pretendard (#158, #161) |
 | lead | 20 / 32 | 홈 일기장 요약 문장 (#158) |
 | heading-xl | 28 / 40 | 큰 제목, 대시보드 보조 숫자 |
 | heading-lg | 22 / 32 | 페이지 제목 |
