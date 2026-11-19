@@ -121,3 +121,39 @@
   - 계정 전환: A 탭에 수정 중인 패널을 열어 둔 채 B로 바뀌면 패널(`dialog`)이 0개인지 확인을 더했다.
   - 새 항목: 키보드(Enter)로 패널 열기 → 포커스가 패널 안 → 기록 저장(`diary`에 단계와 함께 저장) → Esc로 닫고 연 버튼으로 포커스 복귀 → 새로고침 후 기록 표시 → 정보 수정/취소 시 포커스 이동 → 다른 탭 변경 충돌 시 저장 안 함·글 보존 → 바깥 클릭으로 닫기.
 - 예시 데이터로 지원 보드 패널 1440/390px, 홈에서 연 패널의 수정 화면 1440px 캡처, 홈·지원 보드 1440/768/390px 가로 넘침·브라우저 예외 없음.
+
+## 화면 전환 애니메이션과 마무리 (#176)
+
+### React 버전
+
+- React 패키지는 올리지 않았다. App Router는 Next 16.4.6에 내장된 React(`next/dist/compiled/react`)로 동작하고, 그 안에 `ViewTransition`과 `addTransitionType`이 이미 있다. 설치된 `react` 19.2.4에는 없다.
+- 타입은 `src/types/react-canary.d.ts`에서 `@types/react`의 canary 타입(`/// <reference types="react/canary" />`)만 참조해 해결했다.
+- `<ViewTransition>`은 transition(`startTransition`) 안의 상태 변경에서만 움직인다. 그래서 보기 전환·주 이동·단계 필터를 `startTransition`으로 바꿨다. 단계 변경은 #174부터 이미 transition(`useStageMove`) 안이다.
+
+### 어디가 어떻게 움직이나
+
+| 동작 | 대상 | 애니메이션 |
+| --- | --- | --- |
+| 주 이동 | 7일 칸(`name="week-days"`, `key=주 시작일`) | 다음 주는 왼쪽으로, 이전 주는 오른쪽으로 32px 밀리며 교차(`addTransitionType('week-forward'/'week-back')`) |
+| 주간 ↔ 보드 | 보기 전체(`name="board-view"`, `key=보기`) | 200ms 교차 페이드 |
+| 단계 필터·단계 변경 | 기다리는 목록의 행(`key=지원 id`) | 들어오는 행은 6px 올라오며 나타나고, 빠지는 행은 사라짐 |
+| 상세 패널 열기 | 패널 | `@starting-style`로 살짝 밀려 들어옴(#175, View Transitions와 별개) |
+
+- 이름 붙인 부분만 움직이도록 페이지 전체(`root`) 교차 페이드는 껐다. 전환 중에도 클릭이 페이지로 가도록 `::view-transition`에 `pointer-events: none`을 줬다.
+- 다른 전환 때 덩달아 움직이지 않게 모든 `ViewTransition`에 `default="none"`을 두고 필요한 경우(share/enter/exit)만 켰다. 트랙 진행 막대는 CSS `transition`(width)으로 따로 움직인다.
+- `prefers-reduced-motion: reduce`이면 모든 view-transition 애니메이션 시간을 0으로 만든다. View Transitions API가 없는 브라우저에서는 React가 전환 없이 바로 바꾼다.
+- CSS는 `src/app/globals.css` 끝에 모았다(키프레임 이름은 `jd-` 접두사).
+
+### 하지 않은 것
+
+- Popover API로 "탈락·합격·지원취소로 정리" 메뉴(선택 항목)는 넣지 않았다. 결과 단계로 바꾸는 일은 상세 패널의 "정보 수정"과 보드 보기 드래그로 충분하고, 목록 행마다 메뉴 버튼을 더하면 트랙과 함께 조작 지점이 많아진다. 필요해지면 별도 이슈로 다룬다.
+- 페이지 간 이동(홈 ↔ 지원 보드) 슬라이드는 넣지 않았다. 헤더 탭 이동은 같은 층위의 이동이라 방향 의미가 없다.
+
+### #176 검증
+
+- 운영 빌드(Edge)에서 애니메이션 시간 측정: 기본 설정은 주 이동 때 `week-days`만 120~250ms, `root`는 0ms. `reducedMotion: reduce`는 모두 0ms. 전환 중간 프레임에서 새 주가 오른쪽에서 들어오고 이전 주가 흐려지는 것을 확인.
+- `npm test` 124개, `npm run lint`(check:ui 포함), `npx tsc --noEmit`, `npm run build` 통과.
+- `scripts/verify-release-browser.mjs` 10개 통과. 새 항목: 지원 브라우저에서 주 이동 때 `document.startViewTransition`이 실제로 불리는지 세고, `startViewTransition`을 지운 페이지(미지원 브라우저 흉내)에서 주 이동·단계 필터·트랙 단계 변경(저장 확인)·보기 전환이 같게 동작하며 전환이 0번인지 확인.
+  - 단계 필터는 이제 transition으로 바뀌어 클릭 직후 속성을 바로 읽으면 이전 값일 수 있다. 검증은 `pressed` 상태가 바뀔 때까지 기다린다.
+- `scripts/verify-auth-loading-seo.mjs` 4개 통과, 홈·지원 보드 1440/768/390px 가로 넘침·브라우저 예외 없음.
+- README에 지원 보드·상세 패널 이미지와 기능 설명을 더했다([GitHub 공개 자료](GITHUB_SHOWCASE.md)에 촬영 방법 기록).
