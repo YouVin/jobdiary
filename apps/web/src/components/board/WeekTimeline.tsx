@@ -1,4 +1,5 @@
 import { clsx } from 'clsx';
+import { ViewTransition } from 'react';
 import { Icon } from '@/components/common/Icon';
 import type { WeekDay, WeekEvent, WeekTimeline as Timeline } from '@/utils/weekTimeline';
 
@@ -119,61 +120,71 @@ export function WeekTimeline({ timeline, offset, onOffsetChange, onSelect }: Wee
         </div>
       </div>
 
-      <ol className="hidden grid-cols-7 gap-2 md:grid">
-        {timeline.days.map((day) => (
-          <li
-            key={day.date}
-            aria-label={dayLabel(day)}
-            className={clsx(
-              'flex min-h-48 min-w-0 flex-col gap-2 rounded-card border bg-card p-3',
-              day.isToday ? 'border-brand shadow-card ring-1 ring-brand' : 'border-card-border',
-              day.weekdayIndex >= 5 && !day.isToday && 'bg-page',
-            )}
-          >
-            <div className={clsx('flex items-baseline justify-between gap-1', day.isPast && 'opacity-50')}>
-              <span className="text-label text-text-muted">{WEEKDAYS[day.weekdayIndex]}</span>
-              {/* 태블릿 폭에서는 칸이 좁아 숫자와 겹친다. 오늘은 테두리와 숫자 색으로도 구분된다. */}
-              {day.isToday && <span className="hidden rounded-full bg-brand px-2 text-badge leading-4 text-on-brand lg:inline">오늘</span>}
-              <span className={clsx('text-heading-lg font-bold tabular-nums', day.isToday ? 'text-brand' : 'text-text-primary')}>
-                {day.dayOfMonth}
-              </span>
-            </div>
-            {day.events.map((event) => (
-              <Capsule key={`${event.applicationId}-${event.kind}`} event={event} onSelect={onSelect} dimmed={day.isPast} />
-            ))}
-            {!day.events.length && !day.isPast && <p className="text-caption text-text-muted">일정 없음</p>}
-            <AppliedFoot count={day.appliedCount} />
-          </li>
-        ))}
-      </ol>
-
-      <ol className="flex flex-col gap-2 md:hidden">
-        {agendaDays.map((day) => (
-          <li
-            key={day.date}
-            aria-label={dayLabel(day)}
-            className={clsx('grid grid-cols-[48px_minmax(0,1fr)] gap-3 rounded-card border bg-card p-3', day.isToday ? 'border-brand ring-1 ring-brand' : 'border-card-border')}
-          >
-            <div className="flex flex-col items-center text-caption text-text-muted">
-              {WEEKDAYS[day.weekdayIndex]}
-              <span className={clsx('text-heading-lg font-bold tabular-nums', day.isToday ? 'text-brand' : 'text-text-primary')}>{day.dayOfMonth}</span>
-              {day.isToday && '오늘'}
-            </div>
-            <div className="flex min-w-0 flex-col gap-2">
-              {day.events.length ? (
-                day.events.map((event) => (
+      {/* 주를 옮기면 key가 바뀌어 이전 주와 새 주가 전환 타입(week-forward/back) 방향으로 넘어간다. */}
+      <ViewTransition
+        key={timeline.start}
+        name="week-days"
+        share={{ 'week-forward': 'week-forward', 'week-back': 'week-back', default: 'none' }}
+        default="none"
+      >
+        <div>
+          <ol className="hidden grid-cols-7 gap-2 md:grid">
+            {timeline.days.map((day) => (
+              <li
+                key={day.date}
+                aria-label={dayLabel(day)}
+                className={clsx(
+                  'flex min-h-48 min-w-0 flex-col gap-2 rounded-card border bg-card p-3',
+                  day.isToday ? 'border-brand shadow-card ring-1 ring-brand' : 'border-card-border',
+                  day.weekdayIndex >= 5 && !day.isToday && 'bg-page',
+                )}
+              >
+                <div className={clsx('flex items-baseline justify-between gap-1', day.isPast && 'opacity-50')}>
+                  <span className="text-label text-text-muted">{WEEKDAYS[day.weekdayIndex]}</span>
+                  {/* 태블릿 폭에서는 칸이 좁아 숫자와 겹친다. 오늘은 테두리와 숫자 색으로도 구분된다. */}
+                  {day.isToday && <span className="hidden rounded-full bg-brand px-2 text-badge leading-4 text-on-brand lg:inline">오늘</span>}
+                  <span className={clsx('text-heading-lg font-bold tabular-nums', day.isToday ? 'text-brand' : 'text-text-primary')}>
+                    {day.dayOfMonth}
+                  </span>
+                </div>
+                {day.events.map((event) => (
                   <Capsule key={`${event.applicationId}-${event.kind}`} event={event} onSelect={onSelect} dimmed={day.isPast} />
-                ))
-              ) : (
-                <p className="py-2 text-caption text-text-muted">
-                  잡힌 일정이 없어요{day.appliedCount ? ` · 지원 ${day.appliedCount}건` : ''}
-                </p>
-              )}
-            </div>
-          </li>
-        ))}
-        {!agendaDays.length && <li className="rounded-card bg-column p-4 text-small text-text-secondary">이 주에는 잡힌 일정이 없어요.</li>}
-      </ol>
+                ))}
+                {!day.events.length && !day.isPast && <p className="text-caption text-text-muted">일정 없음</p>}
+                <AppliedFoot count={day.appliedCount} />
+              </li>
+            ))}
+          </ol>
+
+          <ol className="flex flex-col gap-2 md:hidden">
+            {agendaDays.map((day) => (
+              <li
+                key={day.date}
+                aria-label={dayLabel(day)}
+                className={clsx('grid grid-cols-[48px_minmax(0,1fr)] gap-3 rounded-card border bg-card p-3', day.isToday ? 'border-brand ring-1 ring-brand' : 'border-card-border')}
+              >
+                <div className="flex flex-col items-center text-caption text-text-muted">
+                  {WEEKDAYS[day.weekdayIndex]}
+                  <span className={clsx('text-heading-lg font-bold tabular-nums', day.isToday ? 'text-brand' : 'text-text-primary')}>{day.dayOfMonth}</span>
+                  {day.isToday && '오늘'}
+                </div>
+                <div className="flex min-w-0 flex-col gap-2">
+                  {day.events.length ? (
+                    day.events.map((event) => (
+                      <Capsule key={`${event.applicationId}-${event.kind}`} event={event} onSelect={onSelect} dimmed={day.isPast} />
+                    ))
+                  ) : (
+                    <p className="py-2 text-caption text-text-muted">
+                      잡힌 일정이 없어요{day.appliedCount ? ` · 지원 ${day.appliedCount}건` : ''}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+            {!agendaDays.length && <li className="rounded-card bg-column p-4 text-small text-text-secondary">이 주에는 잡힌 일정이 없어요.</li>}
+          </ol>
+        </div>
+      </ViewTransition>
 
       {timeline.laterCount > 0 && (
         <p className="mt-3 text-caption text-text-muted">이 주 이후에 일정이 {timeline.laterCount}건 더 있어요. 다음 주로 넘겨 보세요.</p>
