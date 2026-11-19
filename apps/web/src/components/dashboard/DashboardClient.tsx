@@ -8,9 +8,10 @@ import { JourneyCard } from '@/components/dashboard/JourneyCard';
 import { RecentCard } from '@/components/dashboard/RecentCard';
 import { RouteCard } from '@/components/dashboard/RouteCard';
 import { UpcomingCard } from '@/components/dashboard/UpcomingCard';
-import { EditApplicationModal } from '@/components/modal/EditApplicationModal';
+import { ApplicationPanel } from '@/components/detail/ApplicationPanel';
 import { useApplicationsLoader } from '@/hooks/useApplicationsLoader';
 import { useExtensionImport } from '@/hooks/useExtensionImport';
+import { useStageMove } from '@/hooks/useStageMove';
 import { useApplicationStore } from '@/store/applicationStore';
 import type { Platform } from '@/types/application';
 import { getTodayInKorea } from '@/utils/applicationDeadline';
@@ -31,9 +32,10 @@ export function DashboardClient() {
   const error = useApplicationStore((state) => state.error);
   const { requestImport, isRequesting, isExtensionAvailable, importSummary, lastImportAt, dismissImportSummary } =
     useExtensionImport();
-  // 일정·최근 지원 행을 누르면 칸반 카드와 같은 수정 모달을 연다. 삭제되면 모달도 함께 닫힌다.
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const editingApplication = applications.find((application) => application.id === editingId);
+  // 일정·최근 지원 행을 누르면 지원 보드와 같은 상세 패널을 연다 (#175). 삭제되면 패널도 함께 닫힌다.
+  const { optimisticApplications, moveStage, moveError } = useStageMove(applications);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedApplication = optimisticApplications.find((application) => application.id === selectedId);
 
   // 익스텐션이 "취준일기 열기"로 붙인 ?import=1 신호를 감지하면 자동으로 가져오기를 실행한다.
   // 처리 전에 먼저 URL에서 신호를 지워, 새로고침해도 다시 트리거되지 않게 한다(중복 방지).
@@ -107,18 +109,24 @@ export function DashboardClient() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <div className="min-w-0">
-          <UpcomingCard events={stats.upcoming} onSelect={setEditingId} />
+          <UpcomingCard events={stats.upcoming} onSelect={setSelectedId} />
         </div>
         <div className="min-w-0">
-          <RecentCard applications={stats.recent} onSelect={setEditingId} />
+          <RecentCard applications={stats.recent} onSelect={setSelectedId} />
         </div>
         <div className="min-w-0 md:col-span-2 lg:col-span-1">
           <CalendarCard calendar={stats.calendar} />
         </div>
       </div>
 
-      {editingApplication && (
-        <EditApplicationModal application={editingApplication} isOpen onClose={() => setEditingId(null)} />
+      {selectedApplication && (
+        <ApplicationPanel
+          key={selectedApplication.id}
+          application={selectedApplication}
+          onClose={() => setSelectedId(null)}
+          onMove={moveStage}
+          moveError={moveError}
+        />
       )}
     </div>
   );

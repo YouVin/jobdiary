@@ -41,7 +41,7 @@ function Capsule({ event, onSelect, dimmed }: { event: WeekEvent; onSelect: (id:
     <button
       type="button"
       onClick={() => onSelect(event.applicationId)}
-      aria-label={`${event.company} ${KIND_LABEL[event.kind]}, 지원 정보 수정`}
+      aria-label={`${event.company} ${KIND_LABEL[event.kind]}, 상세 보기`}
       title={`${event.company} · ${event.position}`}
       className={clsx(
         'flex w-full min-w-0 flex-col rounded-lg border-l-4 px-2 py-2 text-left transition-transform hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',

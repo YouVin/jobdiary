@@ -1,19 +1,20 @@
 'use client';
 
 import { clsx } from 'clsx';
-import { useMemo, useOptimistic, useState, useTransition } from 'react';
+import { useMemo, useState } from 'react';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { ResultRow, StagePills } from '@/components/board/StageSummary';
 import { WaitingList } from '@/components/board/WaitingList';
 import { WeekTimeline } from '@/components/board/WeekTimeline';
 import { ApplicationErrorNotice } from '@/components/dashboard/ApplicationNotices';
 import { ApplicationFilters } from '@/components/dashboard/ApplicationFilters';
-import { EditApplicationModal } from '@/components/modal/EditApplicationModal';
+import { ApplicationPanel } from '@/components/detail/ApplicationPanel';
 import { STATUS_ORDER } from '@/constants/status';
 import { useApplicationsLoader } from '@/hooks/useApplicationsLoader';
+import { useStageMove } from '@/hooks/useStageMove';
 import { type BoardView, loadBoardView, saveBoardView } from '@/lib/storage';
 import { useApplicationStore } from '@/store/applicationStore';
-import type { Application, Status } from '@/types/application';
+import type { Status } from '@/types/application';
 import { getTodayInKorea } from '@/utils/applicationDeadline';
 import { DEFAULT_APPLICATION_FILTERS, filterApplications } from '@/utils/applicationFilters';
 import { getWaitingBoard } from '@/utils/waitingList';
@@ -39,58 +40,37 @@ function weekLede(offset: number, interviewCount: number, deadlineCount: number)
   return `${subject} ${parts.join(', ')}이 있어요.`;
 }
 
-// 저장 전에 화면에 먼저 반영할 단계 변경
-function applyStatusChange(current: Application[], change: { id: string; status: Status }): Application[] {
-  return current.map((application) => (application.id === change.id ? { ...application, status: change.status } : application));
-}
-
 // 지원 보드(/board) (#173·#174)
 // - 주간(기본): 단계 버튼 → 주간 타임라인 → 결과 기다리는 중 목록 → 결과가 나온 지원 한 줄
+// - 어느 보기든 지원을 누르면 오른쪽 상세 패널(#175)
 // - 보드: 기존 검색·필터와 7단계 칸반(드래그)
 // 지원 내역 조회는 홈과 같은 훅을 쓰고, 고른 보기는 이 브라우저에 기억한다.
 export function BoardClient() {
   const isReady = useApplicationsLoader();
   const applications = useApplicationStore((state) => state.applications);
   const error = useApplicationStore((state) => state.error);
-  const updateStatus = useApplicationStore((state) => state.updateStatus);
-  const clearError = useApplicationStore((state) => state.clearError);
   const [view, setView] = useState<BoardView>(loadBoardView);
 
   // 보드 보기: 검색·필터
   const [filters, setFilters] = useState(DEFAULT_APPLICATION_FILTERS);
   const visibleApplications = useMemo(() => filterApplications(applications, filters), [applications, filters]);
 
-  // 주간 보기: 트랙에서 바꾼 단계는 저장 응답 전에 먼저 보여주고, 실패하면 transition이 끝날 때 원래 값으로 돌아간다.
-  const [optimisticApplications, applyOptimisticStatus] = useOptimistic(applications, applyStatusChange);
-  const [, startTransition] = useTransition();
-  const [moveError, setMoveError] = useState<string | null>(null);
+  // 주간 보기·상세 패널: 트랙에서 바꾼 단계는 저장 응답 전에 먼저 보여준다(useStageMove).
+  const { optimisticApplications, moveStage, moveError } = useStageMove(applications);
   const [stage, setStage] = useState<Status | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
   const today = getTodayInKorea();
   const timeline = useMemo(() => getWeekTimeline(optimisticApplications, today, weekOffset), [optimisticApplications, today, weekOffset]);
   const waiting = useMemo(() => getWaitingBoard(optimisticApplications, today, stage), [optimisticApplications, today, stage]);
 
-  // 일정 캡슐·목록의 회사를 누르면 칸반 카드와 같은 수정 모달을 연다. 삭제되면 모달도 함께 닫힌다.
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const editingApplication = applications.find((application) => application.id === editingId);
+  // 일정 캡슐·목록의 회사·칸반 카드를 누르면 상세 패널을 연다 (#175).
+  // 목록에서 사라지면(삭제·계정 전환) 패널도 그리지 않는다.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedApplication = optimisticApplications.find((application) => application.id === selectedId);
 
   const changeView = (next: BoardView) => {
     setView(next);
     saveBoardView(next);
-  };
-
-  const moveStage = (applicationId: string, status: Status) => {
-    const company = applications.find((application) => application.id === applicationId)?.company ?? '지원';
-    setMoveError(null);
-    startTransition(async () => {
-      applyOptimisticStatus({ id: applicationId, status });
-      const saved = await updateStatus(applicationId, status);
-      if (!saved) {
-        // 위쪽 공통 오류 안내와 겹치지 않게, 목록 옆 안내 한 곳에만 보여준다.
-        clearError();
-        setMoveError(`${company}의 단계를 바꾸지 못해 원래대로 되돌렸어요. 잠시 뒤 다시 시도해 주세요.`);
-      }
-    });
   };
 
   if (!isReady) {
@@ -143,7 +123,7 @@ export function BoardClient() {
             <p className="mb-4 rounded-section bg-column p-4 text-body text-text-secondary">{EMPTY_MESSAGE}</p>
           )}
           <StagePills counts={waiting.stageCounts} resultTotal={waiting.resultTotal} stage={stage} onStageChange={setStage} />
-          <WeekTimeline timeline={timeline} offset={weekOffset} onOffsetChange={setWeekOffset} onSelect={setEditingId} />
+          <WeekTimeline timeline={timeline} offset={weekOffset} onOffsetChange={setWeekOffset} onSelect={setSelectedId} />
           <WaitingList
             items={waiting.items}
             scheduledCount={waiting.scheduledCount}
@@ -151,7 +131,7 @@ export function BoardClient() {
             moveError={moveError}
             onClearStage={() => setStage(null)}
             onMove={moveStage}
-            onOpen={setEditingId}
+            onOpen={setSelectedId}
           />
           <ResultRow counts={waiting.resultCounts} total={waiting.resultTotal} />
         </>
@@ -168,12 +148,18 @@ export function BoardClient() {
               {applications.length === 0 ? EMPTY_MESSAGE : '조건에 맞는 지원 내역이 없습니다. 검색어나 필터를 변경해보세요.'}
             </p>
           )}
-          <KanbanBoard applications={applications} visibleApplications={visibleApplications} />
+          <KanbanBoard applications={applications} visibleApplications={visibleApplications} onOpen={setSelectedId} />
         </>
       )}
 
-      {editingApplication && (
-        <EditApplicationModal application={editingApplication} isOpen onClose={() => setEditingId(null)} />
+      {selectedApplication && (
+        <ApplicationPanel
+          key={selectedApplication.id}
+          application={selectedApplication}
+          onClose={() => setSelectedId(null)}
+          onMove={moveStage}
+          moveError={moveError}
+        />
       )}
     </>
   );
