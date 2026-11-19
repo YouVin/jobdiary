@@ -2,20 +2,43 @@
 
 import { useMemo, useState } from 'react';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
+import { WeekTimeline } from '@/components/board/WeekTimeline';
 import { ApplicationErrorNotice } from '@/components/dashboard/ApplicationNotices';
 import { ApplicationFilters } from '@/components/dashboard/ApplicationFilters';
+import { EditApplicationModal } from '@/components/modal/EditApplicationModal';
 import { STATUS_ORDER } from '@/constants/status';
 import { useApplicationsLoader } from '@/hooks/useApplicationsLoader';
 import { useApplicationStore } from '@/store/applicationStore';
+import { getTodayInKorea } from '@/utils/applicationDeadline';
 import { DEFAULT_APPLICATION_FILTERS, filterApplications } from '@/utils/applicationFilters';
+import { getWeekTimeline } from '@/utils/weekTimeline';
 
-// 지원 보드(/board): 검색·필터와 7단계 칸반. 지원 내역 조회는 홈과 같은 훅을 쓴다.
+// 머리말 한 줄. 일정이 없으면 없다고 말한다.
+function weekLede(offset: number, interviewCount: number, deadlineCount: number): string {
+  let subject = '이 주에';
+  if (offset === 0) subject = '이번 주에';
+  else if (offset === -1) subject = '지난주에';
+  else if (offset === 1) subject = '다음 주에';
+  if (!interviewCount && !deadlineCount) return `${subject} 잡힌 면접이나 공고 마감이 없어요.`;
+  const parts: string[] = [];
+  if (interviewCount) parts.push(`면접 ${interviewCount}번`);
+  if (deadlineCount) parts.push(`공고 마감 ${deadlineCount}번`);
+  return `${subject} ${parts.join(', ')}이 있어요.`;
+}
+
+// 지원 보드(/board): 위에 주간 타임라인(#173), 아래에 검색·필터와 7단계 칸반. 지원 내역 조회는 홈과 같은 훅을 쓴다.
 export function BoardClient() {
   const isReady = useApplicationsLoader();
   const applications = useApplicationStore((state) => state.applications);
   const error = useApplicationStore((state) => state.error);
   const [filters, setFilters] = useState(DEFAULT_APPLICATION_FILTERS);
   const visibleApplications = useMemo(() => filterApplications(applications, filters), [applications, filters]);
+  // 주 이동은 이번 주 기준 상대값. 타임라인은 필터와 상관없이 전체 지원으로 계산한다.
+  const [weekOffset, setWeekOffset] = useState(0);
+  const timeline = useMemo(() => getWeekTimeline(applications, getTodayInKorea(), weekOffset), [applications, weekOffset]);
+  // 일정 캡슐을 누르면 칸반 카드와 같은 수정 모달을 연다. 삭제되면 모달도 함께 닫힌다.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const editingApplication = applications.find((application) => application.id === editingId);
 
   if (!isReady) {
     return (
@@ -31,7 +54,13 @@ export function BoardClient() {
 
   return (
     <>
-      <h1 className="mb-4 text-heading-lg font-semibold text-text-primary">지원 보드</h1>
+      <header className="mb-6">
+        <h1 className="text-heading-lg font-semibold text-text-primary">지원 보드</h1>
+        <p className="mt-1 text-body text-text-secondary">
+          {weekLede(weekOffset, timeline.interviewCount, timeline.deadlineCount)}
+        </p>
+      </header>
+      <WeekTimeline timeline={timeline} offset={weekOffset} onOffsetChange={setWeekOffset} onSelect={setEditingId} />
       {error && (
         <div className="mb-3">
           <ApplicationErrorNotice error={error} />
@@ -51,6 +80,9 @@ export function BoardClient() {
         </p>
       )}
       <KanbanBoard applications={applications} visibleApplications={visibleApplications} />
+      {editingApplication && (
+        <EditApplicationModal application={editingApplication} isOpen onClose={() => setEditingId(null)} />
+      )}
     </>
   );
 }
