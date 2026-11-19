@@ -13,3 +13,72 @@ body {
   @apply bg-page text-text-primary;
   font-family: var(--font-sans);
 }
+
+/* 화면 전환 애니메이션 (#176). React <ViewTransition>이 브라우저 View Transitions API로 그린다.
+   지원하지 않는 브라우저에서는 애니메이션 없이 그대로 바뀌고, 기능은 애니메이션에 의존하지 않는다. */
+
+/* 이름 붙인 부분만 움직인다. 페이지 전체 교차 페이드는 끈다. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* 전환 중에도 클릭이 페이지로 그대로 간다. */
+::view-transition {
+  pointer-events: none;
+}
+
+/* 주 이동: 다음 주는 왼쪽으로, 이전 주는 오른쪽으로 넘긴다. */
+::view-transition-old(.week-forward),
+::view-transition-old(.week-back) {
+  animation:
+    120ms ease-in both jd-fade reverse,
+    240ms ease-in-out both jd-slide-x reverse;
+}
+::view-transition-new(.week-forward),
+::view-transition-new(.week-back) {
+  animation:
+    180ms ease-out 100ms both jd-fade,
+    240ms ease-in-out both jd-slide-x;
+}
+::view-transition-old(.week-forward) { --jd-slide-offset: -32px; }
+::view-transition-new(.week-forward) { --jd-slide-offset: 32px; }
+::view-transition-old(.week-back) { --jd-slide-offset: 32px; }
+::view-transition-new(.week-back) { --jd-slide-offset: -32px; }
+
+/* 기다리는 목록의 행: 빠질 때 줄어들며 사라지고, 들어올 때 살짝 올라온다. */
+::view-transition-old(.row-exit) {
+  animation: 150ms ease-in both jd-fade reverse;
+}
+::view-transition-new(.row-enter) {
+  animation:
+    200ms ease-out both jd-fade,
+    200ms ease-out both jd-slide-y;
+}
+
+/* 주간 ↔ 보드 보기 전환은 기본 교차 페이드를 조금 빠르게 */
+::view-transition-group(board-view) {
+  animation-duration: 200ms;
+}
+
+@keyframes jd-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes jd-slide-x {
+  from { translate: var(--jd-slide-offset) 0; }
+  to { translate: 0 0; }
+}
+@keyframes jd-slide-y {
+  from { translate: 0 6px; }
+  to { translate: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

@@ -95,6 +95,15 @@ await context.route('https://*.supabase.co/**', async route => {
   }
   throw new Error(`예상하지 않은 API: ${method} ${url.pathname}`);
 });
+// 화면 전환 애니메이션(#176)이 실제로 시작됐는지 센다. 지원하지 않는 브라우저 흉내는 아래 마지막 단계에서 한다.
+await context.addInitScript(() => {
+  const original = Document.prototype.startViewTransition;
+  if (!original) return;
+  Document.prototype.startViewTransition = function (...args) {
+    window.__viewTransitionCount = (window.__viewTransitionCount ?? 0) + 1;
+    return original.apply(this, args);
+  };
+});
 const page = await context.newPage();
 const visible = async locator => { await locator.waitFor({ state: 'visible' }); };
 // 헤더 탭으로 지원 보드에 들어간다. 클라이언트 이동이라 스토어에 있는 목록을 그대로 보여준다.
@@ -272,6 +281,42 @@ try {
   await panel.waitFor({ state: 'detached' });
   assert.deepEqual(errors, []);
   console.log('PASS 상세 패널 키보드 열고 닫기·기록 저장·새로고침 유지·충돌 시 글 보존');
+  // 화면 전환 애니메이션(#176): 지원 브라우저에서는 주 이동 때 전환이 시작되고,
+  // View Transitions API가 없는 브라우저에서도 주 이동·단계 필터·단계 변경·보기 전환이 같게 동작한다.
+  await page.getByRole('button', { name: '다음 주', exact: true }).click();
+  await visible(page.getByRole('heading', { name: '다음 주', exact: true }));
+  assert((await page.evaluate(() => window.__viewTransitionCount ?? 0)) > 0, '주 이동 시 화면 전환 시작');
+  await page.getByRole('button', { name: '이번 주', exact: true }).click();
+  const plain = await context.newPage();
+  await plain.addInitScript(() => { delete Document.prototype.startViewTransition; });
+  await plain.goto(`${origin}/board`);
+  assert.equal(await plain.evaluate(() => 'startViewTransition' in document), false);
+  const plainTrack = plain.getByRole('group', { name: 'B 회사 단계' });
+  await visible(plainTrack);
+  await plain.getByRole('button', { name: '다음 주', exact: true }).click();
+  await visible(plain.getByRole('heading', { name: '다음 주', exact: true }));
+  await plain.getByRole('button', { name: '이번 주', exact: true }).click();
+  await visible(plain.getByRole('heading', { name: '이번 주', exact: true }));
+  const screeningPill = plain.getByRole('group', { name: '단계별 보기' }).getByRole('button', { name: /서류통과/ });
+  await screeningPill.click();
+  await visible(plain.getByRole('group', { name: '단계별 보기' }).getByRole('button', { name: /서류통과/, pressed: true }));
+  await visible(plainTrack);
+  await screeningPill.click();
+  await visible(plain.getByRole('group', { name: '단계별 보기' }).getByRole('button', { name: /서류통과/, pressed: false }));
+  await plainTrack.getByRole('button', { name: '면접예정으로 옮기기' }).click();
+  await visible(plainTrack.getByRole('button', { name: '면접예정 (현재 단계)' }));
+  for (let attempt = 0; rows[1].status !== 'interview' && attempt < 100; attempt++) await new Promise(resolve => setTimeout(resolve, 50));
+  assert.equal(rows[1].status, 'interview');
+  await plainTrack.getByRole('button', { name: '서류통과로 옮기기' }).click();
+  await visible(plainTrack.getByRole('button', { name: '서류통과 (현재 단계)' }));
+  const plainView = plain.getByRole('group', { name: '보기 선택' });
+  await plainView.getByRole('button', { name: '보드', exact: true }).click();
+  await visible(plain.getByPlaceholder('회사명 또는 공고명 입력'));
+  await plainView.getByRole('button', { name: '주간', exact: true }).click();
+  await visible(plainTrack);
+  assert.equal(await plain.evaluate(() => window.__viewTransitionCount ?? 0), 0);
+  assert.deepEqual(errors, []);
+  console.log('PASS 화면 전환 애니메이션 시작·View Transitions 미지원 브라우저 동일 동작');
 } finally {
   delayed?.();
   await browser.close();

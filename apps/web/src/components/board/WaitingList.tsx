@@ -1,4 +1,5 @@
 import { clsx } from 'clsx';
+import { ViewTransition } from 'react';
 import { StageTrack } from '@/components/board/StageTrack';
 import { STATUS_INFO } from '@/constants/status';
 import type { Platform, Status } from '@/types/application';
@@ -122,7 +123,10 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
         {items.length ? (
           <ul className="divide-y divide-card-border">
             {items.map((item) => (
-              <WaitingRow key={item.application.id} item={item} onMove={onMove} onOpen={onOpen} />
+              // 단계 필터나 단계 변경으로 목록에 들어오고 빠지는 행만 움직인다(#176).
+              <ViewTransition key={item.application.id} enter="row-enter" exit="row-exit" default="none">
+                <WaitingRow item={item} onMove={onMove} onOpen={onOpen} />
+              </ViewTransition>
             ))}
           </ul>
         ) : (

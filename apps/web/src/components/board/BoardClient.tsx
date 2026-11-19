@@ -1,7 +1,7 @@
 'use client';
 
 import { clsx } from 'clsx';
-import { useMemo, useState } from 'react';
+import { addTransitionType, startTransition, useMemo, useState, ViewTransition } from 'react';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { ResultRow, StagePills } from '@/components/board/StageSummary';
 import { WaitingList } from '@/components/board/WaitingList';
@@ -40,11 +40,12 @@ function weekLede(offset: number, interviewCount: number, deadlineCount: number)
   return `${subject} ${parts.join(', ')}이 있어요.`;
 }
 
-// 지원 보드(/board) (#173·#174)
+// 지원 보드(/board) (#173~#176)
 // - 주간(기본): 단계 버튼 → 주간 타임라인 → 결과 기다리는 중 목록 → 결과가 나온 지원 한 줄
 // - 어느 보기든 지원을 누르면 오른쪽 상세 패널(#175)
 // - 보드: 기존 검색·필터와 7단계 칸반(드래그)
 // 지원 내역 조회는 홈과 같은 훅을 쓰고, 고른 보기는 이 브라우저에 기억한다.
+// 보기 전환·주 이동·단계 필터는 transition으로 바꿔 <ViewTransition> 애니메이션을 켠다(#176). 동작은 애니메이션과 무관하다.
 export function BoardClient() {
   const isReady = useApplicationsLoader();
   const applications = useApplicationStore((state) => state.applications);
@@ -69,8 +70,21 @@ export function BoardClient() {
   const selectedApplication = optimisticApplications.find((application) => application.id === selectedId);
 
   const changeView = (next: BoardView) => {
-    setView(next);
     saveBoardView(next);
+    startTransition(() => setView(next));
+  };
+
+  // 주 이동 방향을 전환 타입으로 넘겨, 다음 주는 왼쪽·이전 주는 오른쪽으로 넘긴다.
+  const moveWeek = (next: number) => {
+    if (next === weekOffset) return;
+    startTransition(() => {
+      addTransitionType(next > weekOffset ? 'week-forward' : 'week-back');
+      setWeekOffset(next);
+    });
+  };
+
+  const changeStage = (next: Status | null) => {
+    startTransition(() => setStage(next));
   };
 
   if (!isReady) {
@@ -117,40 +131,45 @@ export function BoardClient() {
         </div>
       )}
 
-      {view === 'week' ? (
-        <>
-          {!error && applications.length === 0 && (
-            <p className="mb-4 rounded-section bg-column p-4 text-body text-text-secondary">{EMPTY_MESSAGE}</p>
+      {/* 보기를 바꾸면 key가 바뀌어 이전·새 보기가 교차 페이드된다. */}
+      <ViewTransition key={view} name="board-view" share="auto" enter="auto" default="none">
+        <div>
+          {view === 'week' ? (
+            <>
+              {!error && applications.length === 0 && (
+                <p className="mb-4 rounded-section bg-column p-4 text-body text-text-secondary">{EMPTY_MESSAGE}</p>
+              )}
+              <StagePills counts={waiting.stageCounts} resultTotal={waiting.resultTotal} stage={stage} onStageChange={changeStage} />
+              <WeekTimeline timeline={timeline} offset={weekOffset} onOffsetChange={moveWeek} onSelect={setSelectedId} />
+              <WaitingList
+                items={waiting.items}
+                scheduledCount={waiting.scheduledCount}
+                stage={stage}
+                moveError={moveError}
+                onClearStage={() => changeStage(null)}
+                onMove={moveStage}
+                onOpen={setSelectedId}
+              />
+              <ResultRow counts={waiting.resultCounts} total={waiting.resultTotal} />
+            </>
+          ) : (
+            <>
+              <ApplicationFilters
+                filters={filters}
+                onChange={setFilters}
+                visibleCount={visibleApplications.length}
+                totalCount={applications.length}
+              />
+              {!error && visibleApplications.length === 0 && (
+                <p className="mb-4 rounded-section bg-column p-4 text-body text-text-secondary">
+                  {applications.length === 0 ? EMPTY_MESSAGE : '조건에 맞는 지원 내역이 없습니다. 검색어나 필터를 변경해보세요.'}
+                </p>
+              )}
+              <KanbanBoard applications={applications} visibleApplications={visibleApplications} onOpen={setSelectedId} />
+            </>
           )}
-          <StagePills counts={waiting.stageCounts} resultTotal={waiting.resultTotal} stage={stage} onStageChange={setStage} />
-          <WeekTimeline timeline={timeline} offset={weekOffset} onOffsetChange={setWeekOffset} onSelect={setSelectedId} />
-          <WaitingList
-            items={waiting.items}
-            scheduledCount={waiting.scheduledCount}
-            stage={stage}
-            moveError={moveError}
-            onClearStage={() => setStage(null)}
-            onMove={moveStage}
-            onOpen={setSelectedId}
-          />
-          <ResultRow counts={waiting.resultCounts} total={waiting.resultTotal} />
-        </>
-      ) : (
-        <>
-          <ApplicationFilters
-            filters={filters}
-            onChange={setFilters}
-            visibleCount={visibleApplications.length}
-            totalCount={applications.length}
-          />
-          {!error && visibleApplications.length === 0 && (
-            <p className="mb-4 rounded-section bg-column p-4 text-body text-text-secondary">
-              {applications.length === 0 ? EMPTY_MESSAGE : '조건에 맞는 지원 내역이 없습니다. 검색어나 필터를 변경해보세요.'}
-            </p>
-          )}
-          <KanbanBoard applications={applications} visibleApplications={visibleApplications} onOpen={setSelectedId} />
-        </>
-      )}
+        </div>
+      </ViewTransition>
 
       {selectedApplication && (
         <ApplicationPanel

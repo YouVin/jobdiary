@@ -40,7 +40,7 @@
 | Server/Client 렌더링 (#83) | [RENDERING](RENDERING.md) | `apps/web/src/app/(protected)/layout.tsx`, `apps/web/src/components/auth/AuthGuard.tsx` |
 | 인증 스켈레톤·SEO (#105·#106) | [SEO](SEO.md), [RENDERING](RENDERING.md) | `login/layout.tsx`, `AuthFormSkeleton.tsx`, `siteMetadata.ts`, `robots.ts`, `sitemap.ts` |
 | 홈 통계 대시보드 (#146~#150) | [HOME_DASHBOARD](HOME_DASHBOARD.md) | `apps/web/src/utils/applicationStats.ts` |
-| 지원 보드 주간 타임라인·기다리는 목록·상세 패널과 기록 (#173~#176) | [BOARD](BOARD.md) | `apps/web/src/utils/weekTimeline.ts`, `waitingList.ts`, `applicationJourney.ts`, `apps/web/src/components/board/`, `detail/`, `diary/` |
+| 지원 보드 주간 타임라인·기다리는 목록·상세 패널과 기록·화면 전환 (#173~#176) | [BOARD](BOARD.md) | `apps/web/src/utils/weekTimeline.ts`, `waitingList.ts`, `applicationJourney.ts`, `apps/web/src/components/board/`, `detail/`, `diary/` |
 | 검색·필터 (#73) | [DASHBOARD](DASHBOARD.md) | `apps/web/src/utils/applicationFilters.ts`, `apps/web/src/components/dashboard/ApplicationFilters.tsx` |
 | 공고 마감일·자동 탈락 (#85) | [DEADLINE](DEADLINE.md) | `apps/web/src/utils/applicationDeadline.ts`, `apps/web/src/lib/applicationsApi.ts`, `supabase/migrations/` |
 | 헤더 로고·홈 이동 (#79) | [TECH_DESIGN](TECH_DESIGN.md) | `apps/web/src/components/header/Header.tsx` |
