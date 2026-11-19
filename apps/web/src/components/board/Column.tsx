@@ -10,9 +10,10 @@ interface ColumnProps {
   status: Status;
   applications: Application[];
   duplicateIds: Set<string>;
+  onOpen: (applicationId: string) => void;
 }
 
-export function Column({ status, applications, duplicateIds }: ColumnProps) {
+export function Column({ status, applications, duplicateIds, onOpen }: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
@@ -27,7 +28,7 @@ export function Column({ status, applications, duplicateIds }: ColumnProps) {
 
       <div className="mt-3 flex flex-col gap-2">
         {applications.map((application) => (
-          <ApplicationCard key={application.id} application={application} isDuplicate={duplicateIds.has(application.id)} />
+          <ApplicationCard key={application.id} application={application} isDuplicate={duplicateIds.has(application.id)} onOpen={onOpen} />
         ))}
       </div>
     </div>

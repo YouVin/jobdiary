@@ -162,15 +162,23 @@ try {
   await visible(page.getByText('새 지원', { exact: true }));
   assert.equal(inserts, 1);
   console.log('PASS 빈 지원일 API 차단·정상 재저장');
+  // 지원을 누르면 상세 패널(#175)이 열리고, "정보 수정"으로 기존 수정 폼을 쓴다.
+  const openEdit = async target => { await target.getByRole('dialog').getByRole('button', { name: '정보 수정' }).click(); };
   await page.getByText('A 회사', { exact: true }).click();
+  await openEdit(page);
   const second = await context.newPage();
   await second.goto(`${origin}/board`);
   // 탈락으로 바꾼 지원은 주간 목록에서 빠지므로, 모든 단계가 보이는 보드(칸반) 보기에서 편집한다.
   await second.getByRole('group', { name: '보기 선택' }).getByRole('button', { name: '보드', exact: true }).click();
   await second.getByText('A 회사', { exact: true }).click();
+  await openEdit(second);
   await second.getByLabel('상태', { exact: true }).selectOption('rejected');
   await second.getByRole('button', { name: '저장', exact: true }).click();
+  // 저장하면 패널의 상세 화면으로 돌아온다. 닫고 탈락 열의 카드를 다시 연다.
+  await visible(second.getByRole('dialog').getByRole('button', { name: '정보 수정' }));
+  await second.keyboard.press('Escape');
   await second.getByText('A 회사', { exact: true }).click();
+  await openEdit(second);
   await second.getByLabel('상태', { exact: true }).selectOption('applied');
   await second.getByRole('button', { name: '저장', exact: true }).click();
   await page.getByRole('button', { name: '저장', exact: true }).click();
@@ -178,6 +186,8 @@ try {
   assert.equal(rows[0].status, 'applied');
   assert.equal(rows[0].status_source, 'manual');
   console.log('PASS 두 탭 편집 충돌·수동 복원 보호');
+  // 저장 후에도 패널은 상세 화면으로 남아 있으므로 닫고 로그아웃한다(A 탭의 패널은 열어 둔다).
+  await second.keyboard.press('Escape');
   await second.getByRole('button', { name: '로그아웃', exact: true }).click();
   await visible(page.getByLabel('이메일', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
@@ -188,6 +198,7 @@ try {
   await visible(page.getByText('B 회사', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
   assert.equal(await page.getByLabel('회사명 *', { exact: true }).count(), 0);
+  assert.equal(await page.getByRole('dialog').count(), 0);
   console.log('PASS 다른 탭 로그아웃·B 로그인 시 A 목록/편집창 제거');
   await second.getByRole('button', { name: '로그아웃', exact: true }).click();
   delayNextA = true;
@@ -229,6 +240,38 @@ try {
   await visible(bTrack);
   assert.deepEqual(errors, []);
   console.log('PASS 주간 목록 단계 변경·저장 실패 되돌림·보기 기억');
+  // 상세 패널·기록 남기기(#175): 키보드로 열고 닫기, 기록 저장·새로고침 유지, 다른 탭 변경 충돌 시 글 보존, 바깥 클릭 닫기
+  const bOpen = page.getByRole('button', { name: 'B 회사 개발자', exact: true });
+  const panel = page.getByRole('dialog', { name: 'B 회사' });
+  await bOpen.focus();
+  await page.keyboard.press('Enter');
+  await visible(panel);
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('role')), 'dialog');
+  await panel.getByRole('textbox').fill('포트폴리오 정리하기');
+  await panel.getByRole('button', { name: '기록 남기기' }).click();
+  await visible(panel.getByText('기록을 남겼어요.'));
+  assert.equal(rows[1].diary.length, 1);
+  assert.deepEqual([rows[1].diary[0].content, rows[1].diary[0].status], ['포트폴리오 정리하기', 'screening']);
+  await page.keyboard.press('Escape');
+  await panel.waitFor({ state: 'detached' });
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent?.includes('B 회사')), true);
+  await page.reload();
+  await page.getByRole('button', { name: 'B 회사 개발자', exact: true }).click();
+  await visible(panel.getByText('포트폴리오 정리하기'));
+  await panel.getByRole('button', { name: '정보 수정' }).click();
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.id ?? ''), await page.getByLabel('회사명 *', { exact: true }).evaluate(element => element.getAttribute('aria-label') ?? element.id));
+  await panel.getByRole('button', { name: '취소', exact: true }).click();
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), '정보 수정');
+  rows[1].updated_at = '2026-11-02T00:00:00Z'; // 다른 탭에서 먼저 바뀐 것으로 만든다
+  await panel.getByRole('textbox').fill('충돌 확인');
+  await panel.getByRole('button', { name: '기록 남기기' }).click();
+  await visible(panel.getByRole('alert').filter({ hasText: '다른 곳에서 변경' }));
+  assert.equal(await panel.getByRole('textbox').inputValue(), '충돌 확인');
+  assert.equal(rows[1].diary.length, 1);
+  await page.mouse.click(10, 400);
+  await panel.waitFor({ state: 'detached' });
+  assert.deepEqual(errors, []);
+  console.log('PASS 상세 패널 키보드 열고 닫기·기록 저장·새로고침 유지·충돌 시 글 보존');
 } finally {
   delayed?.();
   await browser.close();
