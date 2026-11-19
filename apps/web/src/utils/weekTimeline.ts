@@ -5,7 +5,7 @@ import { getWeekStart, toDateOnly } from '@/utils/applicationStats';
 // 지원 보드 주간 타임라인 (#173). 날짜 기준은 홈 통계와 같다:
 // 저장된 날짜는 UTC 날짜(toDateOnly), 오늘은 한국 날짜, 주는 월요일에 시작한다.
 
-const ACTIVE_STATUSES: Status[] = ['applied', 'screening', 'interview', 'interviewed'];
+export const ACTIVE_STATUSES: Status[] = ['applied', 'screening', 'interview', 'interviewed'];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export type WeekEventKind = 'interview' | 'deadline';

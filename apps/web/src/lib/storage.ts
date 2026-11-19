@@ -43,3 +43,31 @@ export function saveApplications(apps: Application[]): void {
     console.warn('failed to save applications to localStorage', error);
   }
 }
+
+const BOARD_VIEW_KEY = 'jobdiary:boardView';
+export type BoardView = 'week' | 'kanban';
+
+// 지원 보드에서 마지막으로 고른 보기(주간/보드). 이 브라우저에만 남는 편의 정보라 계정과 상관없이 하나만 둔다.
+export function loadBoardView(): BoardView {
+  if (typeof window === 'undefined') {
+    return 'week';
+  }
+
+  try {
+    return localStorage.getItem(BOARD_VIEW_KEY) === 'kanban' ? 'kanban' : 'week';
+  } catch {
+    return 'week';
+  }
+}
+
+export function saveBoardView(view: BoardView): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(BOARD_VIEW_KEY, view);
+  } catch (error) {
+    console.warn('failed to save board view to localStorage', error);
+  }
+}

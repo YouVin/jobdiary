@@ -23,6 +23,7 @@ let inserts = 0;
 let consentFail = true;
 let delayed = null;
 let delayNextA = false;
+let failNextPatch = false;
 const errors = [];
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const context = await browser.newContext();
@@ -81,6 +82,10 @@ await context.route('https://*.supabase.co/**', async route => {
     if (method === 'PATCH') {
       // 자동 마감 갱신: 이 fixture는 모두 manual이라 대상 없음.
       if (url.searchParams.has('status_source')) return send([]);
+      if (failNextPatch) {
+        failNextPatch = false;
+        return send({ message: 'temporary failure' }, 500);
+      }
       const expected = url.searchParams.get('updated_at');
       if (expected) found = found.filter(item => `eq.${item.updated_at}` === expected);
       if (!found.length) return send({ code: 'PGRST116', message: '0 rows' }, 406);
@@ -160,6 +165,8 @@ try {
   await page.getByText('A 회사', { exact: true }).click();
   const second = await context.newPage();
   await second.goto(`${origin}/board`);
+  // 탈락으로 바꾼 지원은 주간 목록에서 빠지므로, 모든 단계가 보이는 보드(칸반) 보기에서 편집한다.
+  await second.getByRole('group', { name: '보기 선택' }).getByRole('button', { name: '보드', exact: true }).click();
   await second.getByText('A 회사', { exact: true }).click();
   await second.getByLabel('상태', { exact: true }).selectOption('rejected');
   await second.getByRole('button', { name: '저장', exact: true }).click();
@@ -198,6 +205,30 @@ try {
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
   assert.deepEqual(errors, []);
   console.log('PASS 이전 계정 지연 조회 무시·브라우저 예외 0건');
+  // 지원 보드 주간 보기(#174): 트랙 점으로 단계 변경 → 저장·새로고침 유지, 저장 실패 시 되돌림, 고른 보기 기억
+  // 앞 단계에서 보드 보기를 골랐으므로(이 브라우저에 기억됨) 주간 보기로 돌아온다.
+  const viewGroup = page.getByRole('group', { name: '보기 선택' });
+  await viewGroup.getByRole('button', { name: '주간', exact: true }).click();
+  const bTrack = page.getByRole('group', { name: 'B 회사 단계' });
+  await bTrack.getByRole('button', { name: '서류통과로 옮기기' }).click();
+  await visible(bTrack.getByRole('button', { name: '서류통과 (현재 단계)' }));
+  for (let attempt = 0; rows[1].status !== 'screening' && attempt < 100; attempt++) await new Promise(resolve => setTimeout(resolve, 50));
+  assert.equal(rows[1].status, 'screening');
+  await page.reload();
+  await visible(bTrack.getByRole('button', { name: '서류통과 (현재 단계)' }));
+  failNextPatch = true;
+  await bTrack.getByRole('button', { name: '면접예정으로 옮기기' }).click();
+  await visible(page.getByRole('alert').filter({ hasText: 'B 회사의 단계를 바꾸지 못해' }));
+  await visible(bTrack.getByRole('button', { name: '서류통과 (현재 단계)' }));
+  assert.equal(rows[1].status, 'screening');
+  await viewGroup.getByRole('button', { name: '보드', exact: true }).click();
+  await page.reload();
+  await visible(page.getByPlaceholder('회사명 또는 공고명 입력'));
+  assert.equal(await bTrack.count(), 0);
+  await viewGroup.getByRole('button', { name: '주간', exact: true }).click();
+  await visible(bTrack);
+  assert.deepEqual(errors, []);
+  console.log('PASS 주간 목록 단계 변경·저장 실패 되돌림·보기 기억');
 } finally {
   delayed?.();
   await browser.close();
