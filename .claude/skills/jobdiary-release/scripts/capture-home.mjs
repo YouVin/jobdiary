@@ -86,7 +86,7 @@ async function shoot(data, shots) {
   await context.close();
 }
 
-await shoot(rows, [['/', 1440, 'home-1440'], ['/', 768, 'home-768'], ['/', 390, 'home-390'], ['/board', 1440, 'board-1440'], ['/board', 390, 'board-390']]);
+await shoot(rows, [['/', 1440, 'home-1440'], ['/', 768, 'home-768'], ['/', 390, 'home-390'], ['/board', 1440, 'board-1440'], ['/board', 768, 'board-768'], ['/board', 390, 'board-390']]);
 await shoot([], [['/', 1440, 'home-empty-1440']]);
 await browser.close();
 console.log(`screenshots: ${outDir}`);
