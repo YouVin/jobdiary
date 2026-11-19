@@ -7,6 +7,7 @@ export interface DiaryEntry {
   content: string; // 일기 내용
   mood?: string; // 감정 (선택)
   createdAt: string;
+  status?: Status; // 기록을 남길 때의 단계 (#175부터 쓴 기록에만 있다)
 }
 
 export interface Application {
