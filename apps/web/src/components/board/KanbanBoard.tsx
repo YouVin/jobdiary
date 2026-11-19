@@ -21,9 +21,10 @@ import { getDuplicateApplicationIds } from '@/utils/duplicateDetection';
 interface KanbanBoardProps {
   applications: Application[];
   visibleApplications?: Application[];
+  onOpen: (applicationId: string) => void; // 카드를 누르면 상세 패널을 연다 (#175)
 }
 
-export function KanbanBoard({ applications, visibleApplications = applications }: KanbanBoardProps) {
+export function KanbanBoard({ applications, visibleApplications = applications, onOpen }: KanbanBoardProps) {
   const updateStatus = useApplicationStore((state) => state.updateStatus);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeWidth, setActiveWidth] = useState<number | undefined>(undefined);
@@ -87,7 +88,7 @@ export function KanbanBoard({ applications, visibleApplications = applications }
         {STATUS_ORDER.map((status) => {
           const columnApplications = visibleApplications.filter((application) => application.status === status);
 
-          return <Column key={status} status={status} applications={columnApplications} duplicateIds={duplicateIds} />;
+          return <Column key={status} status={status} applications={columnApplications} duplicateIds={duplicateIds} onOpen={onOpen} />;
         })}
       </div>
 

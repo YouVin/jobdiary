@@ -14,6 +14,8 @@ const ICON_PATHS = {
   sparkle: '/icons/sparkle.svg',
   download: '/icons/download.svg',
   'arrow-right': '/icons/arrow-right.svg',
+  'chevron-left': '/icons/chevron-left.svg',
+  'chevron-right': '/icons/chevron-right.svg',
 } as const;
 
 interface IconProps {

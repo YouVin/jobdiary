@@ -20,7 +20,8 @@ coverage/
 !.env.example
 *.local
 *.pem
-.claude/
+.claude/*
+!.claude/skills/
 *.tsbuildinfo
 next-env.d.ts
 
