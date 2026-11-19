@@ -58,13 +58,8 @@ function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: Waiti
       </button>
 
       <div className="col-span-2 row-start-2 lg:col-span-1 lg:col-start-2 lg:row-start-1">
-        <StageTrack company={application.company} stageIndex={stageIndex} onMove={(status) => onMove(application.id, status)} />
         {/* 좁은 화면에는 열 머리가 없어 트랙 아래에 단계 이름을 둔다. */}
-        <div className="grid grid-cols-4 text-center text-badge text-text-muted lg:hidden" aria-hidden="true">
-          {ACTIVE_STATUSES.map((status, index) => (
-            <span key={status} className={clsx(index === stageIndex && 'font-semibold text-text-primary')}>{STATUS_INFO[status].label}</span>
-          ))}
-        </div>
+        <StageTrack company={application.company} stageIndex={stageIndex} onMove={(status) => onMove(application.id, status)} labelsClassName="lg:hidden" />
       </div>
 
       <p className={clsx('col-span-2 row-start-3 text-caption text-text-muted tabular-nums lg:col-span-1 lg:col-start-3 lg:row-start-1', !nextEvent && 'hidden lg:block')}>
