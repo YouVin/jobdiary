@@ -38,7 +38,7 @@ export function Modal({ isOpen, onClose, title, children, closeDisabled = false 
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="w-full max-w-105 rounded-card bg-card p-5 shadow-float focus:outline-none"
+        className="w-full max-w-105 rounded-card bg-card p-5 shadow-float focus:outline-none motion-safe:animate-rise"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -48,7 +48,7 @@ export function Modal({ isOpen, onClose, title, children, closeDisabled = false 
             onClick={handleRequestClose}
             disabled={closeDisabled}
             aria-label="닫기"
-            className="flex h-6 w-6 items-center justify-center rounded text-text-secondary transition-colors hover:bg-column disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-column disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             <Icon name="close" className="h-4 w-4" />
           </button>
