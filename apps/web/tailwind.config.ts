@@ -27,30 +27,43 @@ const config: Config = {
         "illustration-xs": ["6px", { lineHeight: "8px" }], // aria-hidden 목업 전용
         "illustration-sm": ["8px", { lineHeight: "12px" }], // aria-hidden 목업 전용
       },
-      // 모서리 — 기존 rounded-lg(8px, 버튼·입력)/rounded-md(6px)는 Tailwind 기본값 그대로 쓰고,
-      // 카드·모달은 rounded-card, 칸반 컬럼은 rounded-section으로 통일한다.
+      // 모서리 — 입력은 rounded-xl, 버튼·메뉴·알약은 rounded-full(Tailwind 기본값).
+      // 카드·모달은 rounded-card, 칸·묶음처럼 카드보다 한 단계 낮은 면은 rounded-section (#193에서 키움).
       borderRadius: {
-        card: "14px", // 카드, 모달
-        section: "10px", // 칸반 컬럼 등 카드보다 한 단계 낮은 큰 반경
+        card: "20px", // 카드, 모달, 패널
+        section: "14px", // 칸·묶음·카드 안의 면
       },
-      // 그림자 — 은은하고 따뜻한 톤(순검정 대신 살짝 브라운 계열 rgba)으로 2단계만.
+      // 그림자 — 그레이지 바탕에 맞춘 무채색 그림자 2단계. 카드 경계는 주로 card-border 테두리로 그린다.
       // 기존 shadow-sm/md/lg/xl(Tailwind 기본값)은 그대로 둔다 — 이름이 겹치지 않는 새 키만 추가.
       boxShadow: {
-        card: "0 1px 2px 0 rgba(41, 37, 34, 0.06), 0 1px 3px 0 rgba(41, 37, 34, 0.08)", // 카드 기본 상태
-        float: "0 8px 24px -4px rgba(41, 37, 34, 0.16), 0 4px 8px -2px rgba(41, 37, 34, 0.08)", // 모달, 드래그 중 카드 등 떠 있는 요소
+        card: "0 1px 2px 0 rgba(24, 24, 27, 0.04), 0 1px 3px 0 rgba(24, 24, 27, 0.05)", // 카드 기본 상태
+        float: "0 12px 28px -12px rgba(24, 24, 27, 0.28), 0 4px 10px -4px rgba(24, 24, 27, 0.10)", // 모달, 드래그 중 카드, 마우스를 올린 카드
+      },
+      // 움직임 (#193) — 나타날 때 살짝 올라오는 rise와 부드러운 감속 곡선. 화면에서는 motion-safe:animate-rise처럼
+      // motion-safe 변형으로만 써서, 모션 줄이기 설정에서는 움직이지 않게 한다.
+      keyframes: {
+        "jd-rise": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to: { opacity: "1", transform: "none" },
+        },
+      },
+      animation: {
+        rise: "jd-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both",
+      },
+      transitionTimingFunction: {
+        soft: "cubic-bezier(0.2, 0.8, 0.2, 1)",
       },
       colors: {
+        // 강조색 (#193): 인디고 대신 검정 하나로 강조한다. 이름은 그대로 두어 화면 코드를 바꾸지 않는다.
         brand: {
-          DEFAULT: "#4F46E5",
-          hover: "#4338CA",
-          tint: "#EEF2FF",
-          text: "#3730A3",
-          // 로그인 화면 비주얼 패널(AuthVisualPanel) 전용 — 연보라 배경 그라데이션/글로우/구 장식에만
-          // 쓰는, 기존 tint보다 옅거나 톤이 다른 라벤더 3단계. 다른 화면에서 새로 쓸 필요가 생기면
-          // 그때 이름을 일반화한다(지금은 이 패널 용도로 한정).
-          "tint-100": "#F1F0FF",
-          "tint-200": "#DCD9FF",
-          "tint-300": "#D8D5FF",
+          DEFAULT: "#18181B", // 주 버튼, 선택된 메뉴·탭, 포커스 외곽선
+          hover: "#3F3F3C",
+          tint: "#E6E6E0", // 밝은 면 위의 선택·강조 배경
+          text: "#18181B",
+          // 로그인 화면 비주얼 패널(AuthVisualPanel) 전용 장식 3단계 (그레이지 명도 단계).
+          "tint-100": "#F1F1EC",
+          "tint-200": "#E2E2DC",
+          "tint-300": "#D3D3CC",
         },
         status: {
           applied: "#A1A1AA",
@@ -59,38 +72,39 @@ const config: Config = {
           offer: "#639922",
           rejected: "#E24B4A",
           canceled: "#D4D4D8",
-          // 밝은 상태색은 배지/막대에 쓰고, 작은 안내 글자는 대비가 높은 전용 토큰을 쓴다.
+          // 밝은 상태색은 점·막대에 쓰고, 작은 안내 글자는 대비가 높은 전용 토큰을 쓴다.
           "rejected-text": "#B91C1C",
           "offer-text": "#3F6212",
           "screening-text": "#1D4ED8",
         },
-        // bg/text는 익스텐션(apps/extension/tailwind.config.ts)과 같은 값이다. chart는 도넛·플랫폼 표시용 진한 색으로
-        // 세 사이트는 text 색을 그대로 쓴다. manual(직접입력)은 웹앱에만 있는 플랫폼이라 웹앱에서만 정의한다 (#149).
+        // 사이트 배지(bg/text)는 채도를 낮춰 그레이지 화면에 맞췄다(#193). 익스텐션(apps/extension/tailwind.config.ts)은
+        // 이번에 바꾸지 않아 값이 달라졌다. chart는 도넛·사이트 점에 쓰는 무채색 명도 단계다(#149, #193).
         platform: {
-          saramin: { bg: "#F4F4F5", text: "#3F3F46", chart: "#3F3F46" },
-          wanted: { bg: "#EEF2FF", text: "#3730A3", chart: "#3730A3" },
-          jobkorea: { bg: "#FEF2F2", text: "#991B1B", chart: "#991B1B" },
-          manual: { bg: "#F2F2F4", text: "#71717A", chart: "#A1A1AA" },
+          saramin: { bg: "#E6E6E0", text: "#3F3F3C", chart: "#1C1C1A" },
+          wanted: { bg: "#E3E5EC", text: "#333A57", chart: "#4A4946" },
+          jobkorea: { bg: "#F2E4E1", text: "#8A2E22", chart: "#77766F" },
+          manual: { bg: "#EFEFEA", text: "#5E5E59", chart: "#A9A8A2" },
         },
         text: {
           primary: "#18181B",
-          secondary: "#52525B",
-          muted: "#A1A1AA",
+          secondary: "#52524E",
+          muted: "#66655F", // page·column·card·brand-tint 위 작은 글자 대비 4.5:1 이상
         },
-        page: "#FAFAFA",
-        column: "#F2F2F4",
-        card: "#FFFFFF",
-        // 지원 달력 칸의 지원 건수 단계 (1건 → 4건 이상). 브랜드 인디고 계열 한 색상의 명도 단계다.
+        page: "#E8E8E3", // 그레이지 바탕
+        column: "#EFEFEA", // 카드 안의 낮은 면, 칸, 마우스를 올린 행
+        card: "#F7F7F3", // 카드·패널·입력 표면
+        raised: "#FFFFFF", // 카드 위에 한 단계 떠 있는 행·알약
+        // 지원 달력 칸의 지원 건수 단계 (1건 → 4건 이상). 회색에서 검정으로 가는 명도 단계다(#193).
         heat: {
-          1: "#C7D2FE",
-          2: "#A5B4FC",
-          3: "#818CF8",
-          4: "#4F46E5",
+          1: "#D9D8D2",
+          2: "#B3B2AC",
+          3: "#6B6A66",
+          4: "#1C1C1A",
         },
         "on-brand": "#FFFFFF",
         overlay: "#000000",
-        "card-border": "#DEDEE2",
-        "border-strong": "#A1A1AA",
+        "card-border": "#DEDED8",
+        "border-strong": "#8E8D87", // 입력 테두리 (card 위 3:1 이상)
       },
       fontFamily: {
         sans: ["var(--font-pretendard)"],
