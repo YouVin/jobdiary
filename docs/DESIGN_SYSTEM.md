@@ -91,16 +91,16 @@
 
 | 토큰 | 이전 | 지금 | 비고 |
 |---|---|---|---|
-| `page` | #FAFAFA | #E8E8E3 | 그레이지 바탕 |
-| `card` | #FFFFFF | #F7F7F3 | 카드·패널·입력 표면 |
-| `column` | #F2F2F4 | #EFEFEA | 카드 안의 낮은 면, 마우스를 올린 행 |
+| `page` | #FAFAFA | #F1F1ED | 그레이지 바탕 |
+| `card` | #FFFFFF | #FCFCFA | 카드·패널 표면 |
+| `column` | #F2F2F4 | #F4F4F0 | 카드 안의 낮은 면, 마우스를 올린 행 |
 | `raised` (새) | — | #FFFFFF | 카드 위 행·알약·입력칸 |
-| `card-border` / `border-strong` | #DEDEE2 / #A1A1AA | #DEDED8 / #8E8D87 | 입력 테두리는 card 위 3.1:1 |
+| `card-border` / `border-strong` | #DEDEE2 / #A1A1AA | #E4E4DF / #8E8D87 | 입력 테두리는 card 위 3.24:1 |
 | `brand` / `brand-hover` / `brand-text` | #4F46E5 / #4338CA / #3730A3 | #18181B / #3F3F3C / #18181B | 인디고 대신 검정 강조 |
 | `brand-tint` | #EEF2FF | #E6E6E0 | 밝은 면 위 선택 배경 |
 | `brand-tint-100~300` | 라벤더 | #F1F1EC / #E2E2DC / #D3D3CC | 로그인 장식 |
-| `text-secondary` / `text-muted` | #52525B / #A1A1AA | #52524E / #66655F | muted는 page·column·card·brand-tint 위 4.67~5.44:1 |
-| `heat-1~4` | 인디고 4단계 | #D9D8D2 / #B3B2AC / #6B6A66 / #1C1C1A | 3·4단계 흰 글자 5.41:1 이상 |
+| `text-secondary` / `text-muted` | #52525B / #A1A1AA | #52524E / #66655F | muted는 page·column·card·brand-tint 위 4.67~5.69:1 |
+| `heat-1~4` | 인디고 4단계 | #E6E5E0 / #CFCEC8 / #77766F / #1C1C1A | 3·4단계 흰 글자 4.56:1 이상 |
 | `platform-*-bg/text` | 원색 계열 | 채도를 낮춘 배경 + 진한 글자 | 배지 대비 5.65:1 이상 |
 | `platform-*-chart` | 사이트 원색 | #1C1C1A / #4A4946 / #77766F / #A9A8A2 | 사람인·원티드·잡코리아·직접입력 순, 도넛과 사이트 점 |
 | `rounded-card` / `rounded-section` | 14px / 10px | 20px / 14px | |
@@ -113,7 +113,8 @@
 
 ### #193 검증
 
-- 대비는 WCAG 공식으로 계산했다(위 표의 값).
+- 처음에는 바탕 #E8E8E3·카드 #F7F7F3·칸 #EFEFEA로 잡았으나, 사용자가 실제 데이터 화면을 보고 "너무 어둡다"고 해서 바탕·칸·카드·달력 농도를 한 단계 밝혔다. 다시 빌드하지 않고 CSS 색만 바꿔 끼운 "지금 / 밝게 / 더 밝게" 세 단계를 같은 홈·지원보드에서 비교해 "밝게"를 골랐다(위 표가 최종 값).
+- 대비는 WCAG 공식으로 계산했다(위 표의 값). 카드 테두리와 바탕의 대비는 1.13:1로 낮아, 카드 경계는 바탕과 표면 색 차이·그림자·테두리를 함께 써서 구분한다.
 - `npm test` 127개, `npm run lint`(check:ui 포함), `npx tsc --noEmit`, `npm run build` 통과.
 - 프로덕션 빌드에서 `scripts/verify-release-browser.mjs` 14개, `scripts/verify-auth-loading-seo.mjs` 4개(axe 포함) 통과.
 - 예시 데이터 48건과 빈 계정으로 홈·지원보드 1440/768/390px, 로그인 1440/390px, 계정, 지원 추가 모달을 찍어 확인. 가로 넘침·브라우저 예외 없음. 홈·지원보드 배치는 이후 이슈에서 바꾸므로 이번에는 색·모양만 바뀐 상태다.

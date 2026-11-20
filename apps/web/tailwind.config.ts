@@ -90,20 +90,20 @@ const config: Config = {
           secondary: "#52524E",
           muted: "#66655F", // page·column·card·brand-tint 위 작은 글자 대비 4.5:1 이상
         },
-        page: "#E8E8E3", // 그레이지 바탕
-        column: "#EFEFEA", // 카드 안의 낮은 면, 칸, 마우스를 올린 행
-        card: "#F7F7F3", // 카드·패널·입력 표면
+        page: "#F1F1ED", // 그레이지 바탕 (#193에서 처음 값 #E8E8E3이 무거워 밝힘)
+        column: "#F4F4F0", // 카드 안의 낮은 면, 칸, 마우스를 올린 행
+        card: "#FCFCFA", // 카드·패널·입력 표면
         raised: "#FFFFFF", // 카드 위에 한 단계 떠 있는 행·알약
         // 지원 달력 칸의 지원 건수 단계 (1건 → 4건 이상). 회색에서 검정으로 가는 명도 단계다(#193).
         heat: {
-          1: "#D9D8D2",
-          2: "#B3B2AC",
-          3: "#6B6A66",
+          1: "#E6E5E0",
+          2: "#CFCEC8",
+          3: "#77766F",
           4: "#1C1C1A",
         },
         "on-brand": "#FFFFFF",
         overlay: "#000000",
-        "card-border": "#DEDED8",
+        "card-border": "#E4E4DF",
         "border-strong": "#8E8D87", // 입력 테두리 (card 위 3:1 이상)
       },
       fontFamily: {
