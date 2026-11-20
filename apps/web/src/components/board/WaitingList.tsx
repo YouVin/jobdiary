@@ -1,8 +1,10 @@
 import { clsx } from 'clsx';
 import { ViewTransition } from 'react';
 import { StageTrack } from '@/components/board/StageTrack';
+import { Icon } from '@/components/common/Icon';
 import { STATUS_INFO } from '@/constants/status';
 import type { Platform, Status } from '@/types/application';
+import { getPostingUrl } from '@/utils/postingUrl';
 import type { WaitingItem } from '@/utils/waitingList';
 import { ACTIVE_STATUSES } from '@/utils/weekTimeline';
 
@@ -37,26 +39,47 @@ function shortDate(date: string): string {
 
 function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: WaitingListProps['onMove']; onOpen: WaitingListProps['onOpen'] }) {
   const { application, stageIndex, waitDays, isStale, nextEvent } = item;
+  const postingUrl = getPostingUrl(application.url);
   let waitNote = '지원 후';
   if (isStale) waitNote = '소식 없음';
   else if (application.status === 'applied') waitNote = '결과 대기';
 
   return (
     <li className={clsx('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 px-4 py-3 hover:bg-page lg:px-6', ROW_GRID)}>
-      <button
-        type="button"
-        onClick={() => onOpen(application.id)}
-        className="group flex min-w-0 items-center gap-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-      >
+      {/* 회사 이름은 공고를 새 탭으로 연다(#185). 상세 패널(기록·정보 수정)은 오른쪽 버튼으로 연다. */}
+      <div className="flex min-w-0 items-center gap-3">
         <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-section bg-column text-small font-semibold text-text-secondary" aria-hidden="true">
           {companyInitial(application.company)}
           <span className={clsx('absolute -right-1 -bottom-1 h-3 w-3 rounded-full border-2 border-card', PLATFORM_DOT_CLASS[application.platform])} />
         </span>
-        <span className="min-w-0">
-          <b className="block truncate text-body font-semibold text-text-primary group-hover:text-brand-text">{application.company}</b>
+        <span className="min-w-0 flex-1">
+          {postingUrl ? (
+            <a
+              href={postingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${application.company} 공고 열기 (새 탭)`}
+              title="공고 열기 (새 탭)"
+              className="group flex min-w-0 items-center gap-1 text-body font-semibold text-text-primary underline-offset-2 hover:text-brand-text hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              <span className="truncate">{application.company}</span>
+              <Icon name="external" className="h-3 w-3 text-text-muted group-hover:text-brand-text" />
+            </a>
+          ) : (
+            <b className="block truncate text-body font-semibold text-text-primary">{application.company}</b>
+          )}
           <span className="block truncate text-caption text-text-muted">{application.position}</span>
         </span>
-      </button>
+        <button
+          type="button"
+          onClick={() => onOpen(application.id)}
+          aria-label={`${application.company} 상세 보기`}
+          title="상세 보기"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-column hover:text-text-primary focus-visible:outline-2 focus-visible:outline-brand"
+        >
+          <Icon name="pencil" className="h-4 w-4" />
+        </button>
+      </div>
 
       <div className="col-span-2 row-start-2 lg:col-span-1 lg:col-start-2 lg:row-start-1">
         {/* 좁은 화면에는 열 머리가 없어 트랙 아래에 단계 이름을 둔다. */}

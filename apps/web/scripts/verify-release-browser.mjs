@@ -106,9 +106,9 @@ await context.addInitScript(() => {
 });
 const page = await context.newPage();
 const visible = async locator => { await locator.waitFor({ state: 'visible' }); };
-// 헤더 탭으로 지원 보드에 들어간다. 클라이언트 이동이라 스토어에 있는 목록을 그대로 보여준다.
+// 헤더 탭으로 지원보드에 들어간다. 클라이언트 이동이라 스토어에 있는 목록을 그대로 보여준다.
 async function openBoard(target) {
-  await target.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: /지원 보드/ }).click();
+  await target.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: /지원보드/ }).click();
   await target.waitForFunction(() => location.pathname === '/board');
 }
 async function login(target, key) {
@@ -155,7 +155,7 @@ try {
   console.log('PASS 신규 소셜 계정 동의·저장 실패·재시도·새로고침 유지');
   await page.getByRole('button', { name: '로그아웃', exact: true }).click();
   await login(page, 'a');
-  // 로그인 후 홈(통계 대시보드)으로 돌아온다. 카드 편집은 지원 보드에서 확인한다.
+  // 로그인 후 홈(통계 대시보드)으로 돌아온다. 카드 편집은 지원보드에서 확인한다.
   await page.waitForFunction(() => location.pathname === '/');
   await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
   await page.goto(`${origin}/board`);
@@ -173,7 +173,8 @@ try {
   console.log('PASS 빈 지원일 API 차단·정상 재저장');
   // 지원을 누르면 상세 패널(#175)이 열리고, "정보 수정"으로 기존 수정 폼을 쓴다.
   const openEdit = async target => { await target.getByRole('dialog').getByRole('button', { name: '정보 수정' }).click(); };
-  await page.getByText('A 회사', { exact: true }).click();
+  // 주간 보기의 기다리는 목록은 회사 이름이 공고 링크라(#185) 상세 버튼으로 연다.
+  await page.getByRole('button', { name: 'A 회사 상세 보기', exact: true }).click();
   await openEdit(page);
   const second = await context.newPage();
   await second.goto(`${origin}/board`);
@@ -225,7 +226,7 @@ try {
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
   assert.deepEqual(errors, []);
   console.log('PASS 이전 계정 지연 조회 무시·브라우저 예외 0건');
-  // 지원 보드 주간 보기(#174): 트랙 점으로 단계 변경 → 저장·새로고침 유지, 저장 실패 시 되돌림, 고른 보기 기억
+  // 지원보드 주간 보기(#174): 트랙 점으로 단계 변경 → 저장·새로고침 유지, 저장 실패 시 되돌림, 고른 보기 기억
   // 앞 단계에서 보드 보기를 골랐으므로(이 브라우저에 기억됨) 주간 보기로 돌아온다.
   const viewGroup = page.getByRole('group', { name: '보기 선택' });
   await viewGroup.getByRole('button', { name: '주간', exact: true }).click();
@@ -250,7 +251,7 @@ try {
   assert.deepEqual(errors, []);
   console.log('PASS 주간 목록 단계 변경·저장 실패 되돌림·보기 기억');
   // 상세 패널·기록 남기기(#175): 키보드로 열고 닫기, 기록 저장·새로고침 유지, 다른 탭 변경 충돌 시 글 보존, 바깥 클릭 닫기
-  const bOpen = page.getByRole('button', { name: 'B 회사 개발자', exact: true });
+  const bOpen = page.getByRole('button', { name: 'B 회사 상세 보기', exact: true });
   const panel = page.getByRole('dialog', { name: 'B 회사' });
   await bOpen.focus();
   await page.keyboard.press('Enter');
@@ -263,9 +264,9 @@ try {
   assert.deepEqual([rows[1].diary[0].content, rows[1].diary[0].status], ['포트폴리오 정리하기', 'screening']);
   await page.keyboard.press('Escape');
   await panel.waitFor({ state: 'detached' });
-  assert.equal(await page.evaluate(() => document.activeElement?.textContent?.includes('B 회사')), true);
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'B 회사 상세 보기');
   await page.reload();
-  await page.getByRole('button', { name: 'B 회사 개발자', exact: true }).click();
+  await page.getByRole('button', { name: 'B 회사 상세 보기', exact: true }).click();
   await visible(panel.getByText('포트폴리오 정리하기'));
   await panel.getByRole('button', { name: '정보 수정' }).click();
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.id ?? ''), await page.getByLabel('회사명 *', { exact: true }).evaluate(element => element.getAttribute('aria-label') ?? element.id));
@@ -339,6 +340,27 @@ try {
   }
   assert.deepEqual(errors, []);
   console.log('PASS 홈 지원 달력 날짜 말풍선(마우스·탭)·카드 안 배치');
+  // 결과 기다리는 목록(#185): 회사 이름은 공고를 새 탭으로 열고(http(s) 주소만), 상세 패널은 별도 버튼으로 연다. 메뉴 이름은 '지원보드'.
+  rows[1].url = 'https://jobs.example.test/b';
+  rows.find(item => item.company === '달력 회사').url = 'javascript:alert(1)';
+  await context.route('https://jobs.example.test/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>공고</title>' }));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(origin + '/');
+  await openBoard(page);
+  await visible(page.getByRole('heading', { level: 1, name: '지원보드' }));
+  const bLink = page.getByRole('link', { name: 'B 회사 공고 열기 (새 탭)', exact: true });
+  assert.deepEqual(await bLink.evaluate(element => [element.getAttribute('href'), element.target, element.rel]), ['https://jobs.example.test/b', '_blank', 'noopener noreferrer']);
+  const [posting] = await Promise.all([context.waitForEvent('page'), bLink.click()]);
+  await posting.waitForLoadState();
+  assert.equal(posting.url(), 'https://jobs.example.test/b');
+  await posting.close();
+  assert.equal(await page.getByRole('dialog').count(), 0, '회사 이름은 패널을 열지 않는다');
+  assert.equal(await page.getByRole('link', { name: /달력 회사/ }).count(), 0, 'http(s)가 아닌 주소는 링크로 만들지 않는다');
+  await page.getByRole('button', { name: '달력 회사 상세 보기', exact: true }).click();
+  await visible(page.getByRole('dialog', { name: '달력 회사' }));
+  await page.keyboard.press('Escape');
+  assert.deepEqual(errors, []);
+  console.log('PASS 기다리는 목록 회사 이름으로 공고 새 탭 열기·상세 버튼·메뉴 이름 지원보드');
 } finally {
   delayed?.();
   await browser.close();

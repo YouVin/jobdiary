@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { Icon } from '@/components/common/Icon';
 
-// 대시보드 카드 머리의 "지원 보드로 이동" 링크
-export function BoardLink({ label = '지원 보드' }: { label?: string }) {
+// 대시보드 카드 머리의 "지원보드로 이동" 링크
+export function BoardLink({ label = '지원보드' }: { label?: string }) {
   return (
     <Link
       href="/board"

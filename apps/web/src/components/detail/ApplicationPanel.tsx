@@ -14,6 +14,7 @@ import { useApplicationStore } from '@/store/applicationStore';
 import type { Application, Status } from '@/types/application';
 import { toDateOnly } from '@/utils/applicationStats';
 import { formatDateWithWeekday } from '@/utils/format';
+import { getPostingUrl } from '@/utils/postingUrl';
 import { ACTIVE_STATUSES } from '@/utils/weekTimeline';
 
 interface ApplicationPanelProps {
@@ -28,11 +29,6 @@ function dateText(value: string | undefined): string {
   return date ? formatDateWithWeekday(date, true) : '없음';
 }
 
-// 공고 주소는 http(s)만 링크로 연다.
-function safeUrl(url: string | undefined): string | null {
-  return url && /^https?:\/\//i.test(url) ? url : null;
-}
-
 // 지원 상세 패널 (#175). 일정 캡슐·기다리는 목록·칸반 카드·홈의 일정/최근 지원에서 연다.
 // 데스크톱은 오른쪽 패널, 모바일은 전체 화면. 키보드 기준은 공통 모달과 같다(useDialogFocus).
 // 지원이 삭제되거나 계정이 바뀌어 목록에서 사라지면 부모가 패널을 그리지 않으므로 함께 닫힌다.
@@ -45,7 +41,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const hasSwitchedMode = useRef(false);
   const stageIndex = ACTIVE_STATUSES.indexOf(application.status);
-  const postingUrl = safeUrl(application.url);
+  const postingUrl = getPostingUrl(application.url);
 
   const handleClose = useCallback(() => {
     if (isBusy) return;

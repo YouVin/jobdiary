@@ -16,6 +16,7 @@ const ICON_PATHS = {
   'arrow-right': '/icons/arrow-right.svg',
   'chevron-left': '/icons/chevron-left.svg',
   'chevron-right': '/icons/chevron-right.svg',
+  external: '/icons/external.svg',
 } as const;
 
 interface IconProps {

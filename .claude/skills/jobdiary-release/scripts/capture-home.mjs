@@ -1,4 +1,4 @@
-// 예시 데이터로 홈·지원 보드를 찍고 가로 넘침·브라우저 예외를 확인한다.
+// 예시 데이터로 홈·지원보드를 찍고 가로 넘침·브라우저 예외를 확인한다.
 // 사용: (저장소 루트에서) node .claude/skills/jobdiary-release/scripts/capture-home.mjs <출력폴더> [origin]
 // 전제: apps/web 프로덕션 서버가 origin(기본 http://localhost:3100)에서 실행 중.
 // Supabase 요청은 모두 예시 데이터로 가로채며 실제 계정·DB를 사용하지 않는다.

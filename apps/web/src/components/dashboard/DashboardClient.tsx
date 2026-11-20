@@ -24,7 +24,7 @@ import {
   getUpcomingEvents,
 } from '@/utils/applicationStats';
 
-// 홈(/) 일기장 대시보드 (#158). 칸반·검색·필터는 지원 보드(/board)의 BoardClient가 담당한다.
+// 홈(/) 일기장 대시보드 (#158). 칸반·검색·필터는 지원보드(/board)의 BoardClient가 담당한다.
 // 1줄: 오늘의 일기장(요약·가져오기) / 2줄: 전형 여정 | 지원 경로 / 3줄: 일정 타임라인 | 최근 지원 | 지원 달력
 export function DashboardClient() {
   const isReady = useApplicationsLoader();
@@ -32,7 +32,7 @@ export function DashboardClient() {
   const error = useApplicationStore((state) => state.error);
   const { requestImport, isRequesting, isExtensionAvailable, importSummary, lastImportAt, dismissImportSummary } =
     useExtensionImport();
-  // 일정·최근 지원 행을 누르면 지원 보드와 같은 상세 패널을 연다 (#175). 삭제되면 패널도 함께 닫힌다.
+  // 일정·최근 지원 행을 누르면 지원보드와 같은 상세 패널을 연다 (#175). 삭제되면 패널도 함께 닫힌다.
   const { optimisticApplications, moveStage, moveError } = useStageMove(applications);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedApplication = optimisticApplications.find((application) => application.id === selectedId);

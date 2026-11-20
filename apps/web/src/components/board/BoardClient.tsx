@@ -40,7 +40,7 @@ function weekLede(offset: number, interviewCount: number, deadlineCount: number)
   return `${subject} ${parts.join(', ')}이 있어요.`;
 }
 
-// 지원 보드(/board) (#173~#176)
+// 지원보드(/board) (#173~#176)
 // - 주간(기본): 단계 버튼 → 주간 타임라인 → 결과 기다리는 중 목록 → 결과가 나온 지원 한 줄
 // - 어느 보기든 지원을 누르면 오른쪽 상세 패널(#175)
 // - 보드: 기존 검색·필터와 7단계 칸반(드래그)
@@ -91,7 +91,7 @@ export function BoardClient() {
     return (
       // lg:grid-cols-7은 KanbanBoard와 동일한 이유로 고정값(JIT 동적 클래스 purge 문제).
       // 스켈레톤 개수는 실제 컬럼 수와 어긋나지 않도록 STATUS_ORDER.length로 계산.
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-3 lg:grid-cols-7" aria-busy="true" aria-label="지원 보드를 불러오는 중">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-3 lg:grid-cols-7" aria-busy="true" aria-label="지원보드를 불러오는 중">
         {Array.from({ length: STATUS_ORDER.length }).map((_, index) => (
           <div key={index} className="min-h-30 animate-pulse rounded-section bg-column" />
         ))}
@@ -103,7 +103,7 @@ export function BoardClient() {
     <>
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-heading-lg font-semibold text-text-primary">지원 보드</h1>
+          <h1 className="text-heading-lg font-semibold text-text-primary">지원보드</h1>
           <p className="mt-1 text-body text-text-secondary">
             {weekLede(weekOffset, timeline.interviewCount, timeline.deadlineCount)}
           </p>

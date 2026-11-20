@@ -3,7 +3,7 @@ import { getTodayInKorea } from '@/utils/applicationDeadline';
 import { daysBetween, getWeekStart, toDateOnly } from '@/utils/applicationStats';
 import { ACTIVE_STATUSES, addDays, type WeekEventKind } from '@/utils/weekTimeline';
 
-// 지원 보드 "결과 기다리는 중" 목록 (#174). 날짜 기준은 주간 타임라인(weekTimeline.ts)과 같다.
+// 지원보드 "결과 기다리는 중" 목록 (#174). 날짜 기준은 주간 타임라인(weekTimeline.ts)과 같다.
 // 이번 주 일정(면접·공고 마감)이 있는 진행 중 지원은 위 타임라인에 이미 보이므로 목록에서 뺀다.
 
 export const STALE_DAYS = 14; // 지원완료에서 이만큼 지나면 "소식 없음"으로 강조
