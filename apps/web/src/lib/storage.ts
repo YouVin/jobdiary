@@ -45,16 +45,18 @@ export function saveApplications(apps: Application[]): void {
 }
 
 const BOARD_VIEW_KEY = 'jobdiary:boardView';
-export type BoardView = 'week' | 'kanban';
+export type BoardView = 'week' | 'kanban' | 'duplicates';
+const BOARD_VIEWS: BoardView[] = ['week', 'kanban', 'duplicates'];
 
-// 지원보드에서 마지막으로 고른 보기(주간/보드). 이 브라우저에만 남는 편의 정보라 계정과 상관없이 하나만 둔다.
+// 지원보드에서 마지막으로 고른 보기(주간/보드/중복 #186). 이 브라우저에만 남는 편의 정보라 계정과 상관없이 하나만 둔다.
 export function loadBoardView(): BoardView {
   if (typeof window === 'undefined') {
     return 'week';
   }
 
   try {
-    return localStorage.getItem(BOARD_VIEW_KEY) === 'kanban' ? 'kanban' : 'week';
+    const saved = localStorage.getItem(BOARD_VIEW_KEY);
+    return BOARD_VIEWS.find((view) => view === saved) ?? 'week';
   } catch {
     return 'week';
   }
