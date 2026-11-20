@@ -32,7 +32,7 @@ export function DashboardClient() {
   const error = useApplicationStore((state) => state.error);
   const { requestImport, isRequesting, isExtensionAvailable, importSummary, lastImportAt, dismissImportSummary } =
     useExtensionImport();
-  // 일정·최근 지원 행을 누르면 지원보드와 같은 상세 패널을 연다 (#175). 삭제되면 패널도 함께 닫힌다.
+  // 일정·최근 지원 행과 달력 날짜 목록(#190)의 회사를 누르면 지원보드와 같은 상세 패널을 연다 (#175). 삭제되면 패널도 함께 닫힌다.
   const { optimisticApplications, moveStage, moveError } = useStageMove(applications);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedApplication = optimisticApplications.find((application) => application.id === selectedId);
@@ -115,7 +115,7 @@ export function DashboardClient() {
           <RecentCard applications={stats.recent} onSelect={setSelectedId} />
         </div>
         <div className="min-w-0 md:col-span-2 lg:col-span-1">
-          <CalendarCard calendar={stats.calendar} />
+          <CalendarCard calendar={stats.calendar} applications={optimisticApplications} onSelect={setSelectedId} />
         </div>
       </div>
 
