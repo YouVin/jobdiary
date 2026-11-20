@@ -37,14 +37,14 @@ export function ApplicationCardContent({ application, isDuplicate = false }: App
       )}
 
       {interviewDate && (
-        <div className="mt-2 flex items-center gap-1 text-caption font-medium text-brand">
+        <div className="mt-2 flex items-center gap-1 text-caption font-medium text-event-interview-text">
           <Icon name="calendar" className="h-3 w-3" />
           {formatDate(interviewDate)}
         </div>
       )}
 
       {deadlineAt && (
-        <p className="mt-2 text-caption text-text-muted">공고 마감 {formatDate(deadlineAt)}</p>
+        <p className="mt-2 text-caption text-event-deadline-text">공고 마감 {formatDate(deadlineAt)}</p>
       )}
       {statusSource === 'deadline' && (
         <p className="mt-1 text-caption text-status-rejected">마감일 기준 자동 탈락</p>
