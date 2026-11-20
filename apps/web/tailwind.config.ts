@@ -46,9 +46,15 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "none" },
         },
+        // 형광펜으로 칠하듯 강조 배경이 왼쪽부터 채워진다 (홈 일기장 문장)
+        "jd-mark": {
+          from: { backgroundSize: "0% 100%" },
+          to: { backgroundSize: "100% 100%" },
+        },
       },
       animation: {
         rise: "jd-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both",
+        mark: "jd-mark 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both",
       },
       transitionTimingFunction: {
         soft: "cubic-bezier(0.2, 0.8, 0.2, 1)",
@@ -95,6 +101,21 @@ const config: Config = {
         column: "#F4F4F0", // 카드 안의 낮은 면, 칸, 마우스를 올린 행
         card: "#FCFCFA", // 카드·패널·입력 표면
         raised: "#FFFFFF", // 카드 위에 한 단계 떠 있는 행·알약
+        // 일정 종류 색 (#193): 면접은 보라, 공고 마감은 주황. 점·막대는 DEFAULT(카드 위 3:1 이상), 배지는 tint 배경 + text 글자(4.95:1 이상).
+        event: {
+          interview: "#6A5FDB",
+          "interview-tint": "#ECEAFD",
+          "interview-text": "#4A3FC0",
+          deadline: "#C2621A",
+          "deadline-tint": "#FDEEDF",
+          "deadline-text": "#A4500F",
+        },
+        // 형광펜 강조 배경 (#193): 진한 글자(primary)를 그대로 올린다.
+        highlight: {
+          blue: "#DCE5FD",
+          violet: "#E7E3FD",
+          amber: "#FCE6CF",
+        },
         // 지원 달력 칸의 지원 건수 단계 (1건 → 4건 이상). 연한 파랑에서 진한 남색으로 가는 단계다(#193).
         heat: {
           1: "#E3E8FC",

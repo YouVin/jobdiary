@@ -29,8 +29,20 @@ const SITE_CHIPS: { platform: Exclude<Platform, 'manual'>; className: string }[]
   { platform: 'wanted', className: 'bg-platform-wanted-bg text-platform-wanted-text' },
 ];
 
-function Strong({ children }: { children: React.ReactNode }) {
-  return <b className="font-bold text-brand-text">{children}</b>;
+// 형광펜 강조 (#193): 글자 아래쪽 절반에 연한 색을 칠하고, 처음 열 때 왼쪽부터 칠해진다(모션 줄이기 설정이면 바로 칠해진 상태).
+// 클래스는 Tailwind가 찾을 수 있게 리터럴로 둔다.
+const MARK_CLASS = {
+  blue: 'bg-[linear-gradient(transparent_55%,theme(colors.highlight.blue)_55%)]',
+  violet: 'bg-[linear-gradient(transparent_55%,theme(colors.highlight.violet)_55%)]',
+  amber: 'bg-[linear-gradient(transparent_55%,theme(colors.highlight.amber)_55%)]',
+} as const;
+
+function Strong({ children, tone = 'blue' }: { children: React.ReactNode; tone?: keyof typeof MARK_CLASS }) {
+  return (
+    <b className={`box-decoration-clone bg-left bg-no-repeat font-bold text-text-primary motion-safe:animate-mark ${MARK_CLASS[tone]}`}>
+      {children}
+    </b>
+  );
 }
 
 // 현황을 한두 문장으로 요약한다. 숫자 타일 대신 일기처럼 읽히게 하려는 선택이다.
@@ -44,7 +56,7 @@ function Summary({ overview, stage, nextEvent }: Pick<DiaryHeaderProps, 'overvie
       지금까지 <Strong>{overview.total}건</Strong> 지원했고,{' '}
       {stage.inProgress > 0 ? (
         <>
-          <Strong>{stage.inProgress}건</Strong>이 아직 소식을 기다리고 있어요.
+          <Strong tone="violet">{stage.inProgress}건</Strong>이 아직 소식을 기다리고 있어요.
         </>
       ) : (
         <>진행 중인 지원은 없어요.</>
@@ -53,7 +65,7 @@ function Summary({ overview, stage, nextEvent }: Pick<DiaryHeaderProps, 'overvie
         <>
           {' '}
           {nextEvent.daysLeft === 0 ? '오늘은 ' : `다음 일정은 D-${nextEvent.daysLeft} `}
-          <Strong>
+          <Strong tone={nextEvent.kind === 'interview' ? 'violet' : 'amber'}>
             {nextEvent.company} {KIND_LABEL[nextEvent.kind]}
           </Strong>
           {nextEvent.daysLeft === 0 ? '이 있는 날이에요.' : '이에요.'}
@@ -68,10 +80,11 @@ export function DiaryHeader({
 }: DiaryHeaderProps) {
   const [year, month, day] = today.split('-').map(Number);
   const weekday = WEEKDAYS[new Date(`${today}T00:00:00.000Z`).getUTCDay()];
+  // 칩 앞 색 점(#193): 숫자가 무엇을 세는지 색으로도 구분한다.
   const facts = [
-    { label: '이번 주 새 지원', value: `${overview.thisWeekCount}건` },
-    ...(stage.screeningPassRate === null ? [] : [{ label: '서류 통과율', value: `${Math.round(stage.screeningPassRate * 100)}%` }]),
-    { label: '지원한 기업', value: `${overview.companyCount}곳` },
+    { label: '이번 주 새 지원', value: `${overview.thisWeekCount}건`, dot: 'bg-heat-3' },
+    ...(stage.screeningPassRate === null ? [] : [{ label: '서류 통과율', value: `${Math.round(stage.screeningPassRate * 100)}%`, dot: 'bg-status-screening' }]),
+    { label: '지원한 기업', value: `${overview.companyCount}곳`, dot: 'bg-event-interview' },
   ];
 
   return (
@@ -91,13 +104,15 @@ export function DiaryHeader({
           </p>
           <ul className="flex flex-wrap gap-2">
             {facts.map((fact) => (
-              <li key={fact.label} className="flex items-baseline gap-2 rounded-full bg-column px-3 py-1 text-label text-text-secondary">
+              <li key={fact.label} className="flex items-center gap-2 rounded-full bg-column px-3 py-1 text-label text-text-secondary">
+                <span aria-hidden="true" className={`h-2 w-2 rounded-full ${fact.dot}`} />
                 {fact.label}
                 <b className="font-semibold text-text-primary tabular-nums">{fact.value}</b>
               </li>
             ))}
             {stage.autoRejected > 0 && (
-              <li className="flex items-baseline gap-2 rounded-full bg-column px-3 py-1 text-label text-text-secondary">
+              <li className="flex items-center gap-2 rounded-full bg-column px-3 py-1 text-label text-text-secondary">
+                <span aria-hidden="true" className="h-2 w-2 rounded-full bg-status-rejected" />
                 마감 자동 탈락
                 <b className="font-semibold text-status-rejected-text tabular-nums">{stage.autoRejected}건</b>
               </li>
