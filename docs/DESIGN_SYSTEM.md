@@ -101,8 +101,8 @@
 | `brand-tint-100~300` | 라벤더 | #F1F1EC / #E2E2DC / #D3D3CC | 로그인 장식 |
 | `text-secondary` / `text-muted` | #52525B / #A1A1AA | #52524E / #66655F | muted는 page·column·card·brand-tint 위 4.67~5.69:1 |
 | `heat-1~4` | 인디고 4단계 | #E3E8FC / #BCC8F6 / #4F63D6 / #3243B5 | 연한 파랑 → 진한 남색. 3·4단계 흰 글자 5.14:1 이상 |
-| `platform-*-bg/text` | 사람인 회색·원티드 인디고·잡코리아 빨강 | 사람인 파랑·원티드 보라·잡코리아 코랄·직접입력 웜그레이, 연한 배경 + 진한 글자 | 배지 대비 5.63:1 이상 |
-| `platform-*-chart` | 사이트 원색 | #3B6FE8 / #7A5CF0 / #DD4B35 / #8E8C84 | 사람인·원티드·잡코리아·직접입력 순, 도넛·사이트 점·글자 아이콘 |
+| `platform-*-bg/text` | 사람인 회색·원티드 인디고·잡코리아 빨강 | 각 사이트 아이콘 색 계열의 연한 배경 + 진한 글자 | 배지 대비 6.23:1 이상 |
+| `platform-*-chart` | 사이트 원색 | 사람인 #4876EF · 잡코리아 #0B40D0 · 원티드 #0068FF→#FF8FC0→#FF5A00(chart·mid·end) · 직접입력 #8E8C84 | 사이트 공식 아이콘에서 뽑은 색. 도넛·사이트 점 |
 | `rounded-card` / `rounded-section` | 14px / 10px | 20px / 14px | |
 | `shadow-card` / `shadow-float` | 브라운 rgba | 무채색 rgba | |
 
@@ -114,6 +114,21 @@
 - 움직임: `animate-rise`(아래에서 8px 올라오며 나타남, 0.5초)와 `ease-soft` 곡선을 추가했다. 화면에서는 반드시 `motion-safe:animate-rise`처럼 `motion-safe` 변형으로만 써서 모션 줄이기 설정에서는 움직이지 않게 한다. 공통 모달에 먼저 적용했다.
 - 공통 부품: 버튼은 알약(`rounded-full`), 입력은 흰 둥근 칸(`rounded-xl bg-raised`), 헤더는 흰 줄 없이 바탕과 이어지고 원형 로고와 알약 메뉴(선택 항목은 검정)를 쓴다. 모바일 메뉴도 헤더 아래 전체 폭 알약이다.
 - 익스텐션은 이번에 바꾸지 않았다. 사이트 배지 색은 웹앱과 익스텐션 값이 달라졌으며, 익스텐션 개편 때 맞춘다.
+
+### 사이트 공식 아이콘 (#193)
+
+사용자 요청으로 지원 경로·사이트 배지의 S·J·W 글자 칸을 각 사이트의 공식 탭 아이콘으로 바꿨다. 아이콘은 각 회사의 상표이며, 어느 사이트에서 지원했는지 표시하는 용도로만 원본 그대로 쓴다(색·모양을 바꾸지 않는다).
+
+| 사이트 | 원본 (2026-11-20 받음) | 저장 | 비고 |
+|---|---|---|---|
+| 사람인 | https://www.saramin.co.kr/favicon.ico (48×48) | `public/brands/saramin.png` | 파란 사각형에 흰 S. 칸을 꽉 채운다 |
+| 잡코리아 | https://www.jobkorea.co.kr/favicon.ico (256×256) | `public/brands/jobkorea.png` | 투명 바탕의 파란 J. 흰 칸 안에 둔다 |
+| 원티드 | https://static.wanted.co.kr/favicon/new/favicon.ico (256×256) | `public/brands/wanted.png` | 파랑·분홍·주황 심볼. 흰 칸 안에 둔다. 공식 [브랜드센터](https://wanted.co.kr/brandcenter) 있음 |
+
+- ICO를 PNG로만 바꿨고(픽셀 그대로) 다른 편집은 하지 않았다. 사람인 원본은 48px라 28px 이하로만 쓴다.
+- 공통 `PlatformIcon`(`components/badge/`)이 모든 사이트를 같은 크기·같은 모서리의 칸(sm 16px, md 28px)에 담는다. 처음 시안에서 사람인만 칸을 꽉 채우고 나머지는 작게 들어가 크기가 달라 보인다는 의견을 반영했다. 사이트 배지(`PlatformBadge`)와 일기장 사이트 칩은 sm, 지원 경로 목록은 md를 쓴다.
+- 도넛의 원티드 조각은 SVG 그라데이션(`WANTED_GRADIENT_STROKE`), 기다리는 목록의 원티드 점은 CSS 그라데이션이다.
+- 사용자가 처음 보낸 잡코리아 이미지는 "파란 사각형에 흰 J"였지만 공식 탭 아이콘은 투명 바탕 파란 J다. 상표 색을 뒤집어 만들지 않고 공식 원본을 썼다.
 
 ### #193 검증
 
