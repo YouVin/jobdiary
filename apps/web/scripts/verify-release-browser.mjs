@@ -319,7 +319,7 @@ try {
   assert.deepEqual(errors, []);
   console.log('PASS 화면 전환 애니메이션 시작·View Transitions 미지원 브라우저 동일 동작');
   await plain.close();
-  // 홈 지원 달력 말풍선(#184): 오늘 지원한 건을 하나 더하고, 날짜 칸에 마우스를 올리거나(데스크톱) 탭하면(모바일) 건수·회사가 바로 보인다.
+  // 홈 지원 달력 말풍선(#184): 오늘 지원한 건을 하나 더하고, 날짜 칸에 마우스를 올리면 건수·회사가 바로 보인다(지원이 있는 날을 누르면 #190의 회사 목록이 열린다).
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
   const [, month, day] = today.split('-').map(Number);
   rows.push({ ...row(users.b, '달력 회사', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), applied_at: `${today}T00:00:00Z`, updated_at: `${today}T00:00:00Z` });
@@ -331,7 +331,7 @@ try {
     await visible(cell);
     const tip = cell.locator('[aria-hidden="true"]');
     assert.equal(await tip.isVisible(), false);
-    if (width === 390) await cell.click(); else await cell.hover();
+    await cell.hover();
     await visible(tip);
     assert.match(await tip.innerText(), new RegExp(`${month}월 ${day}일 · 지원 1건\\s+달력 회사`));
     const [tipBox, cardBox] = [await tip.boundingBox(), await calendar.boundingBox()];
@@ -339,7 +339,7 @@ try {
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${width}px 가로 넘침`);
   }
   assert.deepEqual(errors, []);
-  console.log('PASS 홈 지원 달력 날짜 말풍선(마우스·탭)·카드 안 배치');
+  console.log('PASS 홈 지원 달력 날짜 말풍선(마우스)·카드 안 배치');
   // 결과 기다리는 목록(#185): 회사 이름은 공고를 새 탭으로 열고(http(s) 주소만), 상세 패널은 별도 버튼으로 연다. 메뉴 이름은 '지원보드'.
   rows[1].url = 'https://jobs.example.test/b';
   rows.find(item => item.company === '달력 회사').url = 'javascript:alert(1)';
@@ -378,6 +378,33 @@ try {
   await visible(page.getByRole('article', { name: 'B 회사 개발자' }));
   assert.deepEqual(errors, []);
   console.log('PASS 중복 보기 묶음·공고 열기·상세 보기·보기 기억');
+  // 달력 날짜 → 회사 목록 → 상세 패널(#190): 마우스·키보드로 날짜를 고르면 그날 지원 목록이 열리고, 회사를 누르면 기록 남기기 패널이 열린다.
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(origin + '/');
+  const dayButton = page.getByRole('button', { name: `${month}월 ${day}일 지원 1건`, exact: true });
+  const dayList = page.getByRole('region', { name: `${month}월 ${day}일 지원 목록` });
+  await dayButton.click();
+  await visible(dayList);
+  assert.equal(await dayButton.getAttribute('aria-pressed'), 'true');
+  await page.mouse.move(0, 0); // 마우스를 치우면 클릭 포커스로는 말풍선이 남지 않는다
+  assert.equal(await dayButton.locator('[aria-hidden="true"]').evaluate(element => getComputedStyle(element).display), 'none', '누른 뒤에는 말풍선 대신 목록');
+  await dayList.getByRole('button', { name: '달력 회사 개발자, 기록·상세 보기' }).click();
+  const calendarPanel = page.getByRole('dialog', { name: '달력 회사' });
+  await visible(calendarPanel.getByRole('textbox'));
+  await page.keyboard.press('Escape');
+  await calendarPanel.waitFor({ state: 'detached' });
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), '달력 회사 개발자, 기록·상세 보기');
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), '390px 가로 넘침');
+  await dayButton.click();
+  await dayList.waitFor({ state: 'detached' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await dayButton.focus();
+  await page.keyboard.press('Enter');
+  await visible(dayList);
+  await dayList.getByRole('button', { name: '날짜 목록 닫기' }).click();
+  await dayList.waitFor({ state: 'detached' });
+  assert.deepEqual(errors, []);
+  console.log('PASS 달력 날짜 → 그날 회사 목록 → 상세 패널·포커스 복귀·키보드로 열고 닫기');
 } finally {
   delayed?.();
   await browser.close();
