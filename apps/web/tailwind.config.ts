@@ -77,13 +77,14 @@ const config: Config = {
           "offer-text": "#3F6212",
           "screening-text": "#1D4ED8",
         },
-        // 사이트 배지(bg/text)는 채도를 낮춰 그레이지 화면에 맞췄다(#193). 익스텐션(apps/extension/tailwind.config.ts)은
-        // 이번에 바꾸지 않아 값이 달라졌다. chart는 도넛·사이트 점에 쓰는 무채색 명도 단계다(#149, #193).
+        // 데이터 색 (#193): 조작 부분(버튼·메뉴·포커스)은 검정으로 강조하고, 사이트·달력 같은 데이터는 색으로 구분한다.
+        // 사이트 배지는 연한 배경 + 진한 글자(5.6:1 이상), chart는 도넛·사이트 점·글자 아이콘 배경이다.
+        // 익스텐션(apps/extension/tailwind.config.ts)은 이번에 바꾸지 않아 배지 값이 다르다.
         platform: {
-          saramin: { bg: "#E6E6E0", text: "#3F3F3C", chart: "#1C1C1A" },
-          wanted: { bg: "#E3E5EC", text: "#333A57", chart: "#4A4946" },
-          jobkorea: { bg: "#F2E4E1", text: "#8A2E22", chart: "#77766F" },
-          manual: { bg: "#EFEFEA", text: "#5E5E59", chart: "#A9A8A2" },
+          saramin: { bg: "#E5ECFD", text: "#1E4FC2", chart: "#3B6FE8" },
+          wanted: { bg: "#EDE8FE", text: "#5536C9", chart: "#7A5CF0" },
+          jobkorea: { bg: "#FCE7E3", text: "#A8321F", chart: "#DD4B35" },
+          manual: { bg: "#EFEFEA", text: "#5E5E59", chart: "#8E8C84" },
         },
         text: {
           primary: "#18181B",
@@ -94,12 +95,12 @@ const config: Config = {
         column: "#F4F4F0", // 카드 안의 낮은 면, 칸, 마우스를 올린 행
         card: "#FCFCFA", // 카드·패널·입력 표면
         raised: "#FFFFFF", // 카드 위에 한 단계 떠 있는 행·알약
-        // 지원 달력 칸의 지원 건수 단계 (1건 → 4건 이상). 회색에서 검정으로 가는 명도 단계다(#193).
+        // 지원 달력 칸의 지원 건수 단계 (1건 → 4건 이상). 연한 파랑에서 진한 남색으로 가는 단계다(#193).
         heat: {
-          1: "#E6E5E0",
-          2: "#CFCEC8",
-          3: "#77766F",
-          4: "#1C1C1A",
+          1: "#E3E8FC",
+          2: "#BCC8F6",
+          3: "#4F63D6",
+          4: "#3243B5",
         },
         "on-brand": "#FFFFFF",
         overlay: "#000000",
