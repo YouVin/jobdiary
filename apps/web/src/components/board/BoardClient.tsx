@@ -2,6 +2,7 @@
 
 import { clsx } from 'clsx';
 import { addTransitionType, startTransition, useMemo, useState, ViewTransition } from 'react';
+import { DuplicateGroups } from '@/components/board/DuplicateGroups';
 import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { ResultRow, StagePills } from '@/components/board/StageSummary';
 import { WaitingList } from '@/components/board/WaitingList';
@@ -17,12 +18,14 @@ import { useApplicationStore } from '@/store/applicationStore';
 import type { Status } from '@/types/application';
 import { getTodayInKorea } from '@/utils/applicationDeadline';
 import { DEFAULT_APPLICATION_FILTERS, filterApplications } from '@/utils/applicationFilters';
+import { getDuplicateGroups } from '@/utils/duplicateDetection';
 import { getWaitingBoard } from '@/utils/waitingList';
 import { getWeekTimeline } from '@/utils/weekTimeline';
 
 const VIEW_OPTIONS: Array<{ value: BoardView; label: string }> = [
   { value: 'week', label: '주간' },
   { value: 'kanban', label: '보드' },
+  { value: 'duplicates', label: '중복' },
 ];
 
 const EMPTY_MESSAGE = '아직 지원 내역이 없습니다. 지원추가 또는 대시보드의 익스텐션에서 가져오기로 시작해보세요.';
@@ -40,10 +43,16 @@ function weekLede(offset: number, interviewCount: number, deadlineCount: number)
   return `${subject} ${parts.join(', ')}이 있어요.`;
 }
 
+// 중복 보기 머리말
+function duplicateLede(groupCount: number): string {
+  return groupCount ? `같은 공고를 여러 사이트에서 지원한 묶음이 ${groupCount}개 있어요.` : '여러 사이트에서 같은 공고에 지원한 건이 없어요.';
+}
+
 // 지원보드(/board) (#173~#176)
 // - 주간(기본): 단계 버튼 → 주간 타임라인 → 결과 기다리는 중 목록 → 결과가 나온 지원 한 줄
 // - 어느 보기든 지원을 누르면 오른쪽 상세 패널(#175)
 // - 보드: 기존 검색·필터와 7단계 칸반(드래그)
+// - 중복: 같은 회사·공고를 여러 사이트에서 지원한 묶음(#186)
 // 지원 내역 조회는 홈과 같은 훅을 쓰고, 고른 보기는 이 브라우저에 기억한다.
 // 보기 전환·주 이동·단계 필터는 transition으로 바꿔 <ViewTransition> 애니메이션을 켠다(#176). 동작은 애니메이션과 무관하다.
 export function BoardClient() {
@@ -63,6 +72,7 @@ export function BoardClient() {
   const today = getTodayInKorea();
   const timeline = useMemo(() => getWeekTimeline(optimisticApplications, today, weekOffset), [optimisticApplications, today, weekOffset]);
   const waiting = useMemo(() => getWaitingBoard(optimisticApplications, today, stage), [optimisticApplications, today, stage]);
+  const duplicateGroups = useMemo(() => getDuplicateGroups(optimisticApplications), [optimisticApplications]);
 
   // 일정 캡슐·목록의 회사·칸반 카드를 누르면 상세 패널을 연다 (#175).
   // 목록에서 사라지면(삭제·계정 전환) 패널도 그리지 않는다.
@@ -105,7 +115,9 @@ export function BoardClient() {
         <div>
           <h1 className="text-heading-lg font-semibold text-text-primary">지원보드</h1>
           <p className="mt-1 text-body text-text-secondary">
-            {weekLede(weekOffset, timeline.interviewCount, timeline.deadlineCount)}
+            {view === 'duplicates'
+              ? duplicateLede(duplicateGroups.length)
+              : weekLede(weekOffset, timeline.interviewCount, timeline.deadlineCount)}
           </p>
         </div>
         <div className="flex rounded-lg border border-card-border bg-card p-1" role="group" aria-label="보기 선택">
@@ -121,6 +133,9 @@ export function BoardClient() {
               )}
             >
               {option.label}
+              {option.value === 'duplicates' && duplicateGroups.length > 0 && (
+                <span className="ml-1 tabular-nums opacity-70">{duplicateGroups.length}</span>
+              )}
             </button>
           ))}
         </div>
@@ -134,7 +149,8 @@ export function BoardClient() {
       {/* 보기를 바꾸면 key가 바뀌어 이전·새 보기가 교차 페이드된다. */}
       <ViewTransition key={view} name="board-view" share="auto" enter="auto" default="none">
         <div>
-          {view === 'week' ? (
+          {view === 'duplicates' && <DuplicateGroups groups={duplicateGroups} onOpen={setSelectedId} />}
+          {view === 'week' && (
             <>
               {!error && applications.length === 0 && (
                 <p className="mb-4 rounded-section bg-column p-4 text-body text-text-secondary">{EMPTY_MESSAGE}</p>
@@ -152,7 +168,8 @@ export function BoardClient() {
               />
               <ResultRow counts={waiting.resultCounts} total={waiting.resultTotal} />
             </>
-          ) : (
+          )}
+          {view === 'kanban' && (
             <>
               <ApplicationFilters
                 filters={filters}

@@ -1,4 +1,5 @@
-import { Application } from '@/types/application';
+import type { Application, Platform } from '@/types/application';
+import { toDateOnly } from '@/utils/applicationStats';
 import { toDateInputValue } from '@/utils/format';
 
 // 동일 지원은 갱신하고, 사용자가 직접 정한 상태와 일기 등은 유지한다.
@@ -89,33 +90,57 @@ export function getImportDecision(
   return hasSameCompanyPosition ? { type: 'add-duplicate' } : { type: 'add' };
 }
 
-// 보드에 표시된 지원건들 중 "중복 지원"으로 표시할 id 집합을 실시간으로 계산한다 (docs/INTEGRATION.md §5).
-// company+position별로 묶어, 서로 다른 platform이 2개 이상 섞여 있는 그룹만 중복으로 본다 — 같은
-// platform끼리는 같은 공고의 상태 변화라 이미 update로 합쳐졌을 것이므로 대상에서 제외한다.
+// 사이트 간 중복 지원 묶음 (#186). 회사명+공고명이 같고 서로 다른 platform이 2개 이상 섞인 지원끼리 묶는다
+// (docs/INTEGRATION.md §5). 같은 platform끼리는 같은 공고의 상태 변화라 이미 update로 합쳐졌을 것이므로 기준에서 뺀다.
 // 저장하지 않고 렌더 시점에만 계산하는 값이라 별도 DB 필드나 캐시가 필요 없다.
-export function getDuplicateApplicationIds(applications: Application[]): Set<string> {
-  const groups = new Map<string, Application[]>();
+export interface DuplicateGroup {
+  key: string;
+  company: string;
+  position: string;
+  applications: Application[]; // 먼저 지원한 순
+  platforms: Platform[]; // 처음 지원한 사이트부터, 중복 없이
+  latestAppliedAt: string; // 묶음에서 가장 최근 지원일 (YYYY-MM-DD)
+}
 
-  applications.forEach((application) => {
+function appliedDate(application: Application): string {
+  return toDateOnly(application.appliedAt) ?? '';
+}
+
+// 최근에 지원한 묶음이 위. 같은 날이면 회사명 순.
+export function getDuplicateGroups(applications: Application[]): DuplicateGroup[] {
+  const groups = new Map<string, Application[]>();
+  for (const application of applications) {
     const key = JSON.stringify([normalizeText(application.company), normalizeText(application.position)]);
     const group = groups.get(key);
-
     if (group) {
       group.push(application);
     } else {
       groups.set(key, [application]);
     }
-  });
+  }
 
+  const result: DuplicateGroup[] = [];
+  for (const [key, group] of groups) {
+    const sorted = [...group].sort((a, b) => appliedDate(a).localeCompare(appliedDate(b)));
+    const platforms = [...new Set(sorted.map((application) => application.platform))];
+    if (platforms.length < 2) continue;
+    result.push({
+      key,
+      company: normalizeText(sorted[0].company),
+      position: normalizeText(sorted[0].position),
+      applications: sorted,
+      platforms,
+      latestAppliedAt: appliedDate(sorted[sorted.length - 1]),
+    });
+  }
+  return result.sort((a, b) => b.latestAppliedAt.localeCompare(a.latestAppliedAt) || a.company.localeCompare(b.company, 'ko'));
+}
+
+// 보드 카드의 "중복 지원" 배지용 id 집합. 묶음 계산과 같은 기준이다.
+export function getDuplicateApplicationIds(applications: Application[]): Set<string> {
   const duplicateIds = new Set<string>();
-
-  groups.forEach((group) => {
-    const distinctPlatforms = new Set(group.map((application) => application.platform));
-
-    if (distinctPlatforms.size >= 2) {
-      group.forEach((application) => duplicateIds.add(application.id));
-    }
-  });
-
+  for (const group of getDuplicateGroups(applications)) {
+    for (const application of group.applications) duplicateIds.add(application.id);
+  }
   return duplicateIds;
 }
