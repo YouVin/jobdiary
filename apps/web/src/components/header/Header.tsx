@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { HeaderActions } from '@/components/header/HeaderActions';
 import { HeaderNav } from '@/components/header/HeaderNav';
+import { BrandMark } from '@/components/common/BrandMark';
 
 // 헤더 (#193): 흰 줄 없이 바탕과 이어지고, 원형 로고와 알약 메뉴를 쓴다.
 export function Header() {
@@ -13,9 +14,7 @@ export function Header() {
             aria-label="취준일기 홈으로 이동"
             className="flex shrink-0 items-center gap-2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-body font-bold text-on-brand">
-              J
-            </div>
+            <BrandMark className="h-9 w-9" />
             <span className="text-heading-md font-bold text-text-primary">취준일기</span>
           </Link>
           <HeaderNav variant="desktop" />
