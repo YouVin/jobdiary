@@ -115,6 +115,7 @@ test('지원 달력은 월요일 시작으로 이번 달 지원만 날짜별로 
   assert.equal(days.length, 30);
   assert.equal(days.find((day) => day.day === 16).count, 2);
   assert.deepEqual(days.find((day) => day.day === 16).companies, ['회사 b', '회사 c']);
+  assert.deepEqual(days.find((day) => day.day === 16).applicationIds, ['b', 'c']);
   assert.deepEqual(days.find((day) => day.day === 2).companies, []);
   assert.equal(days.find((day) => day.day === 17).isToday, true);
   assert.equal(days.find((day) => day.day === 18).isFuture, true);
