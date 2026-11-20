@@ -21,7 +21,7 @@ interface WaitingListProps {
 // 회사 이니셜 옆 플랫폼 점. 도넛 차트와 같은 진한 플랫폼 색이다.
 const PLATFORM_DOT_CLASS: Record<Platform, string> = {
   saramin: 'bg-platform-saramin-chart',
-  wanted: 'bg-platform-wanted-chart',
+  wanted: 'bg-linear-to-br from-platform-wanted-chart via-platform-wanted-mid to-platform-wanted-end',
   jobkorea: 'bg-platform-jobkorea-chart',
   manual: 'bg-platform-manual-chart',
 };

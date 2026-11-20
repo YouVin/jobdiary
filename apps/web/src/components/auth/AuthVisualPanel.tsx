@@ -2,6 +2,7 @@ import { clsx } from 'clsx';
 import { Icon } from '@/components/common/Icon';
 import { PLATFORM_INFO } from '@/constants/platform';
 import { Platform } from '@/types/application';
+import { BrandMark } from '@/components/common/BrandMark';
 
 interface DdayMockCard {
   platform: Platform;
@@ -70,9 +71,7 @@ export function AuthVisualPanel({ className }: AuthVisualPanelProps) {
       <div className="relative z-10 mx-auto w-full max-w-md text-center">
         {/* 모바일 전용 로고 — 데스크탑에서는 폼 쪽 로고가 이 역할을 대신하므로 여기선 숨긴다 */}
         <div className="mb-3 flex items-center justify-center gap-2 md:hidden">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-brand text-label font-bold text-on-brand">
-            J
-          </div>
+          <BrandMark className="h-7 w-7" />
           <span className="text-label text-text-primary">취준일기</span>
         </div>
 
@@ -145,9 +144,7 @@ function PhoneMockup() {
 
         {/* 로고 */}
         <div className="flex items-center gap-1">
-          <div className="flex h-3 w-3 items-center justify-center rounded bg-brand text-illustration-xs font-bold text-on-brand lg:h-4 lg:w-4 lg:text-illustration-sm">
-            J
-          </div>
+          <BrandMark className="h-3 w-3 lg:h-4 lg:w-4" />
           <span className="text-illustration-sm font-bold text-text-primary lg:text-badge">취준일기</span>
         </div>
 

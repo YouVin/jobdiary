@@ -1,6 +1,6 @@
 # UI 디자인 시스템
 
-2026-10-14, #81. 이후 전체 디자인 개편 전까지 적용하는 코드·스타일 기준이다. 기준 구현은 `tailwind.config.ts`이며, 이 작업에서 별도 Figma 파일을 조회하거나 수정하지 않았다.
+2026-10-14, #81. 2026-11-20 #193에서 색·모서리·움직임 기준을 그레이지·검정 강조로 바꿨다(아래 절). 간격·타이포·SVG 규칙은 그대로다. 기준 구현은 `tailwind.config.ts`이며, 이 작업에서 별도 Figma 파일을 조회하거나 수정하지 않았다.
 
 ## 간격과 크기
 
@@ -32,9 +32,9 @@
 | illustration-xs / illustration-sm | 6 / 8, 8 / 12 | `aria-hidden` 목업 안의 장식 텍스트만 |
 
 - 데이터로 그리는 차트 SVG는 `src/components/charts/`에서만 작성하고 색은 토큰 클래스로 지정한다. 플랫폼 차트 색은 `platform.*.chart` (#149, [HOME_DASHBOARD](HOME_DASHBOARD.md)).
-- 입력·버튼은 `rounded-lg`, 모달·계정 섹션은 `rounded-card`(14px), 칸반 컬럼은 `rounded-section`(10px).
+- 버튼·메뉴·알약은 `rounded-full`, 입력은 `rounded-xl`, 카드·모달·패널은 `rounded-card`(20px), 카드 안의 칸·묶음은 `rounded-section`(14px) (#193).
 - 로그인 장식 프레임은 `rounded-2xl`, `rounded-3xl`, `rounded-4xl` 등 정수 px의 기본 토큰을 사용한다.
-- 표면은 `bg-card`, 페이지는 `bg-page`, 브랜드 위 글자는 `text-on-brand`, 모달 배경은 `bg-overlay/50`.
+- 페이지는 `bg-page`(그레이지), 카드·패널·입력 표면은 `bg-card`, 카드 안의 낮은 면은 `bg-column`, 카드 위에 떠 있는 행·알약·입력칸은 `bg-raised`(흰색), 브랜드(검정) 위 글자는 `text-on-brand`, 모달 배경은 `bg-overlay/50`.
 - 색·그림자·타이포 정의를 컴포넌트나 globals.css에 복제하지 않는다. `shadow-card`, `shadow-float`를 재사용한다.
 
 ## 공통 코드
@@ -84,3 +84,56 @@
 - 원인: 공통 `Modal`이 ESC 닫기만 처리하고 대화상자 역할·포커스 관리를 하지 않았다.
 - 수정: `role="dialog"`, `aria-modal="true"`, `useId`로 만든 제목 `aria-labelledby`. 열릴 때 첫 입력(없으면 첫 버튼)으로 포커스를 옮기고, Tab/Shift+Tab을 모달 안에서 순환하며, 닫히면 연 요소가 화면에 남아 있을 때 포커스를 돌려준다. 제출 중 닫기 막기(`closeDisabled`)는 그대로 유지한다.
 - 검증: 프로덕션 빌드에서 지원 추가 모달을 키보드로 열기 → 첫 입력 포커스 → Tab·Shift+Tab 각 40회 모달 안 유지 → ESC 닫기 후 지원추가 버튼 포커스 복귀, 브라우저 예외 0건. `scripts/verify-release-browser.mjs` 7개 항목 통과. 스크린리더 실제 낭독은 확인하지 않았다.
+
+## 그레이지 바탕·검정 강조 개편 (#193, 2026-11-20)
+
+사용자가 고른 레퍼런스(그레이지 바탕, 검정 하나로 강조, 알약 모양, 큰 둥근 모서리, 부드러운 움직임)와 시안을 바탕으로 웹앱 기준값을 바꿨다. 토큰 이름은 그대로 두고 값만 바꿔, 화면 코드를 고치지 않아도 앱 전체가 함께 바뀐다. 화면별 배치 개편은 #191(지원보드 흐름), #194(지원보드 요약·일정·중복), #195(홈)에서 한다.
+
+| 토큰 | 이전 | 지금 | 비고 |
+|---|---|---|---|
+| `page` | #FAFAFA | #F1F1ED | 그레이지 바탕 |
+| `card` | #FFFFFF | #FCFCFA | 카드·패널 표면 |
+| `column` | #F2F2F4 | #F4F4F0 | 카드 안의 낮은 면, 마우스를 올린 행 |
+| `raised` (새) | — | #FFFFFF | 카드 위 행·알약·입력칸 |
+| `card-border` / `border-strong` | #DEDEE2 / #A1A1AA | #E4E4DF / #8E8D87 | 입력 테두리는 card 위 3.24:1 |
+| `brand` / `brand-hover` / `brand-text` | #4F46E5 / #4338CA / #3730A3 | #18181B / #3F3F3C / #18181B | 인디고 대신 검정 강조 |
+| `brand-tint` | #EEF2FF | #E6E6E0 | 밝은 면 위 선택 배경 |
+| `brand-tint-100~300` | 라벤더 | #F1F1EC / #E2E2DC / #D3D3CC | 로그인 장식 |
+| `text-secondary` / `text-muted` | #52525B / #A1A1AA | #52524E / #66655F | muted는 page·column·card·brand-tint 위 4.67~5.69:1 |
+| `heat-1~4` | 인디고 4단계 | #E3E8FC / #BCC8F6 / #4F63D6 / #3243B5 | 연한 파랑 → 진한 남색. 3·4단계 흰 글자 5.14:1 이상 |
+| `platform-*-bg/text` | 사람인 회색·원티드 인디고·잡코리아 빨강 | 각 사이트 아이콘 색 계열의 연한 배경 + 진한 글자 | 배지 대비 6.23:1 이상 |
+| `platform-*-chart` | 사이트 원색 | 사람인 #4876EF · 잡코리아 #0B40D0 · 원티드 #0068FF→#FF8FC0→#FF5A00(chart·mid·end) · 직접입력 #8E8C84 | 사이트 공식 아이콘에서 뽑은 색. 도넛·사이트 점 |
+| `rounded-card` / `rounded-section` | 14px / 10px | 20px / 14px | |
+| `shadow-card` / `shadow-float` | 브라운 rgba | 무채색 rgba | |
+
+- **조작은 검정, 데이터는 색**: 버튼·선택된 메뉴·탭·포커스는 검정 하나로 강조하고, 사이트·달력·단계처럼 데이터를 구분하는 곳은 색을 쓴다. 처음에는 데이터까지 무채색으로 칠했으나 사용자가 "어둡기만 하고 사이트별 색이 있어야 한다"고 해서 사이트·달력 색을 되돌렸다.
+- 일정 종류 색 `event-*`: 면접은 보라(`event-interview` #6A5FDB), 공고 마감은 주황(`event-deadline` #C2621A). 점은 카드 위 4.04:1 이상, 배지는 tint 배경 + text 글자(면접 6.42:1, 마감 4.95:1). 홈 다가오는 일정의 점·종류 글자·D-day 배지에 쓰고, 오늘 일정의 배지만 검정이다.
+- 형광펜 강조 `highlight-*`(blue·violet·amber)와 `animate-mark`: 홈 일기장 문장의 숫자와 다음 일정을 글자 아래쪽 절반만 칠하고, 처음 열 때 왼쪽부터 칠해진다(`motion-safe`). 강조 앞뒤 여백은 두지 않는다(조사 앞에 띄어쓰기처럼 보임). 아래 칩에는 무엇을 세는지 색 점을 둔다.
+- 로고 마크: 일기장 페이지 + 체크 + 파란 책갈피. 원본 `public/brand/logo-mark.svg`, 공통 `BrandMark`로 헤더·로그인에 쓰고, 브라우저 탭 아이콘은 같은 그림의 `src/app/icon.svg`(기존 favicon.ico 제거). 여러 색을 가진 브랜드 자산이라 SVG 안에 고유색을 둔다.
+- 상태색(`status-*`)은 단계 구분용 점·막대로 그대로 둔다. 작은 상태 글자는 기존 `*-text` 토큰을 쓴다(card·page 위 5.26:1 이상).
+- 움직임: `animate-rise`(아래에서 8px 올라오며 나타남, 0.5초)와 `ease-soft` 곡선을 추가했다. 화면에서는 반드시 `motion-safe:animate-rise`처럼 `motion-safe` 변형으로만 써서 모션 줄이기 설정에서는 움직이지 않게 한다. 공통 모달에 먼저 적용했다.
+- 공통 부품: 버튼은 알약(`rounded-full`), 입력은 흰 둥근 칸(`rounded-xl bg-raised`), 헤더는 흰 줄 없이 바탕과 이어지고 원형 로고와 알약 메뉴(선택 항목은 검정)를 쓴다. 모바일 메뉴도 헤더 아래 전체 폭 알약이다.
+- 익스텐션은 이번에 바꾸지 않았다. 사이트 배지 색은 웹앱과 익스텐션 값이 달라졌으며, 익스텐션 개편 때 맞춘다.
+
+### 사이트 공식 아이콘 (#193)
+
+사용자 요청으로 지원 경로·사이트 배지의 S·J·W 글자 칸을 각 사이트의 공식 탭 아이콘으로 바꿨다. 아이콘은 각 회사의 상표이며, 어느 사이트에서 지원했는지 표시하는 용도로만 원본 그대로 쓴다(색·모양을 바꾸지 않는다).
+
+| 사이트 | 원본 (2026-11-20 받음) | 저장 | 비고 |
+|---|---|---|---|
+| 사람인 | https://www.saramin.co.kr/favicon.ico (48×48) | `public/brands/saramin.png` | 파란 사각형에 흰 S. 칸을 꽉 채운다 |
+| 잡코리아 | https://www.jobkorea.co.kr/favicon.ico (256×256) | `public/brands/jobkorea.png` | 투명 바탕의 파란 J. 흰 칸 안에 둔다 |
+| 원티드 | https://static.wanted.co.kr/favicon/new/favicon.ico (256×256) | `public/brands/wanted.png` | 파랑·분홍·주황 심볼. 흰 칸 안에 둔다. 공식 [브랜드센터](https://wanted.co.kr/brandcenter) 있음 |
+
+- ICO를 PNG로만 바꿨고(픽셀 그대로) 다른 편집은 하지 않았다. 사람인 원본은 48px라 28px 이하로만 쓴다.
+- 공통 `PlatformIcon`(`components/badge/`)이 모든 사이트를 같은 크기·같은 모서리의 칸(sm 16px, md 28px)에 담는다. 처음 시안에서 사람인만 칸을 꽉 채우고 나머지는 작게 들어가 크기가 달라 보인다는 의견을 반영했다. 사이트 배지(`PlatformBadge`)와 일기장 사이트 칩은 sm, 지원 경로 목록은 md를 쓴다.
+- 도넛의 원티드 조각은 SVG 그라데이션(`WANTED_GRADIENT_STROKE`), 기다리는 목록의 원티드 점은 CSS 그라데이션이다.
+- 사용자가 처음 보낸 잡코리아 이미지는 "파란 사각형에 흰 J"였지만 공식 탭 아이콘은 투명 바탕 파란 J다. 상표 색을 뒤집어 만들지 않고 공식 원본을 썼다.
+
+### #193 검증
+
+- 처음에는 바탕 #E8E8E3·카드 #F7F7F3·칸 #EFEFEA로 잡았으나, 사용자가 실제 데이터 화면을 보고 "너무 어둡다"고 해서 바탕·칸·카드·달력 농도를 한 단계 밝혔다. 다시 빌드하지 않고 CSS 색만 바꿔 끼운 "지금 / 밝게 / 더 밝게" 세 단계를 같은 홈·지원보드에서 비교해 "밝게"를 골랐다(위 표가 최종 값).
+- 대비는 WCAG 공식으로 계산했다(위 표의 값). 카드 테두리와 바탕의 대비는 1.13:1로 낮아, 카드 경계는 바탕과 표면 색 차이·그림자·테두리를 함께 써서 구분한다.
+- `npm test` 127개, `npm run lint`(check:ui 포함), `npx tsc --noEmit`, `npm run build` 통과.
+- 프로덕션 빌드에서 `scripts/verify-release-browser.mjs` 14개, `scripts/verify-auth-loading-seo.mjs` 4개(axe 포함) 통과.
+- 예시 데이터 48건과 빈 계정으로 홈·지원보드 1440/768/390px, 로그인 1440/390px, 계정, 지원 추가 모달을 찍어 확인. 가로 넘침·브라우저 예외 없음. 홈·지원보드 배치는 이후 이슈에서 바꾸므로 이번에는 색·모양만 바뀐 상태다.

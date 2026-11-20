@@ -2,7 +2,8 @@
 
 import { clsx } from 'clsx';
 import { useState } from 'react';
-import { DonutChart } from '@/components/charts/DonutChart';
+import { PlatformIcon } from '@/components/badge/PlatformIcon';
+import { DonutChart, WANTED_GRADIENT_STROKE } from '@/components/charts/DonutChart';
 import { BoardLink } from '@/components/dashboard/BoardLink';
 import { DashboardCard } from '@/components/dashboard/DashboardCard';
 import { PLATFORM_INFO } from '@/constants/platform';
@@ -14,12 +15,13 @@ interface RouteCardProps {
   total: number;
 }
 
-// 색은 플랫폼에 고정한다(순위가 바뀌어도 색이 따라 바뀌지 않음). 클래스는 리터럴로 둔다.
-const PLATFORM_CHART: Record<Platform, { mark: string; strokeClass: string; tileClass: string }> = {
-  saramin: { mark: 'S', strokeClass: 'stroke-platform-saramin-chart', tileClass: 'bg-platform-saramin-chart' },
-  jobkorea: { mark: 'J', strokeClass: 'stroke-platform-jobkorea-chart', tileClass: 'bg-platform-jobkorea-chart' },
-  wanted: { mark: 'W', strokeClass: 'stroke-platform-wanted-chart', tileClass: 'bg-platform-wanted-chart' },
-  manual: { mark: '+', strokeClass: 'stroke-platform-manual-chart', tileClass: 'bg-platform-manual-chart' },
+// 색은 플랫폼에 고정한다(순위가 바뀌어도 색이 따라 바뀌지 않음). 사이트 공식 아이콘의 색이며(#193), 원티드는 그라데이션이다.
+// 클래스는 리터럴로 둔다.
+const PLATFORM_STROKE: Record<Platform, string> = {
+  saramin: 'stroke-platform-saramin-chart',
+  jobkorea: 'stroke-platform-jobkorea-chart',
+  wanted: WANTED_GRADIENT_STROKE,
+  manual: 'stroke-platform-manual-chart',
 };
 
 function formatShare(share: number): string {
@@ -33,7 +35,7 @@ export function RouteCard({ shares, total }: RouteCardProps) {
     key: platform,
     label: PLATFORM_INFO[platform].label,
     value: count,
-    strokeClass: PLATFORM_CHART[platform].strokeClass,
+    strokeClass: PLATFORM_STROKE[platform],
   }));
   const chartLabel = `지원 경로별 건수: ${shares.map(({ platform, count }) => `${PLATFORM_INFO[platform].label} ${count}건`).join(', ')}`;
 
@@ -48,7 +50,6 @@ export function RouteCard({ shares, total }: RouteCardProps) {
 
         <ul className="flex w-full min-w-0 flex-1 flex-col">
           {shares.map(({ platform, count, share }) => {
-            const { mark, tileClass } = PLATFORM_CHART[platform];
             const label = PLATFORM_INFO[platform].label;
             return (
               <li
@@ -61,12 +62,10 @@ export function RouteCard({ shares, total }: RouteCardProps) {
                 onBlur={() => setActiveKey(null)}
                 className={clsx(
                   'flex items-center gap-3 rounded-lg border-b border-card-border px-2 py-3 last:border-b-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand',
-                  activeKey === platform && 'bg-page',
+                  activeKey === platform && 'bg-column',
                 )}
               >
-                <span aria-hidden="true" className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-label font-bold text-on-brand ${tileClass}`}>
-                  {mark}
-                </span>
+                <PlatformIcon platform={platform} />
                 <span className="min-w-0 flex-1 truncate text-card-company text-text-primary">{label}</span>
                 <span className="text-label font-semibold text-text-primary tabular-nums">{count}건</span>
                 <span className="w-12 text-right text-label text-text-secondary tabular-nums">{formatShare(share)}</span>
