@@ -1,6 +1,6 @@
 # UI 디자인 시스템
 
-2026-10-14, #81. 이후 전체 디자인 개편 전까지 적용하는 코드·스타일 기준이다. 기준 구현은 `tailwind.config.ts`이며, 이 작업에서 별도 Figma 파일을 조회하거나 수정하지 않았다.
+2026-10-14, #81. 2026-11-20 #193에서 색·모서리·움직임 기준을 그레이지·검정 강조로 바꿨다(아래 절). 간격·타이포·SVG 규칙은 그대로다. 기준 구현은 `tailwind.config.ts`이며, 이 작업에서 별도 Figma 파일을 조회하거나 수정하지 않았다.
 
 ## 간격과 크기
 
@@ -32,9 +32,9 @@
 | illustration-xs / illustration-sm | 6 / 8, 8 / 12 | `aria-hidden` 목업 안의 장식 텍스트만 |
 
 - 데이터로 그리는 차트 SVG는 `src/components/charts/`에서만 작성하고 색은 토큰 클래스로 지정한다. 플랫폼 차트 색은 `platform.*.chart` (#149, [HOME_DASHBOARD](HOME_DASHBOARD.md)).
-- 입력·버튼은 `rounded-lg`, 모달·계정 섹션은 `rounded-card`(14px), 칸반 컬럼은 `rounded-section`(10px).
+- 버튼·메뉴·알약은 `rounded-full`, 입력은 `rounded-xl`, 카드·모달·패널은 `rounded-card`(20px), 카드 안의 칸·묶음은 `rounded-section`(14px) (#193).
 - 로그인 장식 프레임은 `rounded-2xl`, `rounded-3xl`, `rounded-4xl` 등 정수 px의 기본 토큰을 사용한다.
-- 표면은 `bg-card`, 페이지는 `bg-page`, 브랜드 위 글자는 `text-on-brand`, 모달 배경은 `bg-overlay/50`.
+- 페이지는 `bg-page`(그레이지), 카드·패널·입력 표면은 `bg-card`, 카드 안의 낮은 면은 `bg-column`, 카드 위에 떠 있는 행·알약·입력칸은 `bg-raised`(흰색), 브랜드(검정) 위 글자는 `text-on-brand`, 모달 배경은 `bg-overlay/50`.
 - 색·그림자·타이포 정의를 컴포넌트나 globals.css에 복제하지 않는다. `shadow-card`, `shadow-float`를 재사용한다.
 
 ## 공통 코드
@@ -84,3 +84,36 @@
 - 원인: 공통 `Modal`이 ESC 닫기만 처리하고 대화상자 역할·포커스 관리를 하지 않았다.
 - 수정: `role="dialog"`, `aria-modal="true"`, `useId`로 만든 제목 `aria-labelledby`. 열릴 때 첫 입력(없으면 첫 버튼)으로 포커스를 옮기고, Tab/Shift+Tab을 모달 안에서 순환하며, 닫히면 연 요소가 화면에 남아 있을 때 포커스를 돌려준다. 제출 중 닫기 막기(`closeDisabled`)는 그대로 유지한다.
 - 검증: 프로덕션 빌드에서 지원 추가 모달을 키보드로 열기 → 첫 입력 포커스 → Tab·Shift+Tab 각 40회 모달 안 유지 → ESC 닫기 후 지원추가 버튼 포커스 복귀, 브라우저 예외 0건. `scripts/verify-release-browser.mjs` 7개 항목 통과. 스크린리더 실제 낭독은 확인하지 않았다.
+
+## 그레이지 바탕·검정 강조 개편 (#193, 2026-11-20)
+
+사용자가 고른 레퍼런스(그레이지 바탕, 검정 하나로 강조, 알약 모양, 큰 둥근 모서리, 부드러운 움직임)와 시안을 바탕으로 웹앱 기준값을 바꿨다. 토큰 이름은 그대로 두고 값만 바꿔, 화면 코드를 고치지 않아도 앱 전체가 함께 바뀐다. 화면별 배치 개편은 #191(지원보드 흐름), #194(지원보드 요약·일정·중복), #195(홈)에서 한다.
+
+| 토큰 | 이전 | 지금 | 비고 |
+|---|---|---|---|
+| `page` | #FAFAFA | #E8E8E3 | 그레이지 바탕 |
+| `card` | #FFFFFF | #F7F7F3 | 카드·패널·입력 표면 |
+| `column` | #F2F2F4 | #EFEFEA | 카드 안의 낮은 면, 마우스를 올린 행 |
+| `raised` (새) | — | #FFFFFF | 카드 위 행·알약·입력칸 |
+| `card-border` / `border-strong` | #DEDEE2 / #A1A1AA | #DEDED8 / #8E8D87 | 입력 테두리는 card 위 3.1:1 |
+| `brand` / `brand-hover` / `brand-text` | #4F46E5 / #4338CA / #3730A3 | #18181B / #3F3F3C / #18181B | 인디고 대신 검정 강조 |
+| `brand-tint` | #EEF2FF | #E6E6E0 | 밝은 면 위 선택 배경 |
+| `brand-tint-100~300` | 라벤더 | #F1F1EC / #E2E2DC / #D3D3CC | 로그인 장식 |
+| `text-secondary` / `text-muted` | #52525B / #A1A1AA | #52524E / #66655F | muted는 page·column·card·brand-tint 위 4.67~5.44:1 |
+| `heat-1~4` | 인디고 4단계 | #D9D8D2 / #B3B2AC / #6B6A66 / #1C1C1A | 3·4단계 흰 글자 5.41:1 이상 |
+| `platform-*-bg/text` | 원색 계열 | 채도를 낮춘 배경 + 진한 글자 | 배지 대비 5.65:1 이상 |
+| `platform-*-chart` | 사이트 원색 | #1C1C1A / #4A4946 / #77766F / #A9A8A2 | 사람인·원티드·잡코리아·직접입력 순, 도넛과 사이트 점 |
+| `rounded-card` / `rounded-section` | 14px / 10px | 20px / 14px | |
+| `shadow-card` / `shadow-float` | 브라운 rgba | 무채색 rgba | |
+
+- 상태색(`status-*`)은 단계 구분용 점·막대로 그대로 둔다. 작은 상태 글자는 기존 `*-text` 토큰을 쓴다(card·page 위 5.26:1 이상).
+- 움직임: `animate-rise`(아래에서 8px 올라오며 나타남, 0.5초)와 `ease-soft` 곡선을 추가했다. 화면에서는 반드시 `motion-safe:animate-rise`처럼 `motion-safe` 변형으로만 써서 모션 줄이기 설정에서는 움직이지 않게 한다. 공통 모달에 먼저 적용했다.
+- 공통 부품: 버튼은 알약(`rounded-full`), 입력은 흰 둥근 칸(`rounded-xl bg-raised`), 헤더는 흰 줄 없이 바탕과 이어지고 원형 로고와 알약 메뉴(선택 항목은 검정)를 쓴다. 모바일 메뉴도 헤더 아래 전체 폭 알약이다.
+- 익스텐션은 이번에 바꾸지 않았다. 사이트 배지 색은 웹앱과 익스텐션 값이 달라졌으며, 익스텐션 개편 때 맞춘다.
+
+### #193 검증
+
+- 대비는 WCAG 공식으로 계산했다(위 표의 값).
+- `npm test` 127개, `npm run lint`(check:ui 포함), `npx tsc --noEmit`, `npm run build` 통과.
+- 프로덕션 빌드에서 `scripts/verify-release-browser.mjs` 14개, `scripts/verify-auth-loading-seo.mjs` 4개(axe 포함) 통과.
+- 예시 데이터 48건과 빈 계정으로 홈·지원보드 1440/768/390px, 로그인 1440/390px, 계정, 지원 추가 모달을 찍어 확인. 가로 넘침·브라우저 예외 없음. 홈·지원보드 배치는 이후 이슈에서 바꾸므로 이번에는 색·모양만 바뀐 상태다.
