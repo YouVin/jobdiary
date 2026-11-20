@@ -1,3 +1,4 @@
+import { PlatformIcon } from '@/components/badge/PlatformIcon';
 import { PLATFORM_INFO } from '@/constants/platform';
 import { Platform } from '@/types/application';
 
@@ -13,13 +14,15 @@ const PLATFORM_BADGE_CLASS: Record<Platform, string> = {
   manual: 'bg-platform-manual-bg text-platform-manual-text',
 };
 
+// 사이트 공식 아이콘 + 이름 (#193)
 export function PlatformBadge({ platform }: PlatformBadgeProps) {
   const { label } = PLATFORM_INFO[platform];
 
   return (
     <span
-      className={`inline-flex items-center rounded px-2 py-1 text-badge font-medium leading-none ${PLATFORM_BADGE_CLASS[platform]}`}
+      className={`inline-flex items-center gap-1 rounded-full py-px pl-px pr-2 text-badge font-medium leading-none ${PLATFORM_BADGE_CLASS[platform]}`}
     >
+      <PlatformIcon platform={platform} size="sm" />
       {label}
     </span>
   );

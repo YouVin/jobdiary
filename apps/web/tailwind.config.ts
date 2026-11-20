@@ -84,12 +84,13 @@ const config: Config = {
           "screening-text": "#1D4ED8",
         },
         // 데이터 색 (#193): 조작 부분(버튼·메뉴·포커스)은 검정으로 강조하고, 사이트·달력 같은 데이터는 색으로 구분한다.
-        // 사이트 배지는 연한 배경 + 진한 글자(5.6:1 이상), chart는 도넛·사이트 점·글자 아이콘 배경이다.
+        // 사이트 색은 각 사이트 공식 탭 아이콘(public/brands/)에서 뽑은 실제 색이다. 사람인 밝은 파랑, 잡코리아 진한 파랑,
+        // 원티드는 파랑→분홍→주황 그라데이션(chart → mid → end). 배지는 연한 배경 + 진한 글자(6.23:1 이상).
         // 익스텐션(apps/extension/tailwind.config.ts)은 이번에 바꾸지 않아 배지 값이 다르다.
         platform: {
-          saramin: { bg: "#E5ECFD", text: "#1E4FC2", chart: "#3B6FE8" },
-          wanted: { bg: "#EDE8FE", text: "#5536C9", chart: "#7A5CF0" },
-          jobkorea: { bg: "#FCE7E3", text: "#A8321F", chart: "#DD4B35" },
+          saramin: { bg: "#EAF0FD", text: "#1E4FC2", chart: "#4876EF" },
+          wanted: { bg: "#F3EEFB", text: "#3E3A8F", chart: "#0068FF", mid: "#FF8FC0", end: "#FF5A00" },
+          jobkorea: { bg: "#E6ECFB", text: "#0A3AB8", chart: "#0B40D0" },
           manual: { bg: "#EFEFEA", text: "#5E5E59", chart: "#8E8C84" },
         },
         text: {

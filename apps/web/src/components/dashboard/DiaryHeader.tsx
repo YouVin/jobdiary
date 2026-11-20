@@ -1,3 +1,4 @@
+import { PlatformIcon } from '@/components/badge/PlatformIcon';
 import { buttonClassName } from '@/components/common/buttonStyles';
 import { Icon } from '@/components/common/Icon';
 import { PLATFORM_INFO, PLATFORM_STATUS_PAGES } from '@/constants/platform';
@@ -138,8 +139,9 @@ export function DiaryHeader({
                     rel="noopener noreferrer"
                     aria-label={`${label} ${platformCounts[platform]}건 저장됨, ${page.label} (새 탭)`}
                     title={`${label} ${page.label}`}
-                    className={`flex items-center gap-1 rounded-md px-2 py-1 text-label underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${className}`}
+                    className={`flex items-center gap-1 rounded-full py-1 pl-1 pr-2 text-label underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${className}`}
                   >
+                    <PlatformIcon platform={platform} size="sm" />
                     {label}
                     <b className="font-semibold tabular-nums">{platformCounts[platform]}</b>
                   </a>
