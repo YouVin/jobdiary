@@ -157,6 +157,7 @@ export interface CalendarDay {
   date: string; // YYYY-MM-DD
   day: number;
   count: number; // 그날 지원한 건수
+  companies: string[]; // 그날 지원한 회사 이름 (목록 순서, 날짜 칸 말풍선용)
   isToday: boolean;
   isFuture: boolean;
 }
@@ -172,12 +173,14 @@ export interface MonthCalendar {
 export function getMonthCalendar(applications: Application[], today = getTodayInKorea()): MonthCalendar {
   const [year, month] = today.split('-').map(Number);
   const prefix = today.slice(0, 8); // YYYY-MM-
-  const counts = new Map<string, number>();
+  const companiesByDate = new Map<string, string[]>();
   let monthTotal = 0;
   for (const application of applications) {
     const date = toDateOnly(application.appliedAt);
     if (!date || !date.startsWith(prefix)) continue;
-    counts.set(date, (counts.get(date) ?? 0) + 1);
+    const companies = companiesByDate.get(date) ?? [];
+    companies.push(application.company.trim());
+    companiesByDate.set(date, companies);
     monthTotal += 1;
   }
 
@@ -193,7 +196,8 @@ export function getMonthCalendar(applications: Application[], today = getTodayIn
       continue;
     }
     const date = `${prefix}${String(day).padStart(2, '0')}`;
-    weeks[weeks.length - 1].push({ date, day, count: counts.get(date) ?? 0, isToday: date === today, isFuture: date > today });
+    const companies = companiesByDate.get(date) ?? [];
+    weeks[weeks.length - 1].push({ date, day, count: companies.length, companies, isToday: date === today, isFuture: date > today });
   }
 
   return { year, month, weeks, monthTotal };

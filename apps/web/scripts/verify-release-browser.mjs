@@ -317,6 +317,28 @@ try {
   assert.equal(await plain.evaluate(() => window.__viewTransitionCount ?? 0), 0);
   assert.deepEqual(errors, []);
   console.log('PASS 화면 전환 애니메이션 시작·View Transitions 미지원 브라우저 동일 동작');
+  await plain.close();
+  // 홈 지원 달력 말풍선(#184): 오늘 지원한 건을 하나 더하고, 날짜 칸에 마우스를 올리거나(데스크톱) 탭하면(모바일) 건수·회사가 바로 보인다.
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+  const [, month, day] = today.split('-').map(Number);
+  rows.push({ ...row(users.b, '달력 회사', 'dddddddd-dddd-4ddd-8ddd-dddddddddddd'), applied_at: `${today}T00:00:00Z`, updated_at: `${today}T00:00:00Z` });
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(origin + '/');
+    const calendar = page.getByRole('region', { name: `${month}월 지원 달력` });
+    const cell = calendar.getByLabel(`${month}월 ${day}일 지원 1건`, { exact: true });
+    await visible(cell);
+    const tip = cell.locator('[aria-hidden="true"]');
+    assert.equal(await tip.isVisible(), false);
+    if (width === 390) await cell.click(); else await cell.hover();
+    await visible(tip);
+    assert.match(await tip.innerText(), new RegExp(`${month}월 ${day}일 · 지원 1건\\s+달력 회사`));
+    const [tipBox, cardBox] = [await tip.boundingBox(), await calendar.boundingBox()];
+    assert(tipBox.x >= cardBox.x && tipBox.x + tipBox.width <= cardBox.x + cardBox.width, `${width}px 말풍선이 카드 안에 있음`);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${width}px 가로 넘침`);
+  }
+  assert.deepEqual(errors, []);
+  console.log('PASS 홈 지원 달력 날짜 말풍선(마우스·탭)·카드 안 배치');
 } finally {
   delayed?.();
   await browser.close();

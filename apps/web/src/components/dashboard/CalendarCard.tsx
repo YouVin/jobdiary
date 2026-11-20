@@ -20,7 +20,45 @@ function cellClass(day: CalendarDay): string {
 
 const LEGEND = ['bg-column', 'bg-heat-1', 'bg-heat-2', 'bg-heat-3', 'bg-heat-4'];
 
+const TOOLTIP_NAME_LIMIT = 3;
+
+// 말풍선이 카드 밖으로 나가지 않게 월·화는 왼쪽, 토·일은 오른쪽에 맞추고 나머지는 가운데에 둔다.
+function tooltipAlignClass(dayIndex: number): string {
+  if (dayIndex <= 1) return 'left-0';
+  if (dayIndex >= 5) return 'right-0';
+  return 'left-1/2 -translate-x-1/2';
+}
+
+// 날짜 칸 말풍선 (#184). 마우스를 올리면 바로, 터치하면 탭한 칸(포커스)에 보인다.
+// 화면 읽기 프로그램은 칸의 aria-label로 읽으므로 말풍선은 숨긴다.
+function DayTooltip({ month, day, dayIndex }: { month: number; day: CalendarDay; dayIndex: number }) {
+  const names = day.companies.slice(0, TOOLTIP_NAME_LIMIT);
+  const restCount = day.companies.length - names.length;
+  return (
+    <span
+      aria-hidden="true"
+      className={clsx(
+        'pointer-events-none absolute bottom-full z-10 mb-2 hidden w-max max-w-40 flex-col gap-1 rounded-lg bg-text-primary px-3 py-2 text-left text-caption text-on-brand shadow-float group-hover:flex group-focus:flex',
+        tooltipAlignClass(dayIndex),
+      )}
+    >
+      <span className="whitespace-nowrap">
+        {month}월 {day.day}일 · <b className="font-semibold">{day.count > 0 ? `지원 ${day.count}건` : '지원 없음'}</b>
+      </span>
+      {names.length > 0 && (
+        <span className="flex flex-col">
+          {names.map((company, index) => (
+            <span key={index} className="truncate">{company}</span>
+          ))}
+          {restCount > 0 && <span>외 {restCount}건</span>}
+        </span>
+      )}
+    </span>
+  );
+}
+
 // 이번 달 어느 날 지원했는지 보여주는 읽기 전용 일기장 달력. 칸은 버튼이 아니며 날짜별 건수는 접근성 이름으로 읽는다.
+// 지난 날짜 칸은 tabIndex -1로 탭(클릭) 포커스만 받아 말풍선을 연다. Tab 순서에는 넣지 않는다.
 export function CalendarCard({ calendar }: CalendarCardProps) {
   const title = `${calendar.month}월 지원 달력`;
 
@@ -50,14 +88,16 @@ export function CalendarCard({ calendar }: CalendarCardProps) {
                     <span
                       aria-label={day.isFuture ? `${calendar.month}월 ${day.day}일` : `${calendar.month}월 ${day.day}일 지원 ${day.count}건`}
                       aria-current={day.isToday ? 'date' : undefined}
-                      title={day.isFuture ? undefined : `${day.count}건 지원`}
+                      tabIndex={day.isFuture ? undefined : -1}
                       className={clsx(
-                        'flex h-8 items-start rounded-md p-1 text-badge tabular-nums',
+                        'relative flex h-8 items-start rounded-md p-1 text-badge tabular-nums',
+                        !day.isFuture && 'group cursor-default',
                         cellClass(day),
                         day.isToday && 'outline-2 outline-offset-1 outline-text-primary',
                       )}
                     >
                       {day.day}
+                      {!day.isFuture && <DayTooltip month={calendar.month} day={day} dayIndex={dayIndex} />}
                     </span>
                   )}
                 </td>
