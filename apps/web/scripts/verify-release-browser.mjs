@@ -361,6 +361,23 @@ try {
   await page.keyboard.press('Escape');
   assert.deepEqual(errors, []);
   console.log('PASS 기다리는 목록 회사 이름으로 공고 새 탭 열기·상세 버튼·메뉴 이름 지원보드');
+  // 중복 보기(#186): 같은 회사·공고를 다른 사이트에서 지원하면 묶음으로 보이고, 행마다 공고 열기·상세 보기를 쓰며, 고른 보기를 기억한다.
+  rows.push({ ...row(users.b, 'B 회사', 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'), platform: 'saramin', applied_at: '2026-10-05T00:00:00Z', url: 'https://jobs.example.test/b-saramin' });
+  await page.reload();
+  await page.getByRole('group', { name: '보기 선택' }).getByRole('button', { name: /^중복/ }).click();
+  await visible(page.getByText('같은 공고를 여러 사이트에서 지원한 묶음이 1개 있어요.'));
+  const group = page.getByRole('article', { name: 'B 회사 개발자' });
+  await visible(group.getByText('2개 사이트 · 2건'));
+  assert.equal(await group.getByRole('listitem').count(), 2);
+  assert.equal(await group.getByRole('link', { name: 'B 회사 사람인 공고 열기 (새 탭)' }).getAttribute('href'), 'https://jobs.example.test/b-saramin');
+  assert.equal(await page.getByRole('article').count(), 1, '중복이 아닌 지원은 묶지 않는다');
+  await group.getByRole('button', { name: 'B 회사 사람인 10.05 지원 상세 보기' }).click();
+  await visible(page.getByRole('dialog', { name: 'B 회사' }).getByText('사람인'));
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await visible(page.getByRole('article', { name: 'B 회사 개발자' }));
+  assert.deepEqual(errors, []);
+  console.log('PASS 중복 보기 묶음·공고 열기·상세 보기·보기 기억');
 } finally {
   delayed?.();
   await browser.close();
