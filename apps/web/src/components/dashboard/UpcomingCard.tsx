@@ -74,7 +74,7 @@ export function UpcomingCard({ events, onSelect, limit = 4 }: UpcomingCardProps)
           })}
         </ul>
       )}
-      {hiddenCount > 0 && <p className="mt-2 text-caption text-text-secondary">외 {hiddenCount}건은 지원 보드에서 확인할 수 있어요.</p>}
+      {hiddenCount > 0 && <p className="mt-2 text-caption text-text-secondary">외 {hiddenCount}건은 지원보드에서 확인할 수 있어요.</p>}
     </DashboardCard>
   );
 }

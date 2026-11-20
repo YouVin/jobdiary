@@ -106,9 +106,9 @@ await context.addInitScript(() => {
 });
 const page = await context.newPage();
 const visible = async locator => { await locator.waitFor({ state: 'visible' }); };
-// 헤더 탭으로 지원 보드에 들어간다. 클라이언트 이동이라 스토어에 있는 목록을 그대로 보여준다.
+// 헤더 탭으로 지원보드에 들어간다. 클라이언트 이동이라 스토어에 있는 목록을 그대로 보여준다.
 async function openBoard(target) {
-  await target.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: /지원 보드/ }).click();
+  await target.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: /지원보드/ }).click();
   await target.waitForFunction(() => location.pathname === '/board');
 }
 async function login(target, key) {
@@ -155,7 +155,7 @@ try {
   console.log('PASS 신규 소셜 계정 동의·저장 실패·재시도·새로고침 유지');
   await page.getByRole('button', { name: '로그아웃', exact: true }).click();
   await login(page, 'a');
-  // 로그인 후 홈(통계 대시보드)으로 돌아온다. 카드 편집은 지원 보드에서 확인한다.
+  // 로그인 후 홈(통계 대시보드)으로 돌아온다. 카드 편집은 지원보드에서 확인한다.
   await page.waitForFunction(() => location.pathname === '/');
   await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
   await page.goto(`${origin}/board`);
@@ -225,7 +225,7 @@ try {
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
   assert.deepEqual(errors, []);
   console.log('PASS 이전 계정 지연 조회 무시·브라우저 예외 0건');
-  // 지원 보드 주간 보기(#174): 트랙 점으로 단계 변경 → 저장·새로고침 유지, 저장 실패 시 되돌림, 고른 보기 기억
+  // 지원보드 주간 보기(#174): 트랙 점으로 단계 변경 → 저장·새로고침 유지, 저장 실패 시 되돌림, 고른 보기 기억
   // 앞 단계에서 보드 보기를 골랐으므로(이 브라우저에 기억됨) 주간 보기로 돌아온다.
   const viewGroup = page.getByRole('group', { name: '보기 선택' });
   await viewGroup.getByRole('button', { name: '주간', exact: true }).click();

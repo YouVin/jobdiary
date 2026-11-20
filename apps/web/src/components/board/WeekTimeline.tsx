@@ -72,7 +72,7 @@ function AppliedFoot({ count }: { count: number }) {
   );
 }
 
-// 지원 보드 위쪽의 주간 일정. 데스크톱은 월~일 7칸, 모바일은 오늘과 일정이 있는 날만 세로로 보여준다.
+// 지원보드 위쪽의 주간 일정. 데스크톱은 월~일 7칸, 모바일은 오늘과 일정이 있는 날만 세로로 보여준다.
 export function WeekTimeline({ timeline, offset, onOffsetChange, onSelect }: WeekTimelineProps) {
   const agendaDays = timeline.days.filter((day) => day.events.length > 0 || day.isToday);
 

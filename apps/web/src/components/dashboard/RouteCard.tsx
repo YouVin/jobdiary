@@ -38,7 +38,7 @@ export function RouteCard({ shares, total }: RouteCardProps) {
   const chartLabel = `지원 경로별 건수: ${shares.map(({ platform, count }) => `${PLATFORM_INFO[platform].label} ${count}건`).join(', ')}`;
 
   return (
-    <DashboardCard title="지원 경로별 비율" titleId="route-card-title" action={<BoardLink label="지원 보드에서 보기" />}>
+    <DashboardCard title="지원 경로별 비율" titleId="route-card-title" action={<BoardLink label="지원보드에서 보기" />}>
       <div className="flex flex-col items-center gap-6 md:flex-row md:gap-8">
         <DonutChart segments={segments} activeKey={activeKey} onActiveChange={setActiveKey} label={chartLabel}>
           <span className="text-caption text-text-secondary">전체 지원</span>

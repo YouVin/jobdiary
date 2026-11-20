@@ -7,7 +7,7 @@ import { useApplicationStore } from '@/store/applicationStore';
 
 const NAV_ITEMS = [
   { href: '/', label: '대시보드', showCount: false },
-  { href: '/board', label: '지원 보드', showCount: true },
+  { href: '/board', label: '지원보드', showCount: true },
 ] as const;
 
 interface HeaderNavProps {

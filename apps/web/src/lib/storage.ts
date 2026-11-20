@@ -47,7 +47,7 @@ export function saveApplications(apps: Application[]): void {
 const BOARD_VIEW_KEY = 'jobdiary:boardView';
 export type BoardView = 'week' | 'kanban';
 
-// 지원 보드에서 마지막으로 고른 보기(주간/보드). 이 브라우저에만 남는 편의 정보라 계정과 상관없이 하나만 둔다.
+// 지원보드에서 마지막으로 고른 보기(주간/보드). 이 브라우저에만 남는 편의 정보라 계정과 상관없이 하나만 둔다.
 export function loadBoardView(): BoardView {
   if (typeof window === 'undefined') {
     return 'week';
