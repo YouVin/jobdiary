@@ -29,7 +29,7 @@ export function StageTrack({ company, stageIndex, onMove, labelsClassName }: Sta
       <div className="relative grid h-7 grid-cols-4 items-center" role="group" aria-label={`${company} 단계`}>
         <span className="absolute top-1/2 right-1/8 left-1/8 h-1 -translate-y-1/2 rounded-full bg-column" aria-hidden="true" />
         <span
-          className={clsx('absolute top-1/2 left-1/8 h-1 -translate-y-1/2 rounded-full bg-linear-to-r from-heat-2 to-brand transition-[width] duration-300 motion-reduce:transition-none', FILL_CLASS[stageIndex])}
+          className={clsx('absolute top-1/2 left-1/8 h-1 -translate-y-1/2 rounded-full bg-linear-to-r from-border-strong to-brand transition-[width] duration-300 motion-reduce:transition-none', FILL_CLASS[stageIndex])}
           aria-hidden="true"
         />
         {ACTIVE_STATUSES.map((status, index) => {
@@ -53,7 +53,7 @@ export function StageTrack({ company, stageIndex, onMove, labelsClassName }: Sta
                 className={clsx(
                   'rounded-full transition-transform motion-reduce:transition-none',
                   isCurrent && 'h-3 w-3 bg-brand ring-4 ring-brand/15',
-                  index < stageIndex && 'h-2 w-2 bg-heat-2 group-hover:scale-150',
+                  index < stageIndex && 'h-2 w-2 bg-border-strong group-hover:scale-150',
                   index > stageIndex && 'h-2 w-2 bg-card ring-2 ring-card-border ring-inset group-hover:scale-150 group-hover:ring-brand',
                 )}
               />

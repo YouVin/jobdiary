@@ -14,8 +14,8 @@ const KIND_LABEL: Record<JourneyItem['kind'], string> = {
 // 점 색: 기록은 브랜드, 면접은 면접 상태색, 마감은 탈락 상태색, 지원은 회색
 const DOT_CLASS: Record<JourneyItem['kind'], string> = {
   applied: 'bg-status-applied',
-  interview: 'bg-status-interview',
-  deadline: 'bg-status-rejected',
+  interview: 'bg-event-interview',
+  deadline: 'bg-event-deadline',
   note: 'bg-brand',
 };
 

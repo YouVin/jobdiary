@@ -14,8 +14,9 @@ const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일'];
 const KIND_LABEL: Record<WeekEvent['kind'], string> = { interview: '면접', deadline: '공고 마감' };
 // 일정 종류별 캡슐 색. 면접은 브랜드, 공고 마감은 탈락 상태색. 클래스는 리터럴로 둔다.
 const CAPSULE_CLASS: Record<WeekEvent['kind'], string> = {
-  interview: 'border-brand bg-brand-tint text-brand-text',
-  deadline: 'border-status-rejected bg-status-rejected/10 text-status-rejected-text',
+  // 일정 종류 색은 홈 다가오는 일정과 같다(#197): 면접 보라, 공고 마감 주황.
+  interview: 'border-event-interview bg-event-interview-tint text-event-interview-text',
+  deadline: 'border-event-deadline bg-event-deadline-tint text-event-deadline-text',
 };
 
 function shortDate(date: string): string {
@@ -87,8 +88,8 @@ export function WeekTimeline({ timeline, offset, onOffsetChange, onSelect }: Wee
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <ul className="flex flex-wrap gap-3 text-caption text-text-secondary" aria-label="표시 안내">
-            <li className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-brand" aria-hidden="true" />면접</li>
-            <li className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-status-rejected" aria-hidden="true" />공고 마감</li>
+            <li className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-event-interview" aria-hidden="true" />면접</li>
+            <li className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-event-deadline" aria-hidden="true" />공고 마감</li>
             <li className="flex items-center gap-1"><span className="h-1 w-1 rounded-full bg-text-muted" aria-hidden="true" />그날 지원</li>
           </ul>
           <div className="flex items-center gap-1 rounded-lg border border-card-border bg-card p-1" role="group" aria-label="주 이동">

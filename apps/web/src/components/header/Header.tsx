@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { HeaderActions } from '@/components/header/HeaderActions';
 import { HeaderNav } from '@/components/header/HeaderNav';
-import { BrandMark } from '@/components/common/BrandMark';
+import { BrandLogo } from '@/components/common/BrandMark';
 
-// 헤더 (#193): 흰 줄 없이 바탕과 이어지고, 원형 로고와 알약 메뉴를 쓴다.
+// 헤더 (#193, #197): 흰 줄 없이 바탕과 이어지고, 취준일기 글자 로고와 알약 메뉴를 쓴다.
 export function Header() {
   return (
     <header className="bg-page">
@@ -12,10 +12,9 @@ export function Header() {
           <Link
             href="/"
             aria-label="취준일기 홈으로 이동"
-            className="flex shrink-0 items-center gap-2 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+            className="flex shrink-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
           >
-            <BrandMark className="h-9 w-9" />
-            <span className="text-heading-md font-bold text-text-primary">취준일기</span>
+            <BrandLogo className="h-8 w-auto md:h-9" alt="" />
           </Link>
           <HeaderNav variant="desktop" />
         </div>
