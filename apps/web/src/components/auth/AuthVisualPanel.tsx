@@ -2,7 +2,7 @@ import { clsx } from 'clsx';
 import { Icon } from '@/components/common/Icon';
 import { PLATFORM_INFO } from '@/constants/platform';
 import { Platform } from '@/types/application';
-import { BrandMark } from '@/components/common/BrandMark';
+import { BrandLogo, BrandMark } from '@/components/common/BrandMark';
 
 interface DdayMockCard {
   platform: Platform;
@@ -71,8 +71,7 @@ export function AuthVisualPanel({ className }: AuthVisualPanelProps) {
       <div className="relative z-10 mx-auto w-full max-w-md text-center">
         {/* 모바일 전용 로고 — 데스크탑에서는 폼 쪽 로고가 이 역할을 대신하므로 여기선 숨긴다 */}
         <div className="mb-3 flex items-center justify-center gap-2 md:hidden">
-          <BrandMark className="h-7 w-7" />
-          <span className="text-label text-text-primary">취준일기</span>
+          <BrandLogo className="h-7 w-auto" />
         </div>
 
         {/* md~lg 사이(태블릿)는 패널 폭이 좁아 heading-xl이면 "원티드,"가 중간에 잘려 두 줄로 밀린다 —
@@ -144,7 +143,7 @@ function PhoneMockup() {
 
         {/* 로고 */}
         <div className="flex items-center gap-1">
-          <BrandMark className="h-3 w-3 lg:h-4 lg:w-4" />
+          <BrandMark small className="h-3 w-3 lg:h-4 lg:w-4" />
           <span className="text-illustration-sm font-bold text-text-primary lg:text-badge">취준일기</span>
         </div>
 

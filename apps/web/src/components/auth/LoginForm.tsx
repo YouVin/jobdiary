@@ -18,7 +18,7 @@ import { signIn, signUp } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 import { getConfirmPasswordError, getEmailError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
 import { getBoardRedirectPath } from '@/utils/authRedirect';
-import { BrandMark } from '@/components/common/BrandMark';
+import { BrandLogo } from '@/components/common/BrandMark';
 
 type Mode = 'signin' | 'signup';
 
@@ -250,8 +250,7 @@ export function LoginForm() {
     <div className="w-full max-w-105">
       {/* 데스크탑 전용 로고 — 모바일에서는 비주얼 영역(AuthVisualPanel) 상단 로고가 이 역할을 한다 */}
       <div className="mb-6 hidden items-center gap-2 md:flex">
-        <BrandMark className="h-8 w-8" />
-        <span className="text-heading-md text-text-primary">취준일기</span>
+        <BrandLogo className="h-9 w-auto" />
       </div>
 
       <div className="mb-6">
