@@ -1,17 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import { buttonClassName } from '@/components/common/buttonStyles';
-import { fieldErrorClassName, inputClassName, labelClassName } from '@/components/common/formStyles';
+import { useRef, useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Card, CardHeader } from '@/components/ui/Card';
+import { TextField } from '@/components/ui/TextField';
 import { updateEmail } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
 import { getEmailError } from '@/utils/authValidation';
 
+const FAILED_MESSAGE = '이메일 변경을 요청하지 못했어요. 잠시 뒤 다시 시도해 주세요.';
+
 // 이메일 변경 — 제출해도 즉시 바뀌지 않고, 새 이메일로 온 확인 메일을 열어야 실제로 반영된다
 // (docs/AUTH.md §6.5.3). 확인 전까지는 authStore의 session.user.email도 그대로다.
+// 결과 안내는 할 일이 남아 있어(메일 확인) 토스트가 아니라 카드 안에 남긴다.
 export function ChangeEmailSection() {
   const session = useAuthStore((state) => state.session);
   const currentEmail = session?.user.email ?? '';
+  const emailInput = useRef<HTMLInputElement>(null);
 
   const [newEmail, setNewEmail] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
@@ -23,79 +28,69 @@ export function ChangeEmailSection() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
     setErrorMessage(null);
     setSuccessMessage(null);
     setEmailTouched(true);
 
     if (emailError) {
+      emailInput.current?.focus();
       return;
     }
 
     setIsSubmitting(true);
     try {
       const { error } = await updateEmail(newEmail);
-
       if (error) {
         console.error('[change-email] 실패:', error);
-        setErrorMessage('이메일 변경 요청에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        setErrorMessage(FAILED_MESSAGE);
         return;
       }
-
-      setSuccessMessage(`${newEmail}로 확인 메일을 보냈습니다. 메일함에서 확인해야 이메일이 실제로 변경됩니다.`);
+      setSuccessMessage(`${newEmail}로 확인 메일을 보냈어요. 메일함에서 확인해야 이메일이 바뀌어요.`);
       setNewEmail('');
       setEmailTouched(false);
     } catch (error) {
       console.error('[change-email] 실패(예외):', error);
-      setErrorMessage('이메일 변경 요청에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setErrorMessage(FAILED_MESSAGE);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <section className="rounded-card border border-card-border bg-card p-5">
-      <h2 className="text-legacy-body font-semibold text-text-primary">이메일 변경</h2>
-      <p className="mt-1 text-legacy-label text-text-secondary">현재 이메일: {currentEmail}</p>
+    <Card aria-labelledby="change-email-title">
+      <div className="flex flex-col gap-1">
+        <CardHeader title="이메일 변경" titleId="change-email-title" />
+        <p className="text-label text-text-secondary">
+          지금 이메일: <span className="text-text-primary">{currentEmail}</span>
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3" noValidate>
-        <div>
-          <label htmlFor="newEmail" className={labelClassName}>
-            새 이메일
-          </label>
-          <input
-            id="newEmail"
-            type="email"
-            value={newEmail}
-            onChange={(event) => setNewEmail(event.target.value)}
-            onBlur={() => setEmailTouched(true)}
-            placeholder="new@example.com"
-            className={inputClassName}
-            autoComplete="email"
-            aria-required="true"
-            aria-invalid={emailTouched && !!emailError}
-          />
-          {emailTouched && emailError && (
-            <p role="alert" className={fieldErrorClassName}>
-              {emailError}
-            </p>
-          )}
-        </div>
-
-        {errorMessage && (
-          <p role="alert" className="text-legacy-label text-status-rejected">
-            {errorMessage}
-          </p>
-        )}
-        {successMessage && <p className="text-legacy-label text-status-offer">{successMessage}</p>}
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={buttonClassName('primary', 'mt-1 self-start')}
-        >
-          {isSubmitting ? '요청 중...' : '이메일 변경'}
-        </button>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+        <TextField
+          ref={emailInput}
+          id="newEmail"
+          label="새 이메일"
+          type="email"
+          value={newEmail}
+          onChange={(event) => setNewEmail(event.target.value)}
+          onBlur={() => setEmailTouched(true)}
+          placeholder="new@example.com"
+          autoComplete="email"
+          aria-required="true"
+          readOnly={isSubmitting}
+          error={emailTouched ? emailError : null}
+        />
+        <p role="alert" className={errorMessage ? 'text-label text-danger-text' : 'sr-only'}>
+          {errorMessage}
+        </p>
+        <p role="status" className={successMessage ? 'rounded-md bg-selected px-4 py-3 text-label text-text-brand-strong' : 'sr-only'}>
+          {successMessage}
+        </p>
+        <Button type="submit" isLoading={isSubmitting} loadingLabel="요청하는 중" className="self-start">
+          확인 메일 보내기
+        </Button>
       </form>
-    </section>
+    </Card>
   );
 }

@@ -1,63 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
-import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
-import { buttonClassName } from '@/components/common/buttonStyles';
-import { fieldErrorClassName, labelClassName, passwordInputClassName } from '@/components/common/formStyles';
+import { Button } from '@/components/ui/Button';
+import { Card, CardHeader } from '@/components/ui/Card';
+import { PasswordField } from '@/components/ui/TextField';
+import { useToast } from '@/components/ui/Toast';
 import { signIn, updatePassword } from '@/lib/auth';
-import { useAuthStore } from '@/store/authStore';
 import { captureApplicationSession } from '@/store/applicationStore';
+import { useAuthStore } from '@/store/authStore';
 import { hasPasswordIdentity } from '@/utils/authIdentity';
-import { getConfirmPasswordError, getPasswordError } from '@/utils/authValidation';
+import { getConfirmPasswordError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
+
+const FAILED_MESSAGE = '비밀번호를 바꾸지 못했어요. 잠시 뒤 다시 시도해 주세요.';
 
 // 비밀번호 변경 전 현재 비밀번호를 재확인한다 — 세션이 탈취/방치된 상태에서 그대로 비밀번호가
-// 바뀌는 것을 막기 위함이다 (docs/AUTH.md §6.5.2, §6.5.5).
+// 바뀌는 것을 막기 위함이다 (docs/AUTH.md §6.5.2, §6.5.5). 바꾸면 토스트로 알린다(#205).
 export function ChangePasswordSection() {
   const session = useAuthStore((state) => state.session);
   const email = session?.user.email ?? '';
   const canChangePassword = hasPasswordIdentity(session?.user);
+  const showToast = useToast();
+  const currentInput = useRef<HTMLInputElement>(null);
+  const newInput = useRef<HTMLInputElement>(null);
+  const confirmInput = useRef<HTMLInputElement>(null);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
-
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
-
-  const [currentPasswordTouched, setCurrentPasswordTouched] = useState(false);
-  const [newPasswordTouched, setNewPasswordTouched] = useState(false);
-  const [confirmNewPasswordTouched, setConfirmNewPasswordTouched] = useState(false);
-
+  const [isChecked, setIsChecked] = useState(false); // 제출했거나 칸을 벗어난 뒤에만 오류를 보여준다
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // 현재 비밀번호는 "일치하는지"가 아니라 "입력했는지"만 클라이언트에서 확인한다 —
   // 실제 일치 여부는 아래 signIn 재확인이 서버에서 검증한다.
-  const currentPasswordError = currentPassword ? null : '현재 비밀번호를 입력해주세요.';
+  const currentPasswordError = currentPassword ? null : '지금 비밀번호를 입력해 주세요.';
   const newPasswordError = getPasswordError(newPassword);
   const confirmNewPasswordError = getConfirmPasswordError(newPassword, confirmNewPassword);
 
   if (!canChangePassword) {
     return (
-      <section className="rounded-card border border-card-border bg-card p-5">
-        <h2 className="text-legacy-body font-semibold text-text-primary">비밀번호 변경</h2>
-        <p className="mt-2 text-small text-text-secondary">소셜 로그인 계정은 비밀번호 변경이 없습니다.</p>
-      </section>
+      <Card aria-labelledby="change-password-title">
+        <CardHeader title="비밀번호 변경" titleId="change-password-title" />
+        <p className="text-body text-text-secondary">Google로 가입한 계정은 비밀번호가 없어요. 로그인은 Google 계정으로 해요.</p>
+      </Card>
     );
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
     setErrorMessage(null);
-    setSuccessMessage(null);
-    setCurrentPasswordTouched(true);
-    setNewPasswordTouched(true);
-    setConfirmNewPasswordTouched(true);
+    setIsChecked(true);
 
-    if (currentPasswordError || newPasswordError || confirmNewPasswordError) {
+    // 첫 오류 칸으로 포커스를 옮겨 오류 문구를 함께 읽게 한다.
+    const firstInvalid = currentPasswordError ? currentInput : newPasswordError ? newInput : confirmNewPasswordError ? confirmInput : null;
+    if (firstInvalid) {
+      requestAnimationFrame(() => firstInvalid.current?.focus());
       return;
     }
 
@@ -68,147 +67,83 @@ export function ChangePasswordSection() {
     try {
       const { error: reauthError } = await signIn(email, currentPassword);
       if (!context.isCurrent()) return;
-
       if (reauthError) {
         console.error('[change-password] 재확인 실패:', reauthError);
-        setErrorMessage('현재 비밀번호가 올바르지 않습니다.');
+        setErrorMessage('지금 비밀번호가 맞지 않아요.');
         return;
       }
 
       const { error: updateError } = await updatePassword(newPassword);
       if (!context.isCurrent()) return;
-
       if (updateError) {
         console.error('[change-password] 변경 실패:', updateError);
-        setErrorMessage('비밀번호 변경에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        setErrorMessage(FAILED_MESSAGE);
         return;
       }
 
-      setSuccessMessage('비밀번호가 변경됐습니다.');
+      showToast({ message: '비밀번호를 바꿨어요' });
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
-      setCurrentPasswordTouched(false);
-      setNewPasswordTouched(false);
-      setConfirmNewPasswordTouched(false);
+      setIsChecked(false);
     } catch (error) {
       console.error('[change-password] 실패(예외):', error);
-      setErrorMessage('비밀번호 변경에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setErrorMessage(FAILED_MESSAGE);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <section className="rounded-card border border-card-border bg-card p-5">
-      <h2 className="text-legacy-body font-semibold text-text-primary">비밀번호 변경</h2>
-
-      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3" noValidate>
-        <div>
-          <label htmlFor="currentPassword" className={labelClassName}>
-            현재 비밀번호
-          </label>
-          <div className="relative">
-            <input
-              id="currentPassword"
-              type={showCurrentPassword ? 'text' : 'password'}
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-              onBlur={() => setCurrentPasswordTouched(true)}
-              className={passwordInputClassName}
-              autoComplete="current-password"
-              aria-required="true"
-              aria-invalid={currentPasswordTouched && !!currentPasswordError}
-            />
-            <PasswordToggleButton
-              isVisible={showCurrentPassword}
-              onToggle={() => setShowCurrentPassword((prev) => !prev)}
-              fieldLabel="현재 비밀번호"
-            />
-          </div>
-          {currentPasswordTouched && currentPasswordError && (
-            <p role="alert" className={fieldErrorClassName}>
-              {currentPasswordError}
-            </p>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="newPassword" className={labelClassName}>
-            새 비밀번호
-          </label>
-          <div className="relative">
-            <input
+    <Card aria-labelledby="change-password-title">
+      <CardHeader title="비밀번호 변경" titleId="change-password-title" />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+        <fieldset disabled={isSubmitting} className="flex min-w-0 flex-col gap-4">
+          <legend className="sr-only">비밀번호 변경</legend>
+          <PasswordField
+            ref={currentInput}
+            id="currentPassword"
+            label="지금 비밀번호"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+            autoComplete="current-password"
+            aria-required="true"
+            error={isChecked ? currentPasswordError : null}
+          />
+          <div className="flex flex-col gap-2">
+            <PasswordField
+              ref={newInput}
               id="newPassword"
-              type={showNewPassword ? 'text' : 'password'}
+              label="새 비밀번호"
               value={newPassword}
               onChange={(event) => setNewPassword(event.target.value)}
-              onBlur={() => setNewPasswordTouched(true)}
-              placeholder="6자 이상"
-              className={passwordInputClassName}
+              placeholder={`${MIN_PASSWORD_LENGTH}자 이상`}
               autoComplete="new-password"
               aria-required="true"
-              aria-invalid={newPasswordTouched && !!newPasswordError}
+              aria-describedby={newPassword ? 'new-password-strength' : undefined}
+              error={isChecked ? newPasswordError : null}
             />
-            <PasswordToggleButton
-              isVisible={showNewPassword}
-              onToggle={() => setShowNewPassword((prev) => !prev)}
-              fieldLabel="새 비밀번호"
-            />
+            {newPassword && <PasswordStrengthMeter id="new-password-strength" password={newPassword} />}
           </div>
-          {newPasswordTouched && newPasswordError && (
-            <p role="alert" className={fieldErrorClassName}>
-              {newPasswordError}
-            </p>
-          )}
-          {newPassword && <PasswordStrengthMeter password={newPassword} className="mt-2" />}
-        </div>
-
-        <div>
-          <label htmlFor="confirmNewPassword" className={labelClassName}>
-            새 비밀번호 확인
-          </label>
-          <div className="relative">
-            <input
-              id="confirmNewPassword"
-              type={showConfirmNewPassword ? 'text' : 'password'}
-              value={confirmNewPassword}
-              onChange={(event) => setConfirmNewPassword(event.target.value)}
-              onBlur={() => setConfirmNewPasswordTouched(true)}
-              placeholder="비밀번호를 한 번 더 입력해주세요"
-              className={passwordInputClassName}
-              autoComplete="new-password"
-              aria-required="true"
-              aria-invalid={confirmNewPasswordTouched && !!confirmNewPasswordError}
-            />
-            <PasswordToggleButton
-              isVisible={showConfirmNewPassword}
-              onToggle={() => setShowConfirmNewPassword((prev) => !prev)}
-              fieldLabel="새 비밀번호 확인"
-            />
-          </div>
-          {confirmNewPasswordTouched && confirmNewPasswordError && (
-            <p role="alert" className={fieldErrorClassName}>
-              {confirmNewPasswordError}
-            </p>
-          )}
-        </div>
-
-        {errorMessage && (
-          <p role="alert" className="text-legacy-label text-status-rejected">
-            {errorMessage}
-          </p>
-        )}
-        {successMessage && <p className="text-legacy-label text-status-offer">{successMessage}</p>}
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={buttonClassName('primary', 'mt-1 self-start')}
-        >
-          {isSubmitting ? '변경 중...' : '비밀번호 변경'}
-        </button>
+          <PasswordField
+            ref={confirmInput}
+            id="confirmNewPassword"
+            label="새 비밀번호 확인"
+            value={confirmNewPassword}
+            onChange={(event) => setConfirmNewPassword(event.target.value)}
+            placeholder="비밀번호를 한 번 더 입력해 주세요"
+            autoComplete="new-password"
+            aria-required="true"
+            error={isChecked ? confirmNewPasswordError : null}
+          />
+        </fieldset>
+        <p role="alert" className={errorMessage ? 'text-label text-danger-text' : 'sr-only'}>
+          {errorMessage}
+        </p>
+        <Button type="submit" isLoading={isSubmitting} loadingLabel="바꾸는 중" className="self-start">
+          비밀번호 바꾸기
+        </Button>
       </form>
-    </section>
+    </Card>
   );
 }

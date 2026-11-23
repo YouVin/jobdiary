@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import type { ButtonHTMLAttributes, MouseEvent } from 'react';
+import type { ButtonHTMLAttributes, MouseEvent, Ref } from 'react';
 import { Icon, type IconName } from '@/components/common/Icon';
 
 // 디자인 시스템 Button (#201). 종류 5개 × 크기 3개.
@@ -49,6 +49,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: IconName;
   isLoading?: boolean;
   loadingLabel?: string; // 로딩 중 스크린리더가 읽을 이름 (기본: 처리 중)
+  ref?: Ref<HTMLButtonElement>; // React 19: 일반 prop으로 button까지 내려간다 (화면 전환 뒤 포커스 되돌리기)
 }
 
 export function Button({

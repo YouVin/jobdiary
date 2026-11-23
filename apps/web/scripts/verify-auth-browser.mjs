@@ -217,16 +217,17 @@ try {
     assert(await page.locator('#policy-consent').isChecked());
     const errorRegion = await page.getByRole('main').getByRole('alert').elementHandle();
     await page.addScriptTag({ content: fs.readFileSync('node_modules/.release-tools/node_modules/axe-core/axe.min.js', 'utf8') });
-    const scan = async () => assert.deepEqual(await page.evaluate(async () => (await window.axe.run(document)).violations.map(item => ({ id: item.id, targets: item.nodes.map(node => node.target) }))), []);
+    // 버튼 색 전환(duration-fast 150ms)이 끝난 뒤 잰다. 전환 도중에는 글자 대비를 중간색으로 계산한다(#205).
+    const scan = async () => assert.deepEqual(await page.waitForTimeout(250).then(() => page.evaluate(async () => (await window.axe.run(document)).violations.map(item => ({ id: item.id, targets: item.nodes.map(node => node.target) })))), []);
     await scan();
     await page.getByRole('button', { name: '동의하고 시작하기', exact: true }).click();
-    await page.getByRole('status').filter({ hasText: '약관 동의를 저장하고 있습니다.' }).waitFor();
+    await page.getByRole('status').filter({ hasText: '약관 동의를 저장하고 있어요.' }).waitFor();
     assert(await page.locator('#policy-consent').isDisabled());
     await scan();
     for (let i = 0; !options.releaseConsent && i < 100; i++) await new Promise(resolve => setTimeout(resolve, 20));
     assert(options.releaseConsent);
     options.releaseConsent();
-    await page.getByRole('alert').filter({ hasText: '동의를 저장하지 못했습니다.' }).waitFor();
+    await page.getByRole('alert').filter({ hasText: '동의를 저장하지 못했어요.' }).waitFor();
     assert(await errorRegion.evaluate(element => element === document.querySelector('[role="alert"]')));
     await scan();
     await page.getByRole('button', { name: '동의하고 시작하기', exact: true }).click();

@@ -42,6 +42,7 @@
 |---|---|---|
 | Button · `buttonClassName` | `ui/Button.tsx` | 진짜 `<button>`. 비활성·로딩은 `aria-disabled`(포커스·이름 유지, 누름·제출만 막음), 로딩은 `aria-busy` + 숨은 "처리 중" |
 | IconButton | `ui/IconButton.tsx` | `label` 필수 → `aria-label`, 44×44 |
+| SelectField · TextAreaField | `ui/TextField.tsx` | 입력칸과 같은 이름표·도움말·오류 연결(#205). 선택칸은 브라우저 기본 select + 오른쪽 화살표(키보드 동작을 따로 만들지 않음), 여러 줄 칸은 글 길이만큼 늘어남(최소 96px) |
 | TextField · PasswordField · SearchInput | `ui/TextField.tsx` | `<label for>` 자동 연결, 도움말·오류 `aria-describedby`(보이는 것만 연결), 오류 `aria-invalid`, 오류 자리는 비어 있어도 `role="status"`로 미리 둠, 비밀번호 보기는 이름 고정("○○ 보기") + `aria-pressed` + `aria-controls`, 검색 이름표는 sr-only, `ref`는 input까지 전달 |
 | TextLink · `textLinkClassName` | `ui/TextLink.tsx` | 글자 링크 2종: `brand`(가입하기·비밀번호 찾기, 파란 굵은 글자) · `quiet`(이용약관, 본문색 + 밑줄). 포커스 링 3px |
 | Checkbox | `ui/Checkbox.tsx` | 이름표 전체가 눌림 영역, 상자 20px, 오류 자리는 TextField와 같은 방식 |
@@ -58,7 +59,7 @@
 | StageTrack | `ui/StageTrack.tsx` | 점이 버튼, 현재 `aria-current="step"`, 24×24 |
 | EmptyState | `ui/EmptyState.tsx` | 상황 + 다음 행동 |
 | ToastProvider · useToast | `ui/Toast.tsx` | 항상 그려 둔 `role="status"` 영역, 3초(되돌리기 5초) |
-| Dialog · SidePanel | `ui/Overlay.tsx` | `useDialogFocus`: 포커스 이동·Tab 순환·Esc·되돌리기, 제목·설명 연결, 모바일 아래 시트 |
+| Dialog · SidePanel | `ui/Overlay.tsx` | `useDialogFocus`: 포커스 이동·Tab 순환·Esc·되돌리기, 제목·설명 연결, 모바일 아래 시트. 지원 추가는 Dialog(저장 버튼은 footer, `form` 속성으로 연결), 상세는 SidePanel(#205) |
 | SkipLink | `ui/SkipLink.tsx` | 첫 Tab에 "본문으로 건너뛰기", 각 `<main id="main-content" tabIndex={-1}>` |
 
 - 검사: `npm run verify:ui`(개발 서버 실행 중, 기본 `http://localhost:3000`)가 `/dev/ui`를 axe(WCAG 2.2 AA + best-practice)와 키보드 시나리오로 검사한다.
@@ -70,6 +71,13 @@
 - 헤더: 흰 바탕 + 아래 구분선, 높이 64, 내용 폭 1200(`max-w-300`). 로고 · 주 메뉴(홈 / 지원 보드, 지금 화면은 `aria-current="page"` + `bg-subtle` 굵은 글자) · 오른쪽 버튼(익스텐션에서 가져오기 보조 · 지원 추가 주요 · 내 계정 메뉴). 모바일은 메뉴가 아래 줄 전체 폭이고 가져오기 버튼은 아이콘만(이름은 sr-only로 유지).
 - 계정 설정·로그아웃은 "내 계정" 메뉴(`ui/Menu`) 안에 있다. 버튼은 `bg-selected` 원 + `text-brand-strong` 사람 아이콘.
 - 본문: `bg-page` 위 카드 사이 16(`gap-4`), 좌우 여백 16/24/40. 가져오기 결과: 성공은 토스트(`ui/Toast`), 실패는 본문 맨 위 `ImportErrorNotice`(danger-tint).
+
+### 겹쳐 뜨는 창·결과 알림 (#205)
+
+- 제출 버튼은 늘 누를 수 있게 두고, 빈 칸·잘못된 값은 칸 아래 오류 + 첫 오류 칸 포커스로 알린다("회사명을 입력해 주세요."). 버튼을 비활성으로 막으면 왜 안 되는지 알 수 없다.
+- 결과 알림: 창이 닫히며 끝나는 일(지원 추가·삭제)은 토스트, 창이 열린 채 끝나는 일(기록 남기기·정보 수정)은 창 안 알림 영역(`role="status"`). 누른 자리 가까이에서 알리고, aria-modal 창 밖을 읽지 않는 화면 읽기 환경(WebKit·VoiceOver 등)에서도 들린다.
+- 할 일이 남은 결과(이메일 변경 → 메일 확인)는 토스트로 사라지게 두지 않고 카드 안에 남긴다.
+- 되돌릴 수 없는 일(회원 탈퇴)은 빨강 제목 + 확인 문구 입력, 지원 삭제는 두 번 눌러 확인("정말 지울까요?").
 
 ### 로그인·회원가입 화면 (#202)
 

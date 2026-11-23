@@ -19,6 +19,11 @@ interface OverlayProps {
   footer?: ReactNode; // 아래 버튼 줄 (주요 버튼은 오른쪽)
 }
 
+// 모바일 아래 시트의 손잡이 막대 (디자인 시스템 Overlay, #205). 장식이라 읽지 않는다. 640px 이상에서는 없다.
+function SheetHandle() {
+  return <span aria-hidden="true" className="-mt-3 -mb-2 h-1 w-10 shrink-0 self-center rounded-full bg-muted sm:hidden" />;
+}
+
 function OverlayHeader({ titleId, descriptionId, title, description, onClose, closeDisabled }: {
   titleId: string;
   descriptionId: string;
@@ -67,6 +72,7 @@ export function Dialog({ isOpen, onClose, title, description, children, closeDis
         onClick={(event) => event.stopPropagation()}
         className="flex max-h-[90dvh] w-full flex-col gap-5 overflow-y-auto rounded-t-xl bg-surface p-6 shadow-lg focus:outline-none motion-safe:animate-rise sm:max-w-130 sm:rounded-xl"
       >
+        <SheetHandle />
         <OverlayHeader titleId={titleId} descriptionId={descriptionId} title={title} description={description} onClose={requestClose} closeDisabled={closeDisabled} />
         <div>{children}</div>
         {footer && <div className="flex justify-end gap-2">{footer}</div>}
@@ -103,6 +109,7 @@ export function SidePanel({ isOpen, onClose, title, description, children, close
           'sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-110 sm:rounded-none sm:starting:translate-x-4 sm:starting:translate-y-0',
         )}
       >
+        <SheetHandle />
         <OverlayHeader titleId={titleId} descriptionId={descriptionId} title={title} description={description} onClose={requestClose} closeDisabled={closeDisabled} />
         <div className="flex-1">{children}</div>
         {footer && <div className="flex justify-end gap-2">{footer}</div>}

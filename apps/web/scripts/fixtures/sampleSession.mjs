@@ -11,6 +11,8 @@ const dateAt = (offset) => new Date(Date.parse(`${todayKst}T00:00:00Z`) + offset
 export const user = {
   id: '22222222-2222-4222-8222-222222222222', aud: 'authenticated', role: 'authenticated', email: 'sample@example.test',
   app_metadata: { provider: 'email' }, user_metadata: { terms_version: '2026-10-17', privacy_version: '2026-10-17' }, created_at: '2026-09-01T00:00:00Z',
+  // 이메일 가입 계정 (계정 설정의 비밀번호 변경 칸이 보인다)
+  identities: [{ id: 'email-identity', provider: 'email', user_id: '22222222-2222-4222-8222-222222222222', identity_data: {}, created_at: '2026-09-01T00:00:00Z' }],
 };
 
 const NAMES = ['가람소프트', '나래랩스', '다온시스템', '라온데이터', '마루테크', '바다컴퍼니', '사이웍스', '아라네트웍스', '자람에듀', '차오름', '카라클라우드', '타래', '파랑스튜디오', '하늘정보'];
@@ -59,6 +61,22 @@ export async function routeSupabase(context) {
         const row = rows.find((item) => item.id === id);
         Object.assign(row, route.request().postDataJSON(), { updated_at: new Date().toISOString() });
         return send(row); // .single() 요청이라 객체 하나로 돌려준다
+      }
+      // 지원 추가(POST): 한 건(.single())이면 객체, 여러 건이면 배열로 돌려준다.
+      if (route.request().method() === 'POST') {
+        const body = route.request().postDataJSON();
+        const now = new Date().toISOString();
+        const created = (Array.isArray(body) ? body : [body]).map((item, index) => ({
+          id: `99999999-0000-4000-8000-${String(rows.length + index).padStart(12, '0')}`,
+          created_at: now, updated_at: now, diary: [], memo: null, interview_date: null, url: null, external_id: null, ...item,
+        }));
+        rows.push(...created);
+        return send(Array.isArray(body) ? created : created[0], 201);
+      }
+      if (route.request().method() === 'DELETE') {
+        const id = url.searchParams.get('id')?.replace(/^eq\./, '');
+        const index = rows.findIndex((item) => item.id === id);
+        return send(index >= 0 ? rows.splice(index, 1) : []);
       }
       return send(rows);
     }

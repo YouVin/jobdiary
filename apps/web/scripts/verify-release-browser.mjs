@@ -144,7 +144,7 @@ try {
   assert(await page.getByRole('button', { name: '동의하고 시작하기' }).isDisabled());
   await page.locator('#policy-consent').check();
   await page.getByRole('button', { name: '동의하고 시작하기' }).click();
-  await visible(page.getByText('동의를 저장하지 못했습니다. 다시 시도해주세요.', { exact: true }));
+  await visible(page.getByText('동의를 저장하지 못했어요. 다시 시도해 주세요.', { exact: true }));
   assert.equal(await page.getByRole('button', { name: '지원 추가' }).count(), 0);
   consentFail = false;
   await page.getByRole('button', { name: '동의하고 시작하기' }).click();
@@ -161,13 +161,14 @@ try {
   await page.goto(`${origin}/board`);
   await visible(page.getByText('A 회사', { exact: true }));
   await page.getByRole('button', { name: '지원 추가' }).click();
-  await page.getByLabel('회사명 *', { exact: true }).fill('새 지원');
-  await page.getByLabel('지원일 *', { exact: true }).fill('');
-  await page.getByRole('button', { name: '저장', exact: true }).click();
-  await visible(page.getByText('지원일을 올바르게 입력해주세요.', { exact: true }));
+  await page.getByLabel('회사명 (필수)', { exact: true }).fill('새 지원');
+  await page.getByLabel('지원일 (필수)', { exact: true }).fill('');
+  // #205: 지원 추가 창의 저장 버튼 이름은 "지원 추가"
+  await page.getByRole('dialog').getByRole('button', { name: '지원 추가', exact: true }).click();
+  await visible(page.getByText('지원일을 올바르게 입력해 주세요.', { exact: true }));
   assert.equal(inserts, 0);
-  await page.getByLabel('지원일 *', { exact: true }).fill('2026-10-01');
-  await page.getByRole('button', { name: '저장', exact: true }).click();
+  await page.getByLabel('지원일 (필수)', { exact: true }).fill('2026-10-01');
+  await page.getByRole('dialog').getByRole('button', { name: '지원 추가', exact: true }).click();
   await visible(page.getByText('새 지원', { exact: true }));
   assert.equal(inserts, 1);
   console.log('PASS 빈 지원일 API 차단·정상 재저장');
@@ -182,14 +183,14 @@ try {
   await second.getByRole('group', { name: '보기 선택' }).getByRole('button', { name: '보드', exact: true }).click();
   await second.getByText('A 회사', { exact: true }).click();
   await openEdit(second);
-  await second.getByLabel('상태', { exact: true }).selectOption('rejected');
+  await second.getByLabel('단계', { exact: true }).selectOption('rejected');
   await second.getByRole('button', { name: '저장', exact: true }).click();
   // 저장하면 패널의 상세 화면으로 돌아온다. 닫고 탈락 열의 카드를 다시 연다.
   await visible(second.getByRole('dialog').getByRole('button', { name: '정보 수정' }));
   await second.keyboard.press('Escape');
   await second.getByText('A 회사', { exact: true }).click();
   await openEdit(second);
-  await second.getByLabel('상태', { exact: true }).selectOption('applied');
+  await second.getByLabel('단계', { exact: true }).selectOption('applied');
   await second.getByRole('button', { name: '저장', exact: true }).click();
   await page.getByRole('button', { name: '저장', exact: true }).click();
   await visible(page.getByText('지원 내역이 다른 곳에서 변경되었거나 삭제됐습니다.', { exact: false }).last());
@@ -208,7 +209,7 @@ try {
   await openBoard(page);
   await visible(page.getByText('B 회사', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
-  assert.equal(await page.getByLabel('회사명 *', { exact: true }).count(), 0);
+  assert.equal(await page.getByLabel('회사명 (필수)', { exact: true }).count(), 0);
   assert.equal(await page.getByRole('dialog').count(), 0);
   console.log('PASS 다른 탭 로그아웃·B 로그인 시 A 목록/편집창 제거');
   await second.getByRole('button', { name: '내 계정', exact: true }).click();
@@ -272,13 +273,15 @@ try {
   await page.getByRole('button', { name: 'B 회사 상세 보기', exact: true }).click();
   await visible(panel.getByText('포트폴리오 정리하기'));
   await panel.getByRole('button', { name: '정보 수정' }).click();
-  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.id ?? ''), await page.getByLabel('회사명 *', { exact: true }).evaluate(element => element.getAttribute('aria-label') ?? element.id));
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.id ?? ''), await page.getByLabel('회사명 (필수)', { exact: true }).evaluate(element => element.getAttribute('aria-label') ?? element.id));
   await panel.getByRole('button', { name: '취소', exact: true }).click();
   assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), '정보 수정');
   rows[1].updated_at = '2026-11-02T00:00:00Z'; // 다른 탭에서 먼저 바뀐 것으로 만든다
   await panel.getByRole('textbox').fill('충돌 확인');
   await panel.getByRole('button', { name: '기록 남기기' }).click();
-  await visible(panel.getByRole('alert').filter({ hasText: '다른 곳에서 변경' }));
+  // #205: 기록 칸 오류는 다른 입력칸처럼 칸 아래 알림 영역(role=status, aria-describedby 연결)에 둔다
+  await visible(panel.getByRole('status').filter({ hasText: '다른 곳에서 변경' }));
+  assert.equal(await panel.getByRole('textbox').getAttribute('aria-invalid'), 'true');
   assert.equal(await panel.getByRole('textbox').inputValue(), '충돌 확인');
   assert.equal(rows[1].diary.length, 1);
   await page.mouse.click(10, 400);
