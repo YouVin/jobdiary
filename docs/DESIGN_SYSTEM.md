@@ -50,9 +50,11 @@
 | Badge · StageDot | `ui/Badge.tsx` | 색만으로 구분하지 않게 항상 글자. 단계 점 색 `STAGE_DOT_CLASS` |
 | CompanyRow · RowList · CompanyAvatar | `ui/CompanyRow.tsx` | `onOpen`이면 줄 전체가 버튼, 사이트 이름은 sr-only |
 | Card · CardHeader · CardSummary | `ui/Card.tsx` | 제목 h2/h3, `aria-labelledby` 연결용 `titleId` |
-| StatGroup · StatCell | `ui/StatCell.tsx` | `dl/dt/dd`로 "이름: 값" |
+| StatGroup · StatCell | `ui/StatCell.tsx` | `dl/dt/dd`로 "이름: 값". `animate`면 숫자가 0부터 올라간다(CountUp) |
+| CountUp | `ui/CountUp.tsx` | 600ms 감속(`duration-count`). 움직임 줄이기면 바로 최종 값, 스크린리더는 최종 숫자(sr-only)만 읽음 |
+| Menu | `ui/Menu.tsx` | 공개(disclosure) 방식: 버튼 `aria-expanded`·`aria-controls`, 열면 첫 항목 포커스, Esc 닫고 버튼으로 복귀, 바깥 누름·Tab 이탈 시 닫힘 |
 | RatioBar · BarChart · DonutChart | `charts/` | `role="img"` + 모든 값을 담은 이름 |
-| CalendarCell | `ui/CalendarCell.tsx` | 칸 하나를 "11월 18일 수요일, 오늘, 지원 3곳, 면접 1개"로 읽음, 오늘 `aria-current="date"` |
+| CalendarCell | `ui/CalendarCell.tsx` | 칸 하나를 "11월 18일 수요일, 오늘, 지원 3곳, 면접 1개"로 읽음, 오늘 `aria-current="date"`. 버튼이면 `aria-pressed`·`aria-controls`(열린 목록), 말풍선은 장식(aria-hidden) |
 | StageTrack | `ui/StageTrack.tsx` | 점이 버튼, 현재 `aria-current="step"`, 24×24 |
 | EmptyState | `ui/EmptyState.tsx` | 상황 + 다음 행동 |
 | ToastProvider · useToast | `ui/Toast.tsx` | 항상 그려 둔 `role="status"` 영역, 3초(되돌리기 5초) |
@@ -62,6 +64,12 @@
 - 검사: `npm run verify:ui`(개발 서버 실행 중, 기본 `http://localhost:3000`)가 `/dev/ui`를 axe(WCAG 2.2 AA + best-practice)와 키보드 시나리오로 검사한다.
 - 기존 `common/buttonStyles.ts`·`formStyles.ts`·`common/Modal.tsx`는 예전 화면이 쓰는 동안 남겨 두고, 화면을 바꿀 때(#202~#205) 새 부품으로 옮긴 뒤 #206에서 지운다.
 - 입력칸 오류 문구는 `useFieldValidation`이 띄운다. 칸 아래 링크·버튼을 마우스로 누르는 중에 칸을 벗어나면 오류 문구를 클릭이 끝난 뒤에 보여준다(누르는 순간 문구가 생기면 링크가 밀려 클릭이 사라진다, #202). Tab으로 벗어날 때는 바로 보여준다.
+
+### 헤더·로그인한 화면 틀 (#203)
+
+- 헤더: 흰 바탕 + 아래 구분선, 높이 64, 내용 폭 1200(`max-w-300`). 로고 · 주 메뉴(홈 / 지원 보드, 지금 화면은 `aria-current="page"` + `bg-subtle` 굵은 글자) · 오른쪽 버튼(익스텐션에서 가져오기 보조 · 지원 추가 주요 · 내 계정 메뉴). 모바일은 메뉴가 아래 줄 전체 폭이고 가져오기 버튼은 아이콘만(이름은 sr-only로 유지).
+- 계정 설정·로그아웃은 "내 계정" 메뉴(`ui/Menu`) 안에 있다. 버튼은 `bg-selected` 원 + `text-brand-strong` 사람 아이콘.
+- 본문: `bg-page` 위 카드 사이 16(`gap-4`), 좌우 여백 16/24/40. 가져오기 결과: 성공은 토스트(`ui/Toast`), 실패는 본문 맨 위 `ImportErrorNotice`(danger-tint).
 
 ### 로그인·회원가입 화면 (#202)
 

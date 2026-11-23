@@ -1,6 +1,29 @@
 # 홈 통계 대시보드
 
-관련 이슈: #146~#150. 계산은 `apps/web/src/utils/applicationStats.ts`, 테스트는 `apps/web/tests/applicationStats.test.mjs`.
+관련 이슈: #146~#150, #203. 계산은 `apps/web/src/utils/applicationStats.ts`, 테스트는 `apps/web/tests/applicationStats.test.mjs`.
+
+> **2026-11-23 #203에서 화면을 새 디자인으로 바꿨다(바로 아래 절).** "화면 구성 (#147)" 이후 절은 그 전 화면의 기록이다. 계산 기준과 달력 날짜 목록(#190)·말풍선(#184)의 동작은 그대로 이어진다.
+
+## 토스식 통계 화면 (#203)
+
+캔버스 메인 시안과 디자인 시스템 공통 부품(`components/ui`, `components/charts`)으로 만들었다. 화면: `components/dashboard/DashboardClient.tsx`.
+
+| 줄 | 카드 | 내용 |
+|---|---|---|
+| 1 | 요약 `SummaryCard` | 날짜 → 한 문장 제목(h1, "지금까지 50건 지원했고, 9건이 소식을 기다리고 있어요") → 다음 일정(오늘이면 마리골드 D-DAY) → 숫자 4칸(이번 주 새 지원·서류 통과율·지원한 기업·마감 자동 탈락) → 마지막 가져오기 줄(사이트 이름은 그 사이트 지원 현황 새 탭 링크) |
+| 2 | 전형 여정 `JourneyCard` | 가장 앞선 단계부터 숫자를 먼저 쓴 한 줄 요약 → 단계 비율 막대(stage 색) → 지원 완료·서류 통과·면접·합격 숫자 → 끝난 지원 줄 + 지원 보드 링크 |
+| 2 | 지원 경로 `RouteCard` | "잡코리아로 가장 많이 지원했어요"(로/으로 조사 자동) → 도넛(가운데 1위 비율) + 사이트 목록. 색은 순위 기준 chart-1·2·3·rest |
+| 3 | 다가오는 일정 `UpcomingCard` | 이번 주·다음 주·"12월 셋째 주"로 묶은 회사 한 줄. D-day만 마리골드. 처음 4건, "나머지 N건 보기"로 그 자리에서 펼침. 줄을 누르면 상세 패널 |
+| 3 | 주간 지원 `WeeklyCard` | 최근 8주 막대(이번 주 포함). 이번 주에 지원했으면 이번 주, 아니면 지난주를 강조하고 그 숫자로 한 줄 요약 + 지난주 대비. 아래 "8주 동안 N곳 · 주 평균 M곳" |
+| 3 | 지원 달력 `CalendarCard` | 지난달·다음 달 이동(다른 달이면 "이번 달" 돌아가기). 칸에 그날 지원 수, 가장 많이 지원한 날 하나(2건 이상)만 파랑, 오늘 마리골드 원, 앞날 일정 점. 지원한 날을 누르면 그날 회사 목록 → 상세 패널(#190), 마우스를 올리면 회사 이름 말풍선(#184) |
+
+- 배치: 데스크톱 1 / 2 / 3열, 태블릿(768~) 1 / 1 / 2열(달력 전체 폭), 모바일 1열. 내용 폭 1200.
+- 계산 추가: `getWeeklyApplications`(최근 8주, 오늘 이후 제외), `getUpcomingWeekLabel`(월요일 시작 주, "몇째 주"는 그 달 1일이 있는 주가 첫째), `getMonthCalendar(…, targetMonth)`(다른 달, 날짜별 `events`, `topDate`), `shiftMonth`, 일정의 `platform`.
+- 움직임: 카드가 위에서부터 60ms 간격으로 올라오고(`motion-safe:animate-rise`), 숫자는 0부터 600ms 동안 올라간다(`CountUp`). 움직임 줄이기 설정이면 바로 최종 상태이고, 스크린리더는 처음부터 최종 숫자만 읽는다.
+- 접근성: 차트는 모든 값을 담은 이름(`role="img"`), 달력 칸은 "11월 18일 수요일, 오늘, 지원 3곳, 면접 1개", 달 이름 제목은 `aria-live`로 바뀐 달을 알린다.
+- 가져오기: 버튼은 헤더로 옮겼고, 상태는 보호 화면 전체가 `components/import/ExtensionImportProvider`로 함께 쓴다. `?import=1` 자동 가져오기도 여기서 한다(익스텐션이 여는 주소는 그대로). 성공은 토스트, 실패는 본문 위 안내(`ImportErrorNotice`).
+- 지운 것: 일기장 머리(`DiaryHeader`), 최근 지원 카드(주간 지원으로 대체), `DashboardCard`·`BoardLink`. `getRecentApplications`는 테스트와 함께 남겨 둔다.
+- 검증: `scripts/verify-dashboard-browser.mjs`(개발 서버, Supabase는 예시 지원 50건 fixture, `SHOT_DIR`을 주면 1440·768·390px 화면 저장). axe 4개 상태(홈·계정 메뉴·달력 목록·390px) 위반 0건, 요약 문장·차트 이름·건너뛰기 링크·계정 메뉴 Esc·달력 목록→상세 패널·달 이동·일정 펼치기·3개 너비 가로 넘침 없음.
 
 ## 계산 기준 (#146)
 
