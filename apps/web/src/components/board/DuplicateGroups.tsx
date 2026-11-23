@@ -14,7 +14,7 @@ interface DuplicateGroupsProps {
 }
 
 const ICON_BUTTON_CLASS =
-  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-column hover:text-text-primary focus-visible:outline-2 focus-visible:outline-brand';
+  'flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-text-muted hover:bg-column hover:text-text-primary focus-visible:outline-2 focus-visible:outline-brand';
 
 // 묶음 안의 지원 한 건: 사이트 · 단계 · 지원일 · 공고 열기 · 상세 보기
 function DuplicateRow({ application, onOpen }: { application: Application; onOpen: DuplicateGroupsProps['onOpen'] }) {

@@ -49,7 +49,7 @@ export function ResendConfirmationButton({ email }: ResendConfirmationButtonProp
         disabled={isResending}
         aria-busy={isResending}
         aria-describedby={resendMessage ? messageId : undefined}
-        className="cursor-pointer rounded-sm text-label font-medium text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        className="cursor-pointer rounded-xs text-label font-medium text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         {isResending ? '재전송 중...' : '확인 메일 재전송'}
       </button>

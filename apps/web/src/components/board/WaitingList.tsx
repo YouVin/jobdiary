@@ -75,7 +75,7 @@ function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: Waiti
           onClick={() => onOpen(application.id)}
           aria-label={`${application.company} 상세 보기`}
           title="상세 보기"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-column hover:text-text-primary focus-visible:outline-2 focus-visible:outline-brand"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-text-muted hover:bg-column hover:text-text-primary focus-visible:outline-2 focus-visible:outline-brand"
         >
           <Icon name="pencil" className="h-4 w-4" />
         </button>
@@ -127,7 +127,7 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
       </div>
 
       {moveError && (
-        <p role="alert" className="mb-3 rounded-lg border border-status-rejected/30 bg-status-rejected/10 px-3 py-2 text-small text-status-rejected-text">
+        <p role="alert" className="mb-3 rounded-sm border border-status-rejected/30 bg-status-rejected/10 px-3 py-2 text-small text-status-rejected-text">
           {moveError}
         </p>
       )}

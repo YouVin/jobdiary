@@ -30,8 +30,16 @@ const config: Config = {
       // 모서리 — 입력은 rounded-xl, 버튼·메뉴·알약은 rounded-full(Tailwind 기본값).
       // 카드·모달은 rounded-card, 칸·묶음처럼 카드보다 한 단계 낮은 면은 rounded-section (#193에서 키움).
       borderRadius: {
-        card: "20px", // 카드, 모달, 패널
-        section: "14px", // 칸·묶음·카드 안의 면
+        // 디자인 시스템 모서리 단계 (#200). Tailwind 기본 이름(xs~xl)을 디자인 시스템 값으로 덮어쓴다.
+        // 겹친 모서리는 안쪽 = 바깥 − 안쪽 여백 (예: 탭 판 md 12, 안쪽 4 → 선택 판 sm 8).
+        xs: "4px", // 막대그래프 윗부분, 범례 네모
+        sm: "8px", // 뱃지, 달력 칸, 회사 아이콘, 탭 안의 선택 판
+        md: "12px", // 버튼, 입력칸, 카드 안 작은 칸, 칸반 카드, 토스트
+        lg: "16px", // 모바일 카드, 칸반 열, 떠 있는 작은 카드
+        xl: "20px", // 데스크톱 카드, 모달
+        // 예전 이름 (#206에서 걷어냄): card → xl, section → md
+        card: "20px",
+        section: "14px",
       },
       // 그림자 — 그레이지 바탕에 맞춘 무채색 그림자 2단계. 카드 경계는 주로 card-border 테두리로 그린다.
       // 기존 shadow-sm/md/lg/xl(Tailwind 기본값)은 그대로 둔다 — 이름이 겹치지 않는 새 키만 추가.

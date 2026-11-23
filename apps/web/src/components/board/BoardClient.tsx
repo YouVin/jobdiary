@@ -120,7 +120,7 @@ export function BoardClient() {
               : weekLede(weekOffset, timeline.interviewCount, timeline.deadlineCount)}
           </p>
         </div>
-        <div className="flex rounded-lg border border-card-border bg-card p-1" role="group" aria-label="보기 선택">
+        <div className="flex rounded-sm border border-card-border bg-card p-1" role="group" aria-label="보기 선택">
           {VIEW_OPTIONS.map((option) => (
             <button
               key={option.value}
@@ -128,7 +128,7 @@ export function BoardClient() {
               aria-pressed={view === option.value}
               onClick={() => changeView(option.value)}
               className={clsx(
-                'h-8 rounded-md px-4 text-label focus-visible:outline-2 focus-visible:outline-brand',
+                'h-8 rounded-sm px-4 text-label focus-visible:outline-2 focus-visible:outline-brand',
                 view === option.value ? 'bg-text-primary text-on-brand' : 'text-text-secondary hover:bg-column hover:text-text-primary',
               )}
             >

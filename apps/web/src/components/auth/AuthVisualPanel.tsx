@@ -134,7 +134,7 @@ function PhoneMockup() {
   return (
     <div className="relative z-10 aspect-196/400 w-28 shrink-0 -rotate-3 rounded-3xl bg-linear-to-b from-brand to-brand-hover p-1 shadow-float md:w-36 lg:w-48 lg:rounded-4xl">
       {/* 화면 */}
-      <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl bg-card px-3 pb-3 pt-4 lg:rounded-4xl lg:px-4 lg:pb-5 lg:pt-6">
+      <div className="relative flex h-full w-full flex-col overflow-hidden rounded-lg bg-card px-3 pb-3 pt-4 lg:rounded-4xl lg:px-4 lg:pb-5 lg:pt-6">
         {/* 노치 */}
         <div
           aria-hidden="true"
@@ -163,7 +163,7 @@ function PhoneMockup() {
         </div>
 
         {/* 차트 카드 */}
-        <div className="mt-2 flex-1 rounded-lg bg-brand-tint-100 p-2 lg:mt-4 lg:rounded-xl lg:p-3">
+        <div className="mt-2 flex-1 rounded-sm bg-brand-tint-100 p-2 lg:mt-4 lg:rounded-md lg:p-3">
           <div className="flex items-end justify-between">
             <div className="h-1 w-6 rounded-full bg-brand-tint-300 lg:h-2 lg:w-10" />
             <div className="h-1 w-4 rounded-full bg-brand-tint-200 lg:h-2 lg:w-6" />

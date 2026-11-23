@@ -61,7 +61,7 @@ export function RouteCard({ shares, total }: RouteCardProps) {
                 onFocus={() => setActiveKey(platform)}
                 onBlur={() => setActiveKey(null)}
                 className={clsx(
-                  'flex items-center gap-3 rounded-lg border-b border-card-border px-2 py-3 last:border-b-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand',
+                  'flex items-center gap-3 rounded-sm border-b border-card-border px-2 py-3 last:border-b-0 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand',
                   activeKey === platform && 'bg-column',
                 )}
               >

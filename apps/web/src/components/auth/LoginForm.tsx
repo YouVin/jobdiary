@@ -260,7 +260,7 @@ export function LoginForm() {
         </p>
       </div>
 
-      <div role="group" aria-label="로그인 또는 회원가입 선택" className="mb-5 flex rounded-lg bg-column p-1">
+      <div role="group" aria-label="로그인 또는 회원가입 선택" className="mb-5 flex rounded-sm bg-column p-1">
         <button
           type="button"
           onClick={() => handleModeChange('signin')}
@@ -268,7 +268,7 @@ export function LoginForm() {
           aria-pressed={!isSignUp}
           aria-controls="email-auth-form"
           className={clsx(
-            'flex-1 cursor-pointer rounded-md py-2 text-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
+            'flex-1 cursor-pointer rounded-sm py-2 text-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
             !isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary enabled:hover:bg-card enabled:hover:text-text-primary',
           )}
         >
@@ -281,7 +281,7 @@ export function LoginForm() {
           aria-pressed={isSignUp}
           aria-controls="email-auth-form"
           className={clsx(
-            'flex-1 cursor-pointer rounded-md py-2 text-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
+            'flex-1 cursor-pointer rounded-sm py-2 text-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
             isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary enabled:hover:bg-card enabled:hover:text-text-primary',
           )}
         >
@@ -357,7 +357,7 @@ export function LoginForm() {
 
             {!isSignUp && (
               <div className="mt-2 text-right">
-                <Link href="/reset-password" className="cursor-pointer rounded-sm text-label text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                <Link href="/reset-password" className="cursor-pointer rounded-xs text-label text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                   비밀번호를 잊으셨나요?
                 </Link>
               </div>

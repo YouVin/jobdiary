@@ -75,7 +75,7 @@ export function DiaryComposer({ application, onSavingChange }: DiaryComposerProp
         }}
         rows={3}
         placeholder="짧게 적어도 괜찮아요."
-        className="field-sizing-content min-h-20 w-full resize-none rounded-lg border border-card-border bg-card px-3 py-2 text-body text-text-primary placeholder:text-text-muted focus-visible:outline-2 focus-visible:outline-brand"
+        className="field-sizing-content min-h-20 w-full resize-none rounded-sm border border-card-border bg-card px-3 py-2 text-body text-text-primary placeholder:text-text-muted focus-visible:outline-2 focus-visible:outline-brand"
       />
       {error && <p role="alert" className="text-label text-status-rejected-text">{error}</p>}
       <div className="flex items-center justify-between gap-2">

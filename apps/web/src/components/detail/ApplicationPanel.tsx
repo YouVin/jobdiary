@@ -89,7 +89,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
             onClick={handleClose}
             disabled={isBusy}
             aria-label="닫기"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-secondary hover:bg-column hover:text-text-primary focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-50"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-text-secondary hover:bg-column hover:text-text-primary focus-visible:outline-2 focus-visible:outline-brand disabled:opacity-50"
           >
             <Icon name="close" className="h-4 w-4" />
           </button>

@@ -30,7 +30,7 @@ export function ApplicationCard({ application, isDuplicate = false, onOpen }: Ap
       {...attributes}
       {...listeners}
       className={clsx(
-        'touch-manipulation cursor-pointer rounded-lg border border-card-border bg-card p-3 shadow-card transition hover:shadow-float focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
+        'touch-manipulation cursor-pointer rounded-sm border border-card-border bg-card p-3 shadow-card transition hover:shadow-float focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
         isDragging && 'opacity-40',
       )}
     >
