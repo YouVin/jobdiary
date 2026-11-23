@@ -1,7 +1,5 @@
 'use client';
 
-import type { ImportSummary } from '@/store/applicationStore';
-
 import { useExtensionImportState } from '@/components/import/ExtensionImportProvider';
 import { IconButton } from '@/components/ui/IconButton';
 
@@ -29,39 +27,6 @@ export function ImportErrorNotice() {
           <IconButton label="안내 닫기" icon="close" size="sm" onClick={dismissImportSummary} className="text-danger-text hover:text-danger-text" />
         </>
       )}
-    </div>
-  );
-}
-
-// 예전 홈 화면용 (#203 다음 커밋에서 지운다)
-interface ImportSummaryNoticeProps {
-  summary: ImportSummary | null;
-  onDismiss: () => void;
-}
-
-export function ImportSummaryNotice({ summary, onDismiss }: ImportSummaryNoticeProps) {
-  if (!summary) return null;
-  return (
-    <div
-      className={
-        summary.error
-          ? 'flex items-start justify-between gap-3 rounded-sm border border-status-rejected/30 bg-status-rejected/10 px-3 py-2 text-small text-status-rejected'
-          : 'flex items-start justify-between gap-3 rounded-sm border border-brand/20 bg-brand-tint px-3 py-2 text-small text-brand-text'
-      }
-    >
-      <span>
-        {summary.error
-          ? `익스텐션 수집 데이터 저장 실패: ${summary.error}`
-          : `익스텐션에서 ${summary.addedCount}건 추가, ${summary.duplicateCount}건 다른 플랫폼 중복, ${summary.skippedCount}건 기존 내역으로 건너뛰었습니다.`}
-      </span>
-      <button
-        type="button"
-        onClick={onDismiss}
-        aria-label="알림 닫기"
-        className="shrink-0 text-legacy-label font-medium underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-      >
-        닫기
-      </button>
     </div>
   );
 }
