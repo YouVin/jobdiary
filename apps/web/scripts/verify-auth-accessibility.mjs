@@ -27,6 +27,9 @@ page.on('pageerror', error => pageErrors.push(error.message));
 page.setDefaultTimeout(10000);
 
 async function scan(name) {
+  // 처리 중 → 끝으로 바뀐 입력칸·버튼의 색 전환(duration-fast 150ms)이 끝난 뒤 잰다.
+  // 운영 빌드는 응답 직후 바로 그려져, 전환 도중의 중간색을 대비 오류로 잡은 적이 있다(#206).
+  await page.waitForTimeout(300);
   const result = await page.evaluate(async () => {
     const result = await window.axe.run(document, {
       runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'] },
@@ -71,7 +74,8 @@ try {
   // 제목 다음 Tab은 이메일 칸이고, 칸 테두리가 포커스 색(#3461D1)으로 바뀐다.
   await page.getByRole('heading', { name: '다시 오셨네요', exact: true }).click();
   await page.keyboard.press('Tab');
-  await page.waitForTimeout(250); // 테두리 색 전환(duration-fast)이 끝난 뒤 잰다
+  // 테두리 색 전환(duration-fast)이 끝날 때까지 기다린다. 고정 250ms는 운영 빌드에서 끝 값 직전(53, 97, 209)을 재기도 했다(#206).
+  await page.waitForFunction(() => getComputedStyle(document.activeElement).borderColor === 'rgb(52, 97, 209)', null, { timeout: 2000 });
   const focused = await page.evaluate(() => ({ id: document.activeElement.id, border: getComputedStyle(document.activeElement).borderColor }));
   assert.deepEqual(focused, { id: 'email', border: 'rgb(52, 97, 209)' });
 

@@ -97,7 +97,9 @@ const axeSource = fs.readFileSync('node_modules/.release-tools/node_modules/axe-
 
 // axe(WCAG 2.2 AA + best-practice)와 ARIA 참조 대상 검사. 움직임이 끝난 뒤 잰다.
 export async function scan(page, name) {
-  await page.waitForTimeout(700);
+  // 카드가 올라오는 움직임이 다 끝난 뒤 잰다: 마지막 카드 지연 300ms + 0.5s = 800ms.
+  // 운영 빌드는 개발 서버보다 빨리 그려져 700ms로는 움직임 도중을 재는 일이 생겼다(#206).
+  await page.waitForTimeout(1000);
   if (!(await page.evaluate(() => Boolean(window.axe)))) await page.addScriptTag({ content: axeSource });
   const violations = await page.evaluate(async () => {
     const result = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'] } });
