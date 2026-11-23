@@ -122,7 +122,7 @@ export function EditApplicationForm({
       />
 
       {(validationError || error) && (
-        <p role="alert" className="mt-3 text-label text-status-rejected">{validationError || error}</p>
+        <p role="alert" className="mt-3 text-legacy-label text-status-rejected">{validationError || error}</p>
       )}
 
       <div className="mt-5 flex items-center justify-between gap-2">

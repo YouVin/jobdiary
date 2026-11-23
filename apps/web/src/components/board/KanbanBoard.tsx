@@ -96,7 +96,7 @@ export function KanbanBoard({ applications, visibleApplications = applications, 
         {activeApplication && (
           <div
             style={{ width: activeWidth }}
-            className="rotate-2 cursor-grabbing rounded-lg border border-card-border bg-card p-3 shadow-float"
+            className="rotate-2 cursor-grabbing rounded-sm border border-card-border bg-card p-3 shadow-float"
           >
             <ApplicationCardContent application={activeApplication} isDuplicate={duplicateIds.has(activeApplication.id)} />
           </div>

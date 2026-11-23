@@ -1,6 +1,38 @@
 # UI 디자인 시스템
 
-2026-10-14, #81. 2026-11-20 #193에서 색·모서리·움직임 기준을 그레이지·검정 강조로 바꿨다(아래 절). 간격·타이포·SVG 규칙은 그대로다. 기준 구현은 `tailwind.config.ts`이며, 이 작업에서 별도 Figma 파일을 조회하거나 수정하지 않았다.
+2026-10-14, #81. 2026-11-20 #193 그레이지·검정 강조. **2026-11-23 #199 전체 개편: 새 디자인 시스템이 기준이다(바로 아래 절).** 그 아래 절들은 개편 전 기준으로, 화면을 새 디자인으로 바꾸는 동안(#201~#205) 남아 있는 예전 토큰을 설명하며 #206에서 정리한다. 기준 구현은 `apps/web/tailwind.config.ts`다.
+
+## 새 디자인 시스템 (#199, #200, 2026-11-23)
+
+- 원본: [취준일기 디자인 시스템](https://claude.ai/artifact/RR4qTSJVUe774joAoq3mrf) — 브랜드 북, 토큰, 부품 14개 견본. 시안은 [캔버스](https://claude.ai/artifact/JB9dh1KMXVR9AssPfsBg6d)의 메인·지원 보드 3장·로그인 2장.
+- 원칙: 회색이 화면 대부분을 맡고 파랑 하나(`action-primary` #3461D1)가 중요한 걸 알린다. 로고 네이비(#253A63)는 로고에만, 마리골드(#F2A33A)는 오늘·D-day에만. 회사는 항상 한 줄(CompanyRow)로 보여준다.
+- **부품은 유동적으로 관리한다.** 디자인이 바뀌면 디자인 시스템 토큰·부품과 `tailwind.config.ts`(그리고 #201의 `components/ui/`)를 같은 이름으로 함께 고친다. 화면에 색·크기 값을 직접 쓰지 않는다.
+
+### 토큰 이름 (Tailwind 클래스)
+
+| 종류 | 이름 | 예 |
+|---|---|---|
+| 바탕 | `page`(#F5F7FA) · `surface` · `subtle` · `muted` · `selected` · `inverse` · `scrim` | `bg-surface`, `bg-selected` |
+| 글자 | `text-primary` · `text-secondary` · `text-disabled`(비활성만) · `text-brand` · `text-brand-strong` · `text-logo` · `text-on-color` | `text-text-secondary` |
+| 선 | `line-divider` · `line-input` · `line-focus` · `focus-ring` | `border-line-divider`, `outline-focus-ring` |
+| 버튼 | `action-primary` · `action-hover` · `action-pressed` · `action-disabled` | `bg-action-primary` |
+| 상태 | `today` · `success` · `danger` (각 DEFAULT·tint·text) · `info` (tint·text) | `bg-today-tint text-today-text` |
+| 데이터 | `chart-1`~`3` · `chart-rest` · `chart-empty` · `stage-*`(지원 완료~지원 취소) · `event-*` | `bg-stage-screening` |
+| 로고 | `logo-navy` · `logo-marigold` · `logo-grey` | |
+| 글자 | `display` 30 · `title-1` 24 · `title-2` 20 · `title-3` 17 · `body` 15 · `label` 13 · `caption` 12 (모바일 `display-sm` 26 · `title-1-sm` 22) | `text-title-2` |
+| 간격 | Tailwind 기본 4px 단위(`p-1`=4 … `p-16`=64). 카드 안쪽 `p-6`(모바일 `p-5`), 카드 사이 `gap-4`, 구역 사이 `gap-8`, 목록 줄 `py-3` | |
+| 모서리 | `rounded-xs` 4 · `sm` 8 · `md` 12 · `lg` 16 · `xl` 20 · `full` (Tailwind 기본값을 덮어씀) | `rounded-md` |
+| 그림자 | `shadow-sm`(흰 바탕 위 카드) · `shadow-md`(드롭다운·토스트) · `shadow-lg`(모달·패널). 카드에는 그림자 없음 | |
+| 층 | `z-header` 10 · `z-dropdown` 20 · `z-panel` 30 · `z-modal` 40 · `z-toast` 50 | |
+| 움직임 | `duration-fast` 150 · `duration-base` 250 · `duration-slow` 400, 곡선 `ease-soft`, 항상 `motion-safe:` | |
+
+### 예전 이름 연결 (#200 → #206에서 걷어냄)
+
+- 예전 색 이름은 뜻이 같은 새 값으로 연결했다: `brand`→action 파랑, `page`·`column`→#F5F7FA, `card`·`raised`→흰색, `text-muted`→text-secondary, `card-border`→line-divider, `border-strong`→line-input, `status-*`→stage 색. `status-rejected`는 지금 화면에서 오류 빨강으로 쓰여 `danger`(#B93A26)로 연결했다.
+- 예전 글자 크기 `body`·`label`·`caption`은 새 단계와 이름이 겹쳐 `legacy-body`·`legacy-label`·`legacy-caption`으로 옮겼다(값 그대로).
+- 모서리는 클래스 이름만 옮겨 픽셀을 유지했다: 예전 `rounded-sm`(4)→`xs`, `rounded-lg`(8)→`sm`, `rounded-xl`(12)→`md`, `rounded-2xl`(16)→`lg`, 예전 `rounded-md`(6)→`sm`(8).
+- `npm run check:ui`가 남은 예전 이름 개수를 알려 준다(#200 시점 645곳). Tailwind 기본 글자 크기(`text-sm` 등)는 실패로 막는다.
+- 개편 중 수치로 남길 트러블슈팅: [REDESIGN_TROUBLESHOOTING](REDESIGN_TROUBLESHOOTING.md).
 
 ## 간격과 크기
 

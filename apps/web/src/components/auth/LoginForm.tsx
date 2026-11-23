@@ -255,12 +255,12 @@ export function LoginForm() {
 
       <div className="mb-6">
         <h2 id="auth-title" className="text-heading-lg text-text-primary">{isSignUp ? '환영해요' : '다시 오셨네요'}</h2>
-        <p className="mt-1 text-label text-text-secondary">
+        <p className="mt-1 text-legacy-label text-text-secondary">
           {isSignUp ? '지원 여정을 함께 기록해봐요' : '지원 현황을 이어서 관리해보세요'}
         </p>
       </div>
 
-      <div role="group" aria-label="로그인 또는 회원가입 선택" className="mb-5 flex rounded-lg bg-column p-1">
+      <div role="group" aria-label="로그인 또는 회원가입 선택" className="mb-5 flex rounded-sm bg-column p-1">
         <button
           type="button"
           onClick={() => handleModeChange('signin')}
@@ -268,7 +268,7 @@ export function LoginForm() {
           aria-pressed={!isSignUp}
           aria-controls="email-auth-form"
           className={clsx(
-            'flex-1 cursor-pointer rounded-md py-2 text-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
+            'flex-1 cursor-pointer rounded-sm py-2 text-legacy-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
             !isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary enabled:hover:bg-card enabled:hover:text-text-primary',
           )}
         >
@@ -281,7 +281,7 @@ export function LoginForm() {
           aria-pressed={isSignUp}
           aria-controls="email-auth-form"
           className={clsx(
-            'flex-1 cursor-pointer rounded-md py-2 text-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
+            'flex-1 cursor-pointer rounded-sm py-2 text-legacy-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
             isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary enabled:hover:bg-card enabled:hover:text-text-primary',
           )}
         >
@@ -352,12 +352,12 @@ export function LoginForm() {
               {passwordFeedback.error}
             </p>
 
-            {isSignUp && <p id="password-hint" className="mt-1 text-label text-text-secondary">비밀번호는 {MIN_PASSWORD_LENGTH}자 이상 입력해주세요.</p>}
+            {isSignUp && <p id="password-hint" className="mt-1 text-legacy-label text-text-secondary">비밀번호는 {MIN_PASSWORD_LENGTH}자 이상 입력해주세요.</p>}
             {isSignUp && password && <PasswordStrengthMeter id="password-strength" password={password} />}
 
             {!isSignUp && (
               <div className="mt-2 text-right">
-                <Link href="/reset-password" className="cursor-pointer rounded-sm text-label text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+                <Link href="/reset-password" className="cursor-pointer rounded-xs text-legacy-label text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                   비밀번호를 잊으셨나요?
                 </Link>
               </div>
@@ -412,7 +412,7 @@ export function LoginForm() {
                   aria-invalid={termsTouched && !agreedToTerms}
                   aria-describedby={termsTouched && !agreedToTerms ? 'terms-error' : undefined}
                 />
-                <label htmlFor="terms" className="cursor-pointer text-label text-text-secondary">
+                <label htmlFor="terms" className="cursor-pointer text-legacy-label text-text-secondary">
                   [이메일 가입 필수] <PolicyLinks />을 확인하고 이용약관에 동의합니다.
                 </label>
               </div>
@@ -434,15 +434,15 @@ export function LoginForm() {
       </form>
 
       {/* 이메일/구글 공통 에러·안내 — 두 로그인 방식 모두 여기 하나로 표시한다 */}
-      <p role="alert" aria-atomic="true" className={clsx('text-label text-status-rejected-text', authError && 'mt-3')}>
+      <p role="alert" aria-atomic="true" className={clsx('text-legacy-label text-status-rejected-text', authError && 'mt-3')}>
         {authError?.message}
       </p>
       {authError?.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
-      <p role="status" aria-atomic="true" className={clsx('text-label text-status-offer-text', (infoMessage ?? oneTimeMessage) && 'mt-3')}>{infoMessage ?? oneTimeMessage}</p>
+      <p role="status" aria-atomic="true" className={clsx('text-legacy-label text-status-offer-text', (infoMessage ?? oneTimeMessage) && 'mt-3')}>{infoMessage ?? oneTimeMessage}</p>
 
       <div className="my-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-card-border" />
-        <span className="text-label text-text-secondary">또는</span>
+        <span className="text-legacy-label text-text-secondary">또는</span>
         <div className="h-px flex-1 bg-card-border" />
       </div>
 
@@ -464,7 +464,7 @@ export function LoginForm() {
           }}
           onError={(message) => setAuthError({ message, kind: 'other' })}
         />
-        <p id="google-auth-hint" className="mt-3 text-label text-text-secondary">
+        <p id="google-auth-hint" className="mt-3 text-legacy-label text-text-secondary">
           Google에서 이메일·프로필을 전달받습니다. 서비스 약관 확인은 인증 후 필요한 경우 한 번 진행합니다. <PolicyLinks />
         </p>
       </section>

@@ -12,7 +12,7 @@ export function Header() {
           <Link
             href="/"
             aria-label="취준일기 홈으로 이동"
-            className="flex shrink-0 items-center gap-2 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
+            className="flex shrink-0 items-center gap-2 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
           >
             <BrandLogo className="h-8 w-auto md:h-9" alt="" />
           </Link>

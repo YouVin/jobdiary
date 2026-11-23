@@ -6,7 +6,7 @@ export function BoardLink({ label = '지원보드' }: { label?: string }) {
   return (
     <Link
       href="/board"
-      className="flex shrink-0 items-center gap-1 rounded text-label text-text-secondary hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+      className="flex shrink-0 items-center gap-1 rounded text-legacy-label text-text-secondary hover:text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
     >
       {label}
       <Icon name="arrow-right" className="h-3 w-3" />

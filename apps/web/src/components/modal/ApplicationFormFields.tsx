@@ -129,7 +129,7 @@ export function ApplicationFormFields({
           onChange={(event) => onDeadlineAtChange(event.target.value)}
           className={inputClassName}
         />
-        <p className="mt-1 text-caption text-text-muted">상시채용은 비워두세요. 마감 다음 날까지 지원완료라면 자동 탈락 처리됩니다.</p>
+        <p className="mt-1 text-legacy-caption text-text-muted">상시채용은 비워두세요. 마감 다음 날까지 지원완료라면 자동 탈락 처리됩니다.</p>
       </div>
 
       {onInterviewDateChange && (

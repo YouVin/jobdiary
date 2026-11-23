@@ -15,39 +15,39 @@ export function ApplicationCardContent({ application, isDuplicate = false }: App
   return (
     <>
       <p className="text-card-company text-text-primary">{company}</p>
-      <p className="mt-1 text-caption text-text-secondary">{position}</p>
+      <p className="mt-1 text-legacy-caption text-text-secondary">{position}</p>
 
       <div className="mt-2 flex items-center justify-between">
         <PlatformBadge platform={platform} />
-        <span className="text-caption text-text-muted">{formatDate(appliedAt)}</span>
+        <span className="text-legacy-caption text-text-muted">{formatDate(appliedAt)}</span>
       </div>
 
       {isDuplicate && (
-        <div className="mt-2 inline-flex items-center gap-1 rounded bg-status-rejected/10 px-2 py-1 text-caption font-medium text-status-rejected">
+        <div className="mt-2 inline-flex items-center gap-1 rounded bg-status-rejected/10 px-2 py-1 text-legacy-caption font-medium text-status-rejected">
           <Icon name="warning" className="h-3 w-3" />
           중복 지원
         </div>
       )}
 
       {hasDiary && (
-        <div className="mt-2 inline-flex items-center gap-1 rounded bg-brand-tint px-2 py-1 text-caption font-medium text-brand-text">
+        <div className="mt-2 inline-flex items-center gap-1 rounded bg-brand-tint px-2 py-1 text-legacy-caption font-medium text-brand-text">
           <Icon name="pencil" className="h-3 w-3" />
           일기 {diary!.length}
         </div>
       )}
 
       {interviewDate && (
-        <div className="mt-2 flex items-center gap-1 text-caption font-medium text-event-interview-text">
+        <div className="mt-2 flex items-center gap-1 text-legacy-caption font-medium text-event-interview-text">
           <Icon name="calendar" className="h-3 w-3" />
           {formatDate(interviewDate)}
         </div>
       )}
 
       {deadlineAt && (
-        <p className="mt-2 text-caption text-event-deadline-text">공고 마감 {formatDate(deadlineAt)}</p>
+        <p className="mt-2 text-legacy-caption text-event-deadline-text">공고 마감 {formatDate(deadlineAt)}</p>
       )}
       {statusSource === 'deadline' && (
-        <p className="mt-1 text-caption text-status-rejected">마감일 기준 자동 탈락</p>
+        <p className="mt-1 text-legacy-caption text-status-rejected">마감일 기준 자동 탈락</p>
       )}
     </>
   );

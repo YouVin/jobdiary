@@ -60,22 +60,22 @@ function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: Waiti
               rel="noopener noreferrer"
               aria-label={`${application.company} 공고 열기 (새 탭)`}
               title="공고 열기 (새 탭)"
-              className="group flex min-w-0 items-center gap-1 text-body font-semibold text-text-primary underline-offset-2 hover:text-brand-text hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="group flex min-w-0 items-center gap-1 text-legacy-body font-semibold text-text-primary underline-offset-2 hover:text-brand-text hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <span className="truncate">{application.company}</span>
               <Icon name="external" className="h-3 w-3 text-text-muted group-hover:text-brand-text" />
             </a>
           ) : (
-            <b className="block truncate text-body font-semibold text-text-primary">{application.company}</b>
+            <b className="block truncate text-legacy-body font-semibold text-text-primary">{application.company}</b>
           )}
-          <span className="block truncate text-caption text-text-muted">{application.position}</span>
+          <span className="block truncate text-legacy-caption text-text-muted">{application.position}</span>
         </span>
         <button
           type="button"
           onClick={() => onOpen(application.id)}
           aria-label={`${application.company} 상세 보기`}
           title="상세 보기"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-column hover:text-text-primary focus-visible:outline-2 focus-visible:outline-brand"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-text-muted hover:bg-column hover:text-text-primary focus-visible:outline-2 focus-visible:outline-brand"
         >
           <Icon name="pencil" className="h-4 w-4" />
         </button>
@@ -86,7 +86,7 @@ function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: Waiti
         <StageTrack company={application.company} stageIndex={stageIndex} onMove={(status) => onMove(application.id, status)} labelsClassName="lg:hidden" />
       </div>
 
-      <p className={clsx('col-span-2 row-start-3 text-caption text-text-muted tabular-nums lg:col-span-1 lg:col-start-3 lg:row-start-1', !nextEvent && 'hidden lg:block')}>
+      <p className={clsx('col-span-2 row-start-3 text-legacy-caption text-text-muted tabular-nums lg:col-span-1 lg:col-start-3 lg:row-start-1', !nextEvent && 'hidden lg:block')}>
         {nextEvent && (
           <>
             <b className="mr-1 font-semibold text-text-secondary">
@@ -99,7 +99,7 @@ function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: Waiti
 
       <p className={clsx('col-start-2 row-start-1 text-right text-small font-semibold tabular-nums lg:col-start-4', isStale ? 'text-status-rejected-text' : 'text-text-secondary')}>
         {waitDays}일
-        <small className={clsx('block text-caption font-normal', isStale ? 'text-status-rejected-text' : 'text-text-muted')}>{waitNote}</small>
+        <small className={clsx('block text-legacy-caption font-normal', isStale ? 'text-status-rejected-text' : 'text-text-muted')}>{waitNote}</small>
       </p>
     </li>
   );
@@ -118,22 +118,22 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
           )}
         </h2>
         {stage ? (
-          <button type="button" onClick={onClearStage} className="text-label text-brand-text hover:underline focus-visible:outline-2 focus-visible:outline-brand">
+          <button type="button" onClick={onClearStage} className="text-legacy-label text-brand-text hover:underline focus-visible:outline-2 focus-visible:outline-brand">
             전체 보기
           </button>
         ) : (
-          <p className="text-caption text-text-muted">오래 기다린 순</p>
+          <p className="text-legacy-caption text-text-muted">오래 기다린 순</p>
         )}
       </div>
 
       {moveError && (
-        <p role="alert" className="mb-3 rounded-lg border border-status-rejected/30 bg-status-rejected/10 px-3 py-2 text-small text-status-rejected-text">
+        <p role="alert" className="mb-3 rounded-sm border border-status-rejected/30 bg-status-rejected/10 px-3 py-2 text-small text-status-rejected-text">
           {moveError}
         </p>
       )}
 
       <div className="overflow-hidden rounded-card border border-card-border bg-card">
-        <div className={clsx('hidden border-b border-card-border px-6 py-2 text-caption text-text-muted lg:grid', ROW_GRID)} aria-hidden="true">
+        <div className={clsx('hidden border-b border-card-border px-6 py-2 text-legacy-caption text-text-muted lg:grid', ROW_GRID)} aria-hidden="true">
           <span>회사</span>
           <span className="grid grid-cols-4 text-center">
             {ACTIVE_STATUSES.map((status) => (
@@ -157,7 +157,7 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
         )}
       </div>
       {scheduledCount > 0 && (
-        <p className="mt-2 text-caption text-text-muted">이번 주 일정이 있는 {scheduledCount}건은 위 주간 타임라인에 있어요.</p>
+        <p className="mt-2 text-legacy-caption text-text-muted">이번 주 일정이 있는 {scheduledCount}건은 위 주간 타임라인에 있어요.</p>
       )}
     </section>
   );

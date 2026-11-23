@@ -28,7 +28,7 @@ export function UpcomingCard({ events, onSelect, limit = 4 }: UpcomingCardProps)
   return (
     <DashboardCard title="다가오는 일정" titleId="upcoming-card-title" icon="calendar" action={<BoardLink />}>
       {visible.length === 0 ? (
-        <p className="rounded-lg bg-column p-4 text-small text-text-secondary">
+        <p className="rounded-sm bg-column p-4 text-small text-text-secondary">
           다가오는 면접이나 공고 마감이 없습니다. 지원 카드에 면접일이나 공고 마감일을 입력하면 여기에 모입니다.
         </p>
       ) : (
@@ -47,11 +47,11 @@ export function UpcomingCard({ events, onSelect, limit = 4 }: UpcomingCardProps)
                   type="button"
                   onClick={() => onSelect(event.applicationId)}
                   aria-label={`${dday} ${event.company} ${kind}, ${formatDateWithWeekday(event.date)}. 지원 정보 수정`}
-                  className="relative flex w-full items-center rounded-lg px-2 py-2 text-left hover:bg-column focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
+                  className="relative flex w-full items-center rounded-sm px-2 py-2 text-left hover:bg-column focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand"
                 >
                   <span className="flex w-12 shrink-0 flex-col items-end pr-1">
                     <span className="text-diary-date text-text-primary tabular-nums">{day}</span>
-                    <span className="text-caption text-text-secondary">{isToday ? `${weekday} · 오늘` : weekday}</span>
+                    <span className="text-legacy-caption text-text-secondary">{isToday ? `${weekday} · 오늘` : weekday}</span>
                   </span>
                   <span className="flex w-6 shrink-0 justify-center">
                     <span
@@ -63,13 +63,13 @@ export function UpcomingCard({ events, onSelect, limit = 4 }: UpcomingCardProps)
                   </span>
                   <span className="min-w-0 flex-1 pl-2">
                     <span className="block truncate text-card-company text-text-primary">{event.company}</span>
-                    <span className="block truncate text-caption text-text-secondary">
+                    <span className="block truncate text-legacy-caption text-text-secondary">
                       <span className={clsx('font-medium', KIND_TEXT[event.kind])}>{kind}</span> · {event.position}
                     </span>
                   </span>
                   <span
                     className={clsx(
-                      'ml-2 shrink-0 rounded-full px-2 py-1 text-caption font-semibold tabular-nums',
+                      'ml-2 shrink-0 rounded-full px-2 py-1 text-legacy-caption font-semibold tabular-nums',
                       isToday ? 'bg-text-primary text-on-brand' : KIND_BADGE[event.kind],
                     )}
                   >
@@ -81,7 +81,7 @@ export function UpcomingCard({ events, onSelect, limit = 4 }: UpcomingCardProps)
           })}
         </ul>
       )}
-      {hiddenCount > 0 && <p className="mt-2 text-caption text-text-secondary">외 {hiddenCount}건은 지원보드에서 확인할 수 있어요.</p>}
+      {hiddenCount > 0 && <p className="mt-2 text-legacy-caption text-text-secondary">외 {hiddenCount}건은 지원보드에서 확인할 수 있어요.</p>}
     </DashboardCard>
   );
 }

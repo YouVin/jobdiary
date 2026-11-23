@@ -21,7 +21,7 @@ export function ApplicationFilters({ filters, onChange, visibleCount, totalCount
   return (
     <section aria-label="지원 내역 검색 및 필터" className="mb-4 rounded-section border border-card-border bg-card p-4">
       <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
-        <label className="flex min-w-0 flex-1 flex-col gap-1 text-label text-text-secondary">
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-legacy-label text-text-secondary">
           회사명·공고명 검색
           <input
             type="search"
@@ -31,7 +31,7 @@ export function ApplicationFilters({ filters, onChange, visibleCount, totalCount
             className={inputClassName}
           />
         </label>
-        <label className="flex flex-col gap-1 text-label text-text-secondary">
+        <label className="flex flex-col gap-1 text-legacy-label text-text-secondary">
           플랫폼
           <select
             value={filters.platform}
@@ -42,7 +42,7 @@ export function ApplicationFilters({ filters, onChange, visibleCount, totalCount
             {platforms.map((platform) => <option key={platform} value={platform}>{PLATFORM_INFO[platform].label}</option>)}
           </select>
         </label>
-        <label className="flex cursor-pointer items-center gap-2 py-2 text-body text-text-primary">
+        <label className="flex cursor-pointer items-center gap-2 py-2 text-legacy-body text-text-primary">
           <input
             type="checkbox"
             checked={filters.hideClosed}
@@ -61,7 +61,7 @@ export function ApplicationFilters({ filters, onChange, visibleCount, totalCount
           필터 초기화
         </button>
       </div>
-      <div className="mt-3 flex flex-wrap justify-between gap-2 text-label text-text-secondary">
+      <div className="mt-3 flex flex-wrap justify-between gap-2 text-legacy-label text-text-secondary">
         <p id="closed-applications-help">종료 지원: 합격·탈락·지원취소</p>
         <p role="status" aria-atomic="true">전체 {totalCount}건 중 {visibleCount}건 표시</p>
       </div>

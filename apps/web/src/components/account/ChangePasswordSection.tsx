@@ -43,7 +43,7 @@ export function ChangePasswordSection() {
   if (!canChangePassword) {
     return (
       <section className="rounded-card border border-card-border bg-card p-5">
-        <h2 className="text-body font-semibold text-text-primary">비밀번호 변경</h2>
+        <h2 className="text-legacy-body font-semibold text-text-primary">비밀번호 변경</h2>
         <p className="mt-2 text-small text-text-secondary">소셜 로그인 계정은 비밀번호 변경이 없습니다.</p>
       </section>
     );
@@ -101,7 +101,7 @@ export function ChangePasswordSection() {
 
   return (
     <section className="rounded-card border border-card-border bg-card p-5">
-      <h2 className="text-body font-semibold text-text-primary">비밀번호 변경</h2>
+      <h2 className="text-legacy-body font-semibold text-text-primary">비밀번호 변경</h2>
 
       <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3" noValidate>
         <div>
@@ -195,11 +195,11 @@ export function ChangePasswordSection() {
         </div>
 
         {errorMessage && (
-          <p role="alert" className="text-label text-status-rejected">
+          <p role="alert" className="text-legacy-label text-status-rejected">
             {errorMessage}
           </p>
         )}
-        {successMessage && <p className="text-label text-status-offer">{successMessage}</p>}
+        {successMessage && <p className="text-legacy-label text-status-offer">{successMessage}</p>}
 
         <button
           type="submit"

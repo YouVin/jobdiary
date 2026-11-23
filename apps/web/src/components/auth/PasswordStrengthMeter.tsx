@@ -31,7 +31,7 @@ export function PasswordStrengthMeter({ password, id }: PasswordStrengthMeterPro
           />
         ))}
       </div>
-      <p id={id} role="status" className={clsx('mt-1 text-caption font-medium', info.textClassName)}>비밀번호 강도: {info.label}</p>
+      <p id={id} role="status" className={clsx('mt-1 text-legacy-caption font-medium', info.textClassName)}>비밀번호 강도: {info.label}</p>
     </div>
   );
 }

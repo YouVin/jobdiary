@@ -12,8 +12,8 @@ export function ColumnHeader({ status, count }: ColumnHeaderProps) {
   return (
     <div className="flex items-center gap-2">
       <span className={`h-2 w-2 rounded-full ${STATUS_DOT_CLASS[status]}`} />
-      <span className="text-label font-medium text-text-primary">{label}</span>
-      <span className="text-caption font-normal text-text-muted">{count}</span>
+      <span className="text-legacy-label font-medium text-text-primary">{label}</span>
+      <span className="text-legacy-caption font-normal text-text-muted">{count}</span>
     </div>
   );
 }
