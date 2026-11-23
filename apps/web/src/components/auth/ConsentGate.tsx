@@ -6,6 +6,7 @@ import { buttonClassName } from '@/components/common/buttonStyles';
 import { supabase } from '@/lib/supabase';
 import { consentMetadata } from '@/lib/legal';
 import { captureApplicationSession } from '@/store/applicationStore';
+import { MAIN_CONTENT_ID } from '@/components/ui/SkipLink';
 import { useAuthStore } from '@/store/authStore';
 
 export function ConsentGate() {
@@ -40,7 +41,7 @@ export function ConsentGate() {
   };
 
   return (
-    <main aria-labelledby="consent-title" className="mx-auto flex w-full max-w-105 flex-1 flex-col justify-center gap-4 px-4 py-10">
+    <main id={MAIN_CONTENT_ID} tabIndex={-1} aria-labelledby="consent-title" className="focus:outline-none mx-auto flex w-full max-w-105 flex-1 flex-col justify-center gap-4 px-4 py-10">
       <h1 id="consent-title" ref={heading} tabIndex={-1} className="text-heading-lg text-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">서비스 이용 안내</h1>
       <p id="consent-hint" className="text-legacy-body text-text-secondary">지원 내역을 기록하기 전에 약관과 개인정보 처리 내용을 확인해주세요. 동의하지 않으면 서비스 이용을 중단할 수 있습니다.</p>
       <div className="flex items-start gap-2">
