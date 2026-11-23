@@ -30,5 +30,7 @@ interface BrandLogoProps {
 // 마크 + "취준일기" 글자 로고. 글자는 로고 파일 안에 도형으로 들어 있어 글꼴과 무관하게 같은 모양이다.
 // 링크 안에서 링크가 이미 이름을 가지면 alt를 비운다.
 export function BrandLogo({ className = 'h-9 w-auto', alt = '취준일기' }: BrandLogoProps) {
-  return <Image src="/brand/logo-full.svg" width={441} height={130} alt={alt} className={clsx('shrink-0', className)} />;
+  // 로고는 쓰는 곳이 모두 화면 맨 위(헤더·로그인·약관)라 바로 불러온다. 기본(lazy)이면 첫 화면의 가장 큰 요소(LCP)로 잡혀
+  // 늦게 뜰 수 있다는 Next.js 안내가 나온다(#215). Next.js 16에서는 priority 대신 loading="eager"를 권한다.
+  return <Image src="/brand/logo-full.svg" width={441} height={130} alt={alt} loading="eager" className={clsx('shrink-0', className)} />;
 }

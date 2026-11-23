@@ -15,6 +15,7 @@ interface StagePillsProps {
 
 // 단계별 숫자 버튼 (#204, 캔버스 주간 시안). 누르면 아래 "결과 기다리는 중"을 그 단계만 남기고, 다시 누르면 푼다.
 // 켜진 버튼은 selected 바탕 + 파란 숫자로, 눌림 상태는 aria-pressed로 알린다. 끝에 결과 나온 건수(누를 수 없음).
+// 칸마다 단계 이름과 숫자를 가운데에 맞춘다(#215 피드백).
 export function StagePills({ counts, resultTotal, stage, onStageChange }: StagePillsProps) {
   return (
     <Card padding="xs">
@@ -29,7 +30,7 @@ export function StagePills({ counts, resultTotal, stage, onStageChange }: StageP
               aria-pressed={isPressed}
               onClick={() => onStageChange(isPressed ? null : status)}
               className={clsx(
-                'flex cursor-pointer flex-col gap-1 rounded-md px-4 py-3 text-left transition-colors duration-fast focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+                'flex cursor-pointer flex-col items-center gap-1 rounded-md px-4 py-3 text-center transition-colors duration-fast focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
                 isPressed ? 'bg-selected' : 'hover:bg-subtle',
               )}
             >
@@ -48,7 +49,7 @@ export function StagePills({ counts, resultTotal, stage, onStageChange }: StageP
             </button>
           );
         })}
-        <div className="col-span-2 flex flex-col gap-1 rounded-md bg-subtle px-4 py-3 sm:col-span-1">
+        <div className="col-span-2 flex flex-col items-center gap-1 rounded-md bg-subtle px-4 py-3 text-center sm:col-span-1">
           <span className="text-label text-text-secondary">결과 나옴</span>
           <span className="text-title-1 text-text-secondary tabular-nums">{resultTotal}</span>
         </div>
