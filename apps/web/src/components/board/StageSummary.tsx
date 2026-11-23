@@ -1,5 +1,7 @@
 import { clsx } from 'clsx';
-import { STATUS_DOT_CLASS, STATUS_INFO } from '@/constants/status';
+import { STAGE_DOT_CLASS } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
+import { STATUS_INFO } from '@/constants/status';
 import type { Status } from '@/types/application';
 import type { ResultStatus } from '@/utils/waitingList';
 import { ACTIVE_STATUSES } from '@/utils/weekTimeline';
@@ -11,51 +13,80 @@ interface StagePillsProps {
   onStageChange: (stage: Status | null) => void;
 }
 
-// 진행 단계 버튼 한 줄. 누르면 아래 "결과 기다리는 중" 목록을 그 단계만 남기고, 다시 누르면 푼다.
+// 단계별 숫자 버튼 (#204, 캔버스 주간 시안). 누르면 아래 "결과 기다리는 중"을 그 단계만 남기고, 다시 누르면 푼다.
+// 켜진 버튼은 selected 바탕 + 파란 숫자로, 눌림 상태는 aria-pressed로 알린다. 끝에 결과 나온 건수(누를 수 없음).
 export function StagePills({ counts, resultTotal, stage, onStageChange }: StagePillsProps) {
   return (
-    <div className="mb-6 grid grid-cols-2 gap-2 md:flex md:items-center" role="group" aria-label="단계별 보기">
-      {ACTIVE_STATUSES.map((status) => {
-        const isPressed = stage === status;
-        return (
-          <button
-            key={status}
-            type="button"
-            aria-pressed={isPressed}
-            onClick={() => onStageChange(isPressed ? null : status)}
-            className={clsx(
-              'flex h-10 min-w-0 items-center justify-between gap-2 rounded-full border px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand md:flex-1',
-              isPressed ? 'border-text-primary bg-text-primary text-on-brand' : 'border-card-border bg-card text-text-secondary hover:border-border-strong',
-            )}
-          >
-            <span className="flex min-w-0 items-center gap-2 truncate text-small">
-              <span className={clsx('h-2 w-2 shrink-0 rounded-full', STATUS_DOT_CLASS[status])} aria-hidden="true" />
-              {STATUS_INFO[status].label}
-            </span>
-            <b className={clsx('text-legacy-body font-bold tabular-nums', !isPressed && 'text-text-primary')}>{counts[status]}</b>
-          </button>
-        );
-      })}
-      <span className="col-span-2 px-2 text-small text-text-muted md:col-span-1 md:shrink-0">
-        결과 나옴 <b className="font-semibold text-text-secondary tabular-nums">{resultTotal}</b>
-      </span>
-    </div>
+    <Card padding="xs">
+      <div role="group" aria-label="단계별 보기" className="grid grid-cols-2 gap-1 sm:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]">
+        {ACTIVE_STATUSES.map((status) => {
+          const isPressed = stage === status;
+          const count = counts[status];
+          return (
+            <button
+              key={status}
+              type="button"
+              aria-pressed={isPressed}
+              onClick={() => onStageChange(isPressed ? null : status)}
+              className={clsx(
+                'flex cursor-pointer flex-col gap-1 rounded-md px-4 py-3 text-left transition-colors duration-fast focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+                isPressed ? 'bg-selected' : 'hover:bg-subtle',
+              )}
+            >
+              <span className="flex items-center gap-2 text-label text-text-secondary">
+                <span aria-hidden="true" className={clsx('h-2 w-2 shrink-0 rounded-xs', STAGE_DOT_CLASS[status])} />
+                {STATUS_INFO[status].label}
+              </span>
+              <span
+                className={clsx(
+                  'text-title-1 tabular-nums',
+                  isPressed ? 'text-text-brand-strong' : count === 0 ? 'text-text-secondary' : 'text-text-primary',
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+        <div className="col-span-2 flex flex-col gap-1 rounded-md bg-subtle px-4 py-3 sm:col-span-1">
+          <span className="text-label text-text-secondary">결과 나옴</span>
+          <span className="text-title-1 text-text-secondary tabular-nums">{resultTotal}</span>
+        </div>
+      </div>
+    </Card>
   );
 }
 
-const RESULT_ORDER: ResultStatus[] = ['rejected', 'offer', 'canceled'];
+const RESULT_ORDER: ResultStatus[] = ['offer', 'rejected', 'canceled'];
 
-// 합격·탈락·지원취소 건수 한 줄
-export function ResultRow({ counts, total }: { counts: Record<ResultStatus, number>; total: number }) {
+interface ResultRowProps {
+  counts: Record<ResultStatus, number>;
+  total: number;
+  onShowBoard: () => void; // 보드 보기로 바꾸기
+}
+
+// 결과가 나온 지원 한 줄 (#204). 합격·탈락·지원 취소 건수와 보드 보기로 가는 버튼.
+export function ResultRow({ counts, total, onShowBoard }: ResultRowProps) {
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-1 text-small text-text-secondary">
-      <h2 className="mr-auto font-medium">결과가 나온 지원 {total}건</h2>
-      {RESULT_ORDER.map((status) => (
-        <span key={status} className="inline-flex items-center gap-2">
-          <span className={clsx('h-2 w-2 rounded-full', STATUS_DOT_CLASS[status])} aria-hidden="true" />
-          {STATUS_INFO[status].label} <b className="text-text-primary tabular-nums">{counts[status]}</b>
-        </span>
-      ))}
-    </div>
+    <Card padding="sm">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <h2 className="text-body text-text-secondary">
+        <b className="font-semibold text-text-primary tabular-nums">결과가 나온 지원 {total}건</b>
+        {RESULT_ORDER.map((status) => (
+          <span key={status} className="tabular-nums">
+            {' · '}
+            {STATUS_INFO[status].label} {counts[status]}
+          </span>
+        ))}
+      </h2>
+      <button
+        type="button"
+        onClick={onShowBoard}
+        className="cursor-pointer rounded-xs text-body font-semibold text-text-brand hover:text-action-hover hover:underline focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+      >
+        보드에서 보기
+      </button>
+      </div>
+    </Card>
   );
 }
