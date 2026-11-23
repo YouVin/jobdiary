@@ -21,7 +21,7 @@ test('운영 공개 URL만 canonical/sitemap에 안내하고 개인 경로는 �
     assert.equal(metadata.robots.index, true);
     assert.equal(PRIVATE_ROBOTS.index, false);
     const urls = load('@/app/sitemap').default().map(item => item.url);
-    assert.deepEqual(urls, ['/login', '/terms', '/privacy'].map(path => `${SITE_URL}${path}`));
+    assert.deepEqual(urls, ['/login', '/signup', '/terms', '/privacy'].map(path => `${SITE_URL}${path}`));
     assert.equal(load('@/app/robots').default().rules.allow, '/');
   });
 });

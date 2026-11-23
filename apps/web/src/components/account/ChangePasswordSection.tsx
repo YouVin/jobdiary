@@ -161,7 +161,7 @@ export function ChangePasswordSection() {
               {newPasswordError}
             </p>
           )}
-          {newPassword && <PasswordStrengthMeter password={newPassword} />}
+          {newPassword && <PasswordStrengthMeter password={newPassword} className="mt-2" />}
         </div>
 
         <div>
