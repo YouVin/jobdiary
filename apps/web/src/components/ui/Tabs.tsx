@@ -33,7 +33,7 @@ export function Tabs({ label, items, value, onChange, className }: TabsProps) {
     <Wrapper
       aria-label={label}
       role={isLinks ? undefined : 'group'}
-      className={clsx('inline-flex gap-1 rounded-md bg-muted p-1', className)}
+      className={clsx('inline-flex w-fit gap-1 rounded-md bg-muted p-1', className)}
     >
       {items.map((item) => {
         const isSelected = item.value === value;

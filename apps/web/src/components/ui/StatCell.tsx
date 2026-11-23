@@ -2,7 +2,7 @@ import { clsx } from 'clsx';
 import type { ReactNode } from 'react';
 
 // 디자인 시스템 통계 칸 (#201). 이름(13) 위, 숫자(24/700) 아래, 단위는 숫자 뒤에 작게.
-// 여러 칸을 dl로 묶어 스크린리더가 "이름: 값"으로 읽는다. 칸 사이는 세로 구분선.
+// 여러 칸을 dl로 묶어 스크린리더가 "이름: 값"으로 읽는다. 칸 사이 세로 구분선은 640 이상에서만(모바일 두 줄 배치에서 줄 첫 칸이 들여 써지지 않게).
 interface StatGroupProps {
   label?: string;
   children: ReactNode;
@@ -27,7 +27,7 @@ interface StatCellProps {
 export function StatCell({ label, value, unit }: StatCellProps) {
   const isZero = value === 0 || value === '0';
   return (
-    <div className="flex flex-col gap-1 border-line-divider px-4 first:pl-0 [&:not(:first-child)]:border-l">
+    <div className="flex flex-col gap-1 border-line-divider pr-4 sm:px-4 sm:first:pl-0 sm:[&:not(:first-child)]:border-l">
       <dt className="text-label text-text-secondary">{label}</dt>
       <dd className={clsx('text-title-1 tabular-nums', isZero ? 'text-text-secondary' : 'text-text-primary')}>
         {value}
