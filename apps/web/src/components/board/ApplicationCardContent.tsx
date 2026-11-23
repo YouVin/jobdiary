@@ -46,7 +46,8 @@ export function ApplicationCardContent({ application, isDuplicate = false, today
     <>
       <p className="truncate text-body font-semibold text-text-primary">{company}</p>
       <p className="truncate text-label text-text-secondary">{position}</p>
-      <div className="mt-1 flex min-w-0 items-center gap-2">
+      {/* 칸반 열이 좁아(카드 안쪽 약 120px) 사이트·날짜·뱃지가 한 줄에 다 안 들어가면 뱃지는 다음 줄 오른쪽으로 내려간다(#215). */}
+      <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         {platform !== 'manual' && <Image src={SITE_ICON[platform]} alt="" width={16} height={16} unoptimized className="h-4 w-4 shrink-0 rounded-xs" />}
         <span className="text-caption font-normal text-text-secondary tabular-nums">{shortDate(toDateOnly(appliedAt))}</span>
         <span className="ml-auto">
