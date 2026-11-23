@@ -1,7 +1,7 @@
 'use client';
 
 import { clsx } from 'clsx';
-import { type InputHTMLAttributes, type ReactNode, useId, useState } from 'react';
+import { type InputHTMLAttributes, type ReactNode, type Ref, useId, useState } from 'react';
 import { Icon } from '@/components/common/Icon';
 import { IconButton } from '@/components/ui/IconButton';
 
@@ -20,6 +20,7 @@ interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'si
   error?: string | null;
   labelAction?: ReactNode; // 이름표 오른쪽 링크 (예: 비밀번호 찾기)
   endAdornment?: ReactNode; // 칸 안 오른쪽 버튼 (예: 비밀번호 보기)
+  ref?: Ref<HTMLInputElement>; // React 19: ref도 일반 prop으로 input까지 내려간다 (오류 칸에 포커스할 때)
 }
 
 export function TextField({ label, hint, error, labelAction, endAdornment, id, className, 'aria-describedby': describedBy, ...rest }: TextFieldProps) {
