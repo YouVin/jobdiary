@@ -145,16 +145,16 @@ function changesToUpdateRow(changes: ApplicationChanges) {
 // 실제로는 AuthGuard가 비로그인 접근을 막지만, 이 모듈만 놓고 봐도 안전하도록 방어적으로 확인한다.
 async function getCurrentUserId(context?: ApplicationRequestContext): Promise<string> {
   if (context && !context.isCurrent()) {
-    throw new Error('계정이 변경되어 요청을 취소했습니다.');
+    throw new Error('계정이 바뀌어 요청을 멈췄어요.');
   }
   const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {
-    throw new Error('로그인된 사용자가 없어 요청을 처리할 수 없습니다.');
+    throw new Error('로그인한 뒤 다시 시도해 주세요.');
   }
 
   if (context && (!context.isCurrent() || context.userId !== data.user.id)) {
-    throw new Error('계정이 변경되어 요청을 취소했습니다.');
+    throw new Error('계정이 바뀌어 요청을 멈췄어요.');
   }
 
   return data.user.id;
@@ -282,7 +282,7 @@ export async function updateApplication(
     if (expectedUpdatedAt !== undefined && (error?.code === 'PGRST116' || (!error && !data))) {
       return {
         application: null,
-        error: new Error('지원 내역이 다른 곳에서 변경되었거나 삭제됐습니다. 페이지를 새로고침한 뒤 다시 수정해주세요.'),
+        error: new Error('지원 내역이 다른 곳에서 바뀌었거나 지워졌어요. 새로고침한 뒤 다시 고쳐 주세요.'),
       };
     }
 
@@ -308,7 +308,7 @@ export async function deleteApplication(id: string, context?: ApplicationRequest
     }
 
     if (!data || data.length === 0) {
-      return { error: new Error('삭제할 지원 내역을 찾을 수 없거나 권한이 없습니다.') };
+      return { error: new Error('지울 지원 내역을 찾지 못했어요. 새로고침한 뒤 다시 시도해 주세요.') };
     }
 
     return { error: null };

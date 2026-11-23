@@ -193,7 +193,7 @@ try {
   await second.getByLabel('단계', { exact: true }).selectOption('applied');
   await second.getByRole('button', { name: '저장', exact: true }).click();
   await page.getByRole('button', { name: '저장', exact: true }).click();
-  await visible(page.getByText('지원 내역이 다른 곳에서 변경되었거나 삭제됐습니다.', { exact: false }).last());
+  await visible(page.getByText('지원 내역이 다른 곳에서 바뀌었거나 지워졌어요.', { exact: false }).last());
   assert.equal(rows[0].status, 'applied');
   assert.equal(rows[0].status_source, 'manual');
   console.log('PASS 두 탭 편집 충돌·수동 복원 보호');
@@ -280,7 +280,7 @@ try {
   await panel.getByRole('textbox').fill('충돌 확인');
   await panel.getByRole('button', { name: '기록 남기기' }).click();
   // #205: 기록 칸 오류는 다른 입력칸처럼 칸 아래 알림 영역(role=status, aria-describedby 연결)에 둔다
-  await visible(panel.getByRole('status').filter({ hasText: '다른 곳에서 변경' }));
+  await visible(panel.getByRole('status').filter({ hasText: '다른 곳에서 바뀌었' }));
   assert.equal(await panel.getByRole('textbox').getAttribute('aria-invalid'), 'true');
   assert.equal(await panel.getByRole('textbox').inputValue(), '충돌 확인');
   assert.equal(rows[1].diary.length, 1);

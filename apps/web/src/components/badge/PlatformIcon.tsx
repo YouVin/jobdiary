@@ -24,14 +24,14 @@ const INNER_CLASS = { sm: 'h-3 w-3', md: 'h-5 w-5' } as const;
 // 장식 아이콘이다. 사이트 이름은 옆 글자나 부모의 접근성 이름이 전한다.
 export function PlatformIcon({ platform, size = 'md', className }: PlatformIconProps) {
   const tile = clsx(
-    'relative flex shrink-0 items-center justify-center overflow-hidden ring-1 ring-inset ring-card-border',
+    'relative flex shrink-0 items-center justify-center overflow-hidden ring-1 ring-inset ring-line-divider',
     TILE_CLASS[size],
     className,
   );
 
   if (platform === 'manual') {
     return (
-      <span aria-hidden="true" className={clsx(tile, 'bg-column font-bold text-text-secondary', size === 'sm' ? 'text-badge' : 'text-legacy-body')}>
+      <span aria-hidden="true" className={clsx(tile, 'bg-subtle font-bold text-text-secondary', size === 'sm' ? 'text-caption' : 'text-label')}>
         +
       </span>
     );
@@ -39,7 +39,7 @@ export function PlatformIcon({ platform, size = 'md', className }: PlatformIconP
 
   const isFullBleed = platform === 'saramin';
   return (
-    <span aria-hidden="true" className={clsx(tile, 'bg-raised')}>
+    <span aria-hidden="true" className={clsx(tile, 'bg-surface')}>
       <Image
         src={ICON_SRC[platform]}
         alt=""

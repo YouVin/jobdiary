@@ -54,7 +54,7 @@ function withApplicationSession<T>(operation: (context: ApplicationRequestContex
       return await operation(context);
     } catch (error) {
       if (context.isCurrent()) {
-        useApplicationStore.setState({ isLoading: false, error: (error as Error).message ?? '요청을 처리하지 못했습니다.' });
+        useApplicationStore.setState({ isLoading: false, error: (error as Error).message ?? '요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.' });
       }
       return canceled;
     }
@@ -93,7 +93,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       if (!context.isCurrent()) return false;
 
       if (error || !application) {
-        set({ error: error?.message ?? '지원 내역을 추가하지 못했습니다.' });
+        set({ error: error?.message ?? '지원 내역을 추가하지 못했어요. 잠시 뒤 다시 시도해 주세요.' });
         return false;
       }
 
@@ -101,7 +101,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       return true;
     } catch (error) {
       if (!context.isCurrent()) return false;
-      set({ error: (error as Error).message ?? '지원 내역을 추가하지 못했습니다.' });
+      set({ error: (error as Error).message ?? '지원 내역을 추가하지 못했어요. 잠시 뒤 다시 시도해 주세요.' });
       return false;
     }
   }, false),
@@ -124,7 +124,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       const result = await apiUpdateApplication(repair.id, { url: repair.url }, context, repair.expectedUpdatedAt);
       if (!context.isCurrent()) return canceledImport;
       if (result.error || !result.application) {
-        const message = result.error?.message ?? '공고 주소를 보완하지 못했습니다. 다시 시도해주세요.';
+        const message = result.error?.message ?? '공고 주소를 채우지 못했어요. 다시 시도해 주세요.';
         set({ applications: resolvedApplications, historyReady: true, error: message });
         return { addedCount: 0, duplicateCount: 0, skippedCount: 0, error: message };
       }
@@ -166,7 +166,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       if (!context.isCurrent()) return false;
 
       if (error || !application) {
-        set({ error: error?.message ?? '지원 내역을 수정하지 못했습니다.' });
+        set({ error: error?.message ?? '지원 내역을 고치지 못했어요. 잠시 뒤 다시 시도해 주세요.' });
         return false;
       }
 
@@ -176,7 +176,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       return true;
     } catch (error) {
       if (!context.isCurrent()) return false;
-      set({ error: (error as Error).message ?? '지원 내역을 수정하지 못했습니다.' });
+      set({ error: (error as Error).message ?? '지원 내역을 고치지 못했어요. 잠시 뒤 다시 시도해 주세요.' });
       return false;
     }
   }, false),
@@ -202,7 +202,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       return true;
     } catch (error) {
       if (!context.isCurrent()) return false;
-      set({ error: (error as Error).message ?? '지원 내역을 삭제하지 못했습니다.' });
+      set({ error: (error as Error).message ?? '지원 내역을 지우지 못했어요. 잠시 뒤 다시 시도해 주세요.' });
       return false;
     }
   }, false),
