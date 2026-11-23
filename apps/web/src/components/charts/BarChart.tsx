@@ -43,7 +43,7 @@ export function BarChart({ label, bars, heightClass = 'h-40', className }: BarCh
       </div>
       <div className="grid gap-2 text-center text-caption font-normal text-text-secondary tabular-nums" style={columns}>
         {bars.map((bar) => (
-          <span key={bar.key} className={clsx(bar.isHighlighted && 'font-semibold text-text-brand-strong')}>
+          <span key={bar.key} className={clsx('whitespace-nowrap', bar.isHighlighted && 'font-semibold text-text-brand-strong')}>
             {bar.label}
           </span>
         ))}
