@@ -108,7 +108,7 @@ const page = await context.newPage();
 const visible = async locator => { await locator.waitFor({ state: 'visible' }); };
 // 헤더 탭으로 지원보드에 들어간다. 클라이언트 이동이라 스토어에 있는 목록을 그대로 보여준다.
 async function openBoard(target) {
-  await target.getByRole('navigation', { name: '주요 메뉴' }).getByRole('link', { name: /지원보드/ }).click();
+  await target.getByRole('navigation', { name: '주 메뉴' }).getByRole('link', { name: /지원 보드/ }).click();
   await target.waitForFunction(() => location.pathname === '/board');
 }
 async function login(target, key) {
@@ -145,21 +145,22 @@ try {
   await page.locator('#policy-consent').check();
   await page.getByRole('button', { name: '동의하고 시작하기' }).click();
   await visible(page.getByText('동의를 저장하지 못했습니다. 다시 시도해주세요.', { exact: true }));
-  assert.equal(await page.getByRole('button', { name: '지원추가' }).count(), 0);
+  assert.equal(await page.getByRole('button', { name: '지원 추가' }).count(), 0);
   consentFail = false;
   await page.getByRole('button', { name: '동의하고 시작하기' }).click();
-  await visible(page.getByRole('button', { name: '지원추가' }));
+  await visible(page.getByRole('button', { name: '지원 추가' }));
   await page.reload();
-  await visible(page.getByRole('button', { name: '지원추가' }));
+  await visible(page.getByRole('button', { name: '지원 추가' }));
   console.log('PASS 신규 소셜 계정 동의·저장 실패·재시도·새로고침 유지');
+  await page.getByRole('button', { name: '내 계정', exact: true }).click();
   await page.getByRole('button', { name: '로그아웃', exact: true }).click();
   await login(page, 'a');
   // 로그인 후 홈(통계 대시보드)으로 돌아온다. 카드 편집은 지원보드에서 확인한다.
   await page.waitForFunction(() => location.pathname === '/');
-  await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
+  await visible(page.locator('#summary-title'));
   await page.goto(`${origin}/board`);
   await visible(page.getByText('A 회사', { exact: true }));
-  await page.getByRole('button', { name: '지원추가' }).click();
+  await page.getByRole('button', { name: '지원 추가' }).click();
   await page.getByLabel('회사명 *', { exact: true }).fill('새 지원');
   await page.getByLabel('지원일 *', { exact: true }).fill('');
   await page.getByRole('button', { name: '저장', exact: true }).click();
@@ -197,29 +198,32 @@ try {
   console.log('PASS 두 탭 편집 충돌·수동 복원 보호');
   // 저장 후에도 패널은 상세 화면으로 남아 있으므로 닫고 로그아웃한다(A 탭의 패널은 열어 둔다).
   await second.keyboard.press('Escape');
+  await second.getByRole('button', { name: '내 계정', exact: true }).click();
   await second.getByRole('button', { name: '로그아웃', exact: true }).click();
   await visible(page.getByLabel('이메일', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
   await login(second, 'b');
   await page.waitForFunction(() => location.pathname === '/');
-  await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
+  await visible(page.locator('#summary-title'));
   await openBoard(page);
   await visible(page.getByText('B 회사', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
   assert.equal(await page.getByLabel('회사명 *', { exact: true }).count(), 0);
   assert.equal(await page.getByRole('dialog').count(), 0);
   console.log('PASS 다른 탭 로그아웃·B 로그인 시 A 목록/편집창 제거');
+  await second.getByRole('button', { name: '내 계정', exact: true }).click();
   await second.getByRole('button', { name: '로그아웃', exact: true }).click();
   delayNextA = true;
   await login(page, 'a');
   await page.waitForFunction(() => location.pathname === '/');
   for (let attempt = 0; !delayed && attempt < 100; attempt++) await new Promise(resolve => setTimeout(resolve, 50));
   assert(delayed, 'A 조회 지연 요청 시작');
-  await visible(second.getByRole('button', { name: '로그아웃', exact: true }));
+  await visible(second.getByRole('button', { name: '내 계정', exact: true }));
+  await second.getByRole('button', { name: '내 계정', exact: true }).click();
   await second.getByRole('button', { name: '로그아웃', exact: true }).click();
   await login(second, 'b');
   delayed();
-  await visible(page.getByRole('region', { name: '오늘의 지원 요약' }));
+  await visible(page.locator('#summary-title'));
   await openBoard(page);
   await visible(page.getByText('B 회사', { exact: true }));
   assert.equal(await page.getByText('A 회사', { exact: true }).count(), 0);
