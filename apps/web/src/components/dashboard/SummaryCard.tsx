@@ -36,7 +36,7 @@ export function SummaryCard({ today, overview, stage, nextEvent, platformCounts,
   const passRate = stage.screeningPassRate === null ? '-' : Math.round(stage.screeningPassRate * 100);
 
   return (
-    <Card aria-labelledby="summary-title" className="gap-6 motion-safe:animate-rise" style={style}>
+    <Card aria-labelledby="summary-title" gap="lg" className="motion-safe:animate-rise" style={style}>
       <div className="flex flex-col gap-2">
         <p className="text-label text-text-secondary">
           <time dateTime={today}>{`${month}월 ${day}일 ${weekday}`}</time>
