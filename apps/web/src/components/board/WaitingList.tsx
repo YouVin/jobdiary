@@ -1,6 +1,6 @@
 import { clsx } from 'clsx';
 import { ViewTransition } from 'react';
-import { StageTrack } from '@/components/board/StageTrack';
+import { StageTrack } from '@/components/ui/StageTrack';
 import { Icon } from '@/components/common/Icon';
 import { STATUS_INFO } from '@/constants/status';
 import type { Platform, Status } from '@/types/application';
