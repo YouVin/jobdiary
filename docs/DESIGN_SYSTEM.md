@@ -81,7 +81,7 @@
 
 - 틀: `auth/AuthShell.tsx` — 왼쪽 폼(`<main>`), 오른쪽 소개(`<aside aria-label="서비스 미리보기">`). DOM에서는 항상 폼이 먼저라 읽는 순서·Tab 순서가 폼부터다. 1024px 미만은 소개가 위로 올라오는데(`order-first`) 화면 배치만 바뀐 것이다. 제목은 `AuthHeading`(h1)으로 서버에서 그린다.
 - 주소: `/login`(로그인)·`/signup`(회원가입)은 `app/(entry)/` 묶음이 같은 틀을 나눠 쓰고, 둘 사이는 아래 "가입하기 / 로그인하기" 링크로 오간다(`?import=1` 유지). `/reset-password`·`/update-password`도 같은 틀이며, 메일 링크로 바로 들어오므로 1024px 미만에서는 소개 없이 폼부터 보인다(`mobileIntro={false}`).
-- 소개: 1024px 이상 맥북(소개 오른쪽 끝에서 잘림), 미만 아이폰(640px 미만 0.9배). `auth/DeviceMockups.tsx`. 기기 속 화면은 지어낸 예시이며 회사 이름은 익명(A사·B사)이다. 맥북은 소개 영역이 좁으면 왼쪽 40px에 붙어 오른쪽이 잘리고, 넓어지면 `max(40px, (폭 − 640px)/2 − 32px)` 한 식으로 끊김 없이 가운데로 옮겨진다(#215).
+- 소개: 1024px 이상 맥북(소개 오른쪽 끝에서 잘림), 미만 아이폰(640px 미만 0.9배). `auth/DeviceMockups.tsx`. 기기 속 화면은 지어낸 예시이며 회사 이름은 익명(A사·B사)이다. 소개 문구와 맥북은 한 묶음(폭 680)이다. 영역이 좁으면 묶음이 왼쪽 안쪽 여백에 붙어 맥북 오른쪽이 잘리고, 넓어지면 묶음 왼쪽 여백 `max(0, (안쪽 폭 − 680px)/2 − 32px)` 한 식으로 끊김 없이 영역 가운데로 옮겨진다(#215, 왼쪽 폼이 가운데 놓인 한 묶음인 것과 같은 방식).
 - 기기 속 작은 글자: 디자인 시스템 글자 단계(caption~title-1)로 실제 크기에 그리고 화면 전체를 `[zoom:0.75]`로 줄인다. 임의 글자 크기를 만들지 않으며, `transform: scale`과 달리 줄인 만큼 자리도 줄어든다.
 - 기기 고유색·모서리는 화면 역할 색과 섞지 않게 목업 전용 토큰으로 둔다: 색 `device-edge`·`device-steel`·`device-shade`·`device-glass`·`device-hinge`·`device-hinge-light`·`device-base`, 모서리 `rounded-device-phone`(46)·`device-phone-bezel`(45)·`device-phone-screen`(41)·`device-lid`(24)·`device-lid-inner`(23). 디자인 시스템 원본에는 없는 코드 전용 토큰이다.
 - 문구는 해요체. 입력 검사 문구(`utils/authValidation.ts`)도 "~해 주세요"로 띄어 쓴다.
