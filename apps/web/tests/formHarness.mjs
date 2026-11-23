@@ -1,7 +1,9 @@
 import { createSourceLoader } from './loadSource.mjs';
 
 // React 상태를 유지하며 실제 폼의 이벤트 핸들러를 실행한다. 브라우저 렌더링 검증은 별도다.
+// #205: 저장은 form onSubmit, 칸 오류는 ApplicationFormFields의 errors로 받는다. 첫 오류 칸 포커스(requestAnimationFrame)는 여기서 하지 않는다.
 export function createFormHarness(componentName, initialProps, state) {
+  globalThis.requestAnimationFrame ??= () => 0;
   const values = [];
   let cursor = 0;
   let props = initialProps;
@@ -17,7 +19,8 @@ export function createFormHarness(componentName, initialProps, state) {
     },
     '@/store/applicationStore': { useApplicationStore: (selector) => selector(state) },
     '@/components/modal/ApplicationFormFields': { ApplicationFormFields: () => null },
-    '@/components/common/Modal': { Modal: () => null },
+    '@/components/ui/Overlay': { Dialog: () => null },
+    '@/components/ui/Toast': { useToast: () => () => {} },
   });
   const Component = load(`@/components/modal/${componentName}`)[componentName];
   function elements(node) {
@@ -35,7 +38,11 @@ export function createFormHarness(componentName, initialProps, state) {
   return {
     render,
     fields: () => elements(tree).find((node) => node.props?.onAppliedAtChange).props,
-    save: () => elements(tree).filter((node) => node.type === 'button').at(-1).props.onClick(),
-    alerts: () => elements(tree).filter((node) => node.props?.role === 'alert').map((node) => node.props.children),
+    save: () => elements(tree).find((node) => node.props?.onSubmit).props.onSubmit({ preventDefault() {} }),
+    // 칸 아래 오류(errors)와 창 안 알림(role=alert)을 화면 순서대로 모은다. 빈 알림 영역은 뺀다.
+    alerts: () => [
+      ...Object.values(elements(tree).find((node) => node.props?.onAppliedAtChange)?.props.errors ?? {}),
+      ...elements(tree).filter((node) => node.props?.role === 'alert').map((node) => node.props.children),
+    ].filter(Boolean),
   };
 }

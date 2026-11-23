@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { buttonClassName } from '@/components/common/buttonStyles';
-import { Modal } from '@/components/common/Modal';
-import { ApplicationFormFields } from '@/components/modal/ApplicationFormFields';
+import { useId, useState } from 'react';
+import { ApplicationFormFields, fieldId } from '@/components/modal/ApplicationFormFields';
+import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Overlay';
+import { useToast } from '@/components/ui/Toast';
 import { useApplicationStore } from '@/store/applicationStore';
-import { Platform, Status } from '@/types/application';
-import { getApplicationDateError } from '@/utils/applicationFormValidation';
+import type { Platform, Status } from '@/types/application';
+import { type ApplicationFormErrors, firstErrorField, getApplicationFormErrors } from '@/utils/applicationFormValidation';
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -22,10 +23,16 @@ function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+// 지원 추가 (#205): 디자인 시스템 가운데 창(Dialog, 폭 520, 모바일 아래 시트).
+// - 저장 버튼은 늘 누를 수 있고, 빈 칸·잘못된 날짜는 칸 아래 오류 + 첫 오류 칸으로 포커스로 알린다.
+// - 저장하면 창을 닫고 토스트("지원을 추가했어요"), 서버 오류는 창 안 알림 영역에 남기고 창을 닫지 않는다.
 export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProps) {
   const addApplication = useApplicationStore((state) => state.addApplication);
   const clearError = useApplicationStore((state) => state.clearError);
   const error = useApplicationStore((state) => state.error);
+  const showToast = useToast();
+  const idPrefix = useId();
+  const formId = `${idPrefix}-form`;
 
   const [company, setCompany] = useState('');
   const [position, setPosition] = useState('');
@@ -34,7 +41,7 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
   const [appliedAt, setAppliedAt] = useState(getTodayDateString);
   const [deadlineAt, setDeadlineAt] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<ApplicationFormErrors>({});
 
   // 저장 후 다음 입력을 위해 폼 초기화
   const resetForm = () => {
@@ -44,17 +51,20 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
     setStatus('applied');
     setAppliedAt(getTodayDateString());
     setDeadlineAt('');
-    setValidationError(null);
+    setErrors({});
   };
 
-  const handleSave = async () => {
-    if (!company.trim()) {
+  const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+    const nextErrors = getApplicationFormErrors({ company, appliedAt, deadlineAt });
+    setErrors(nextErrors);
+    const first = firstErrorField(nextErrors);
+    if (first) {
+      // 오류 문구가 칸에 연결된 뒤 포커스해 함께 읽히게 한다.
+      requestAnimationFrame(() => document.getElementById(fieldId(idPrefix, first))?.focus());
       return;
     }
-
-    const dateError = getApplicationDateError({ appliedAt, deadlineAt });
-    setValidationError(dateError);
-    if (dateError) return;
 
     setIsSubmitting(true);
     try {
@@ -66,12 +76,10 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
         appliedAt: new Date(appliedAt).toISOString(),
         deadlineAt: deadlineAt || undefined,
       });
+      // 실패 시 에러는 store.error에 남아 아래에 표시되고, 창은 닫지 않는다.
+      if (!succeeded) return;
 
-      // 실패 시 에러는 store.error에 남아 아래에 표시되고, 모달은 닫지 않는다.
-      if (!succeeded) {
-        return;
-      }
-
+      showToast({ message: `${company.trim()} 지원을 추가했어요` });
       resetForm();
       onClose();
     } finally {
@@ -79,56 +87,54 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
     }
   };
 
-  // 취소/ESC/오버레이 클릭 등 저장 없이 닫히는 모든 경로에서도 폼과 에러를 초기화.
-  // 저장 요청이 진행 중일 때는 무시 (버튼은 disabled로 막히지만 ESC/오버레이/X는 별도 경로라 여기서도 막아야 함).
+  // 취소/ESC/바깥 누름 등 저장 없이 닫히는 모든 경로에서도 폼과 에러를 초기화한다. 저장 중에는 닫지 않는다.
   const handleClose = () => {
-    if (isSubmitting) {
-      return;
-    }
+    if (isSubmitting) return;
     clearError();
     resetForm();
     onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="지원 추가" closeDisabled={isSubmitting}>
-      <ApplicationFormFields
-        company={company}
-        onCompanyChange={setCompany}
-        position={position}
-        onPositionChange={setPosition}
-        platform={platform}
-        onPlatformChange={setPlatform}
-        status={status}
-        onStatusChange={setStatus}
-        appliedAt={appliedAt}
-        onAppliedAtChange={setAppliedAt}
-        deadlineAt={deadlineAt}
-        onDeadlineAtChange={setDeadlineAt}
-      />
-
-      {(validationError || error) && (
-        <p role="alert" className="mt-3 text-legacy-label text-status-rejected">{validationError || error}</p>
-      )}
-
-      <div className="mt-5 flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={handleClose}
+    <Dialog
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="지원 추가"
+      description="직접 지원한 곳을 기록해요. 사이트 지원은 익스텐션으로 가져올 수 있어요."
+      closeDisabled={isSubmitting}
+      footer={
+        <>
+          <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
+            취소
+          </Button>
+          <Button type="submit" form={formId} isLoading={isSubmitting} loadingLabel="저장하는 중">
+            지원 추가
+          </Button>
+        </>
+      }
+    >
+      <form id={formId} onSubmit={handleSave} noValidate className="flex flex-col gap-4">
+        <ApplicationFormFields
+          idPrefix={idPrefix}
+          company={company}
+          onCompanyChange={setCompany}
+          position={position}
+          onPositionChange={setPosition}
+          platform={platform}
+          onPlatformChange={setPlatform}
+          status={status}
+          onStatusChange={setStatus}
+          appliedAt={appliedAt}
+          onAppliedAtChange={setAppliedAt}
+          deadlineAt={deadlineAt}
+          onDeadlineAtChange={setDeadlineAt}
+          errors={errors}
           disabled={isSubmitting}
-          className={buttonClassName('secondary')}
-        >
-          취소
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={!company.trim() || isSubmitting}
-          className={buttonClassName('primary')}
-        >
-          {isSubmitting ? '저장 중...' : '저장'}
-        </button>
-      </div>
-    </Modal>
+        />
+        <p role="alert" className={error ? 'rounded-md bg-danger-tint px-4 py-2 text-label text-danger-text' : 'sr-only'}>
+          {error}
+        </p>
+      </form>
+    </Dialog>
   );
 }
