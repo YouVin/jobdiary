@@ -42,7 +42,9 @@
 |---|---|---|
 | Button · `buttonClassName` | `ui/Button.tsx` | 진짜 `<button>`. 비활성·로딩은 `aria-disabled`(포커스·이름 유지, 누름·제출만 막음), 로딩은 `aria-busy` + 숨은 "처리 중" |
 | IconButton | `ui/IconButton.tsx` | `label` 필수 → `aria-label`, 44×44 |
-| TextField · PasswordField · SearchInput | `ui/TextField.tsx` | `<label for>` 자동 연결, 도움말·오류 `aria-describedby`, 오류 `aria-invalid`, 비밀번호 보기 `aria-pressed`, 검색 이름표는 sr-only |
+| TextField · PasswordField · SearchInput | `ui/TextField.tsx` | `<label for>` 자동 연결, 도움말·오류 `aria-describedby`(보이는 것만 연결), 오류 `aria-invalid`, 오류 자리는 비어 있어도 `role="status"`로 미리 둠, 비밀번호 보기는 이름 고정("○○ 보기") + `aria-pressed` + `aria-controls`, 검색 이름표는 sr-only, `ref`는 input까지 전달 |
+| TextLink · `textLinkClassName` | `ui/TextLink.tsx` | 글자 링크 2종: `brand`(가입하기·비밀번호 찾기, 파란 굵은 글자) · `quiet`(이용약관, 본문색 + 밑줄). 포커스 링 3px |
+| Checkbox | `ui/Checkbox.tsx` | 이름표 전체가 눌림 영역, 상자 20px, 오류 자리는 TextField와 같은 방식 |
 | Tabs | `ui/Tabs.tsx` | 주소가 있으면 링크 + `aria-current="page"`, 없으면 버튼 + `aria-pressed` |
 | FilterChip · ChipGroup | `ui/FilterChip.tsx` | `aria-pressed`, 묶음 `role="group"` + 이름 |
 | Badge · StageDot | `ui/Badge.tsx` | 색만으로 구분하지 않게 항상 글자. 단계 점 색 `STAGE_DOT_CLASS` |
@@ -59,6 +61,16 @@
 
 - 검사: `npm run verify:ui`(개발 서버 실행 중, 기본 `http://localhost:3000`)가 `/dev/ui`를 axe(WCAG 2.2 AA + best-practice)와 키보드 시나리오로 검사한다.
 - 기존 `common/buttonStyles.ts`·`formStyles.ts`·`common/Modal.tsx`는 예전 화면이 쓰는 동안 남겨 두고, 화면을 바꿀 때(#202~#205) 새 부품으로 옮긴 뒤 #206에서 지운다.
+- 입력칸 오류 문구는 `useFieldValidation`이 띄운다. 칸 아래 링크·버튼을 마우스로 누르는 중에 칸을 벗어나면 오류 문구를 클릭이 끝난 뒤에 보여준다(누르는 순간 문구가 생기면 링크가 밀려 클릭이 사라진다, #202). Tab으로 벗어날 때는 바로 보여준다.
+
+### 로그인·회원가입 화면 (#202)
+
+- 틀: `auth/AuthShell.tsx` — 왼쪽 폼(`<main>`), 오른쪽 소개(`<aside aria-label="서비스 미리보기">`). DOM에서는 항상 폼이 먼저라 읽는 순서·Tab 순서가 폼부터다. 1024px 미만은 소개가 위로 올라오는데(`order-first`) 화면 배치만 바뀐 것이다. 제목은 `AuthHeading`(h1)으로 서버에서 그린다.
+- 주소: `/login`(로그인)·`/signup`(회원가입)은 `app/(entry)/` 묶음이 같은 틀을 나눠 쓰고, 둘 사이는 아래 "가입하기 / 로그인하기" 링크로 오간다(`?import=1` 유지). `/reset-password`·`/update-password`도 같은 틀이며, 메일 링크로 바로 들어오므로 1024px 미만에서는 소개 없이 폼부터 보인다(`mobileIntro={false}`).
+- 소개: 1024px 이상 맥북(소개 오른쪽 끝에서 잘림), 미만 아이폰(640px 미만 0.9배). `auth/DeviceMockups.tsx`. 기기 속 화면은 예시이며 아래에 "이해를 돕기 위해 예시로 만든 화면이에요"를 둔다. 회사 이름은 익명(A사·B사).
+- 기기 속 작은 글자: 디자인 시스템 글자 단계(caption~title-1)로 실제 크기에 그리고 화면 전체를 `[zoom:0.75]`로 줄인다. 임의 글자 크기를 만들지 않으며, `transform: scale`과 달리 줄인 만큼 자리도 줄어든다.
+- 기기 고유색·모서리는 화면 역할 색과 섞지 않게 목업 전용 토큰으로 둔다: 색 `device-edge`·`device-steel`·`device-shade`·`device-glass`·`device-hinge`·`device-hinge-light`·`device-base`, 모서리 `rounded-device-phone`(46)·`device-phone-bezel`(45)·`device-phone-screen`(41)·`device-lid`(24)·`device-lid-inner`(23). 디자인 시스템 원본에는 없는 코드 전용 토큰이다.
+- 문구는 해요체. 입력 검사 문구(`utils/authValidation.ts`)도 "~해 주세요"로 띄어 쓴다.
 
 ## 간격과 크기
 
@@ -91,7 +103,7 @@
 
 - 데이터로 그리는 차트 SVG는 `src/components/charts/`에서만 작성하고 색은 토큰 클래스로 지정한다. 플랫폼 차트 색은 `platform.*.chart` (#149, [HOME_DASHBOARD](HOME_DASHBOARD.md)).
 - 버튼·메뉴·알약은 `rounded-full`, 입력은 `rounded-xl`, 카드·모달·패널은 `rounded-card`(20px), 카드 안의 칸·묶음은 `rounded-section`(14px) (#193).
-- 로그인 장식 프레임은 `rounded-2xl`, `rounded-3xl`, `rounded-4xl` 등 정수 px의 기본 토큰을 사용한다.
+- 로그인 소개의 모바일 첫 화면 아래 모서리는 `rounded-b-4xl`(32px) 기본 토큰을 쓴다. 기기 목업 모서리는 위 "로그인·회원가입 화면 (#202)"의 `device-*` 토큰을 쓴다.
 - 페이지는 `bg-page`(그레이지), 카드·패널·입력 표면은 `bg-card`, 카드 안의 낮은 면은 `bg-column`, 카드 위에 떠 있는 행·알약·입력칸은 `bg-raised`(흰색), 브랜드(검정) 위 글자는 `text-on-brand`, 모달 배경은 `bg-overlay/50`.
 - 색·그림자·타이포 정의를 컴포넌트나 globals.css에 복제하지 않는다. `shadow-card`, `shadow-float`를 재사용한다.
 

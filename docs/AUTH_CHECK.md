@@ -68,7 +68,7 @@ npm.cmd test
 
 - 공통 버튼에 pointer/hover/active/focus-visible/disabled 상태를 통일했다. 모드 버튼, 비밀번호 표시, 약관 체크·링크, 비밀번호 찾기와 메일 재전송도 키보드 포커스를 제공한다. 아이콘 버튼은 32px 클릭 영역을 확보한다.
 - 모드는 native button 그룹과 aria-pressed/aria-controls로 선택 상태를 알린다. tab 역할은 사용하지 않으므로 Tab과 Enter/Space의 표준 버튼 조작을 따른다. 비밀번호 토글은 안정적인 이름과 aria-pressed, 제어하는 입력 ID를 연결한다.
-- 로그인 페이지는 main 1개·h1 1개로 구성한다. 이메일 fieldset에 legend를 제공하고 비밀번호 규칙·강도·오류, 약관 오류, Google 안내를 입력/버튼과 연결한다. 가입 성공·재전송 결과는 status, 인증 실패는 alert로 알린다. 요청에는 aria-busy와 native disabled를 적용한다.
+- 로그인 페이지는 main 1개·h1 1개로 구성한다. 이메일 fieldset에 legend를 제공하고 비밀번호 규칙·강도·오류, 약관 오류, Google 안내를 입력/버튼과 연결한다. 가입 성공·재전송 결과는 status, 인증 실패는 alert로 알린다. 요청에는 aria-busy를 적용하고, 입력칸은 fieldset disabled, 제출·Google 버튼은 `aria-disabled`로 막는다(#202부터: 처리 중에도 포커스가 버튼에 남는다).
 - 필수값 제출 실패 시 첫 오류 필드로 포커스를 옮긴다. 약관 링크의 새 탭 열림은 스크린리더용 텍스트로 안내한다. 작은 성공·오류 안내에는 대비가 높은 전용 디자인 토큰을 쓴다.
 - 재전송에서 SDK throw 시 안내 없이 예외가 전파되고 반환 오류가 성공 색상으로 보이던 경로를 보완했다. 예외/반환 오류를 안내하고 재시도를 허용하며 연타는 ref로 제한한다. 단위 회귀 2개 추가.
 - axe-core 4.11.0의 WCAG A/AA·best-practice 태그로 로그인, 빈 가입, 필수 오류, 비밀번호 표시/강도, 요청 중, 재전송 실패, 재전송 성공 **7개 상태에서 자동 검출 위반 0건**. ARIA 참조 ID도 모두 존재한다.
@@ -121,3 +121,25 @@ Edge와 NVDA 또는 Windows 내레이터로 아래를 확인하고 브라우저/
 4. Google 최초 로그인 후 약관 제목과 체크박스, 저장/실패/재시도를 확인한다. 이미 동의한 계정은 이 단계를 건너뛰어야 한다. 세션 확인 로딩 안내를 탐색할 수 있고 가짜 컨트롤로 Tab이 이동하지 않아야 한다.
 
 근거: [W3C 폼 알림](https://www.w3.org/WAI/tutorials/forms/notifications/), [ARIA19: 기존 live region의 오류 갱신](https://www.w3.org/WAI/WCAG21/Techniques/aria/ARIA19), [WAI-ARIA aria-busy](https://www.w3.org/TR/wai-aria/#aria-busy).
+
+## 새 디자인 적용 (#202, 2026-11-23)
+
+로그인·회원가입을 `/login`·`/signup`으로 나누고 공통 부품(`components/ui`)으로 바꾸면서 찾은 문제와 조치다. 수치 기록은 [REDESIGN_TROUBLESHOOTING](REDESIGN_TROUBLESHOOTING.md) 16~19번.
+
+1. **칸 아래 링크·버튼 클릭이 사라짐 (실제 재현)**
+   - 재현: 이메일 칸에 `name`을 입력하고 칸을 벗어나지 않은 채 바로 아래 "가입하기" 링크(또는 "로그인" 버튼)를 마우스로 누른다.
+   - 원인: 누르는 순간(mousedown) 칸에서 포커스가 빠지며 오류 문구가 새로 생기고, 그 높이만큼 아래 내용이 밀린다(1024px 이상은 폼이 가운데 정렬이라 14px, 미만 28px). 손을 떼는 위치가 링크 밖이 되어 click이 링크에서 일어나지 않는다. 예전 탭 구조에서도 "로그인" 버튼은 같은 경로가 있었다(이번에 재현한 것은 새 화면).
+   - 수정: `useFieldValidation`이 마우스를 누르는 중에 칸을 벗어나면 오류 문구를 mouseup 다음 차례로 미룬다. Tab으로 벗어나면 지금처럼 바로 보인다. 창 밖에서 손을 떼는 경우는 window blur에서 풀어 준다.
+   - 검증: 같은 조작에서 밀린 거리 14px → 0px, `/signup` 이동 실패 → 성공. `verify-auth-browser.mjs`에 회귀 시나리오 추가(13개 통과).
+2. **오류가 뜨면 없는 도움말 id를 가리킴 (실제 재현)**
+   - 재현: 가입 화면에서 비밀번호를 비운 채 제출.
+   - 원인: `TextField`가 오류가 있으면 도움말 문구를 숨기면서 `aria-describedby`에는 도움말 id를 남겼다.
+   - 수정: 보이는 설명만 연결한다. 검증: `verify-auth-accessibility.mjs`의 ARIA 참조 검사에서 없는 id 1개 → 0개.
+3. **처리 중 제출 버튼 포커스**: 예전에는 제출 버튼이 `fieldset disabled` 안에 있어 처리 중 native disabled가 됐다(HTML 규칙상 포커스를 잃는 구조, 이전 동작은 직접 측정하지 않음). 지금은 버튼을 fieldset 밖에 두고 `aria-disabled`로 누름만 막는다. 처리 중 버튼 이름은 "로그인하는 중"이며 포커스가 버튼에 남는 것을 검사한다.
+4. **비밀번호 보기 버튼 이름**: 누르면 이름이 "숨기기"로 바뀌면서 `aria-pressed`도 켜져 "비밀번호 숨기기, 눌림"처럼 두 신호가 반대로 읽혔다. 이름은 "○○ 보기"로 고정하고 눌림 상태만 바꾼다. 어느 칸을 바꾸는지 `aria-controls`로 연결한다.
+5. **오류 알림 영역**: 공통 `TextField`·`Checkbox`는 오류가 없을 때도 비어 있는 `role="status"` 영역을 그려 둔다(ARIA19). 처음부터 있던 영역이라야 문구가 들어올 때 스크린리더가 놓치지 않는다.
+
+검증 (HTTP fixture, Edge):
+- `verify-auth-accessibility.mjs`: 로그인·빈 가입·필수 오류·비밀번호 강도/표시·요청 중·재전송 실패·재전송 성공·비밀번호 재설정·재설정 오류 **9개 상태 axe 위반 0건**, 포커스 테두리 색(#3461D1), Tab 순서(이메일 → 비밀번호 찾기 → 비밀번호 → 보기 버튼), 키보드 Enter로 가입 화면 이동, 390/768/1440px 가로 넘침 없음.
+- `verify-auth-browser.mjs` 13개, `verify-auth-loading-seo.mjs` 4개, `verify:ui` 11개 통과. `/signup`이 공개 페이지 메타데이터·sitemap에 들어갔다(sitemap 3 → 4개).
+- 확인하지 못한 범위: 실제 Google 계정 로그인과 실제 메일 발송·인증 링크, 실제 스크린리더(NVDA·VoiceOver) 낭독, 운영 도메인. `verify-release-browser.mjs`는 문구·경로만 맞췄고 테스트 계정이 필요해 이번에 실행하지 않았다.
