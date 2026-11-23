@@ -3,9 +3,11 @@ import { BrandLogo } from '@/components/common/BrandMark';
 import { IPhoneMockup, MacBookMockup } from '@/components/auth/DeviceMockups';
 
 // 로그인 소개 영역 (#202, 캔버스 Login-R5·R5m).
-// - 1024px 이상: 폼 오른쪽, 회색 바탕 위 맥북(오른쪽 끝에서 잘림). 로고는 폼 쪽에 있다.
+// - 1024px 이상: 폼 오른쪽, 회색 바탕 위 맥북. 로고는 폼 쪽에 있다.
+//   소개 영역이 좁으면 왼쪽 40px에 붙고 오른쪽 끝이 잘린다. 넓어져 맥북이 다 들어가면 가운데로 간다(#215).
+//   왼쪽 여백 = max(40px, (영역 폭 − 맥북 640px) / 2 − 32px). 한 식으로 이어져 있어 폭이 바뀌어도 위치가 끊기지 않고
+//   자연스럽게 옮겨진다(32px = 영역 왼쪽 안쪽 여백 64px의 절반, 영역 전체 기준으로 가운데를 맞춘다).
 // - 1024px 미만: 폼 위로 올라오고 아래 모서리가 둥근 첫 화면. 로고 + 소개 문구 + 아이폰.
-// 기기 화면은 예시라서 아래에 "예시로 만든 화면"이라고 밝힌다.
 export function AuthIntro({ className }: { className?: string }) {
   return (
     <aside
@@ -31,12 +33,8 @@ export function AuthIntro({ className }: { className?: string }) {
 
       <div aria-hidden="true" className="relative">
         <IPhoneMockup className="lg:hidden" />
-        <MacBookMockup className="ml-10 max-lg:hidden" />
+        <MacBookMockup className="ml-[max(2.5rem,calc((100%_-_40rem)/2_-_2rem))] max-lg:hidden" />
       </div>
-
-      <p className="relative -mt-2 text-caption font-normal text-text-secondary lg:absolute lg:right-5 lg:bottom-4 lg:mt-0">
-        이해를 돕기 위해 예시로 만든 화면이에요
-      </p>
     </aside>
   );
 }
