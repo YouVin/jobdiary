@@ -1,0 +1,38 @@
+import { clsx } from 'clsx';
+import type { ReactNode } from 'react';
+
+// 디자인 시스템 통계 칸 (#201). 이름(13) 위, 숫자(24/700) 아래, 단위는 숫자 뒤에 작게.
+// 여러 칸을 dl로 묶어 스크린리더가 "이름: 값"으로 읽는다. 칸 사이는 세로 구분선.
+interface StatGroupProps {
+  label?: string;
+  children: ReactNode;
+  className?: string;
+}
+
+export function StatGroup({ label, children, className }: StatGroupProps) {
+  return (
+    <dl aria-label={label} className={clsx('grid grid-cols-2 gap-y-4 sm:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]', className)}>
+      {children}
+    </dl>
+  );
+}
+
+interface StatCellProps {
+  label: string;
+  value: number | string;
+  unit?: string; // 건 · 곳 · 번 · %
+}
+
+// 0은 숫자를 낮춘 회색으로 둔다(24px 이상이라 3:1 기준). 문장에서는 "아직 없어요"라고 쓴다.
+export function StatCell({ label, value, unit }: StatCellProps) {
+  const isZero = value === 0 || value === '0';
+  return (
+    <div className="flex flex-col gap-1 border-line-divider px-4 first:pl-0 [&:not(:first-child)]:border-l">
+      <dt className="text-label text-text-secondary">{label}</dt>
+      <dd className={clsx('text-title-1 tabular-nums', isZero ? 'text-text-disabled' : 'text-text-primary')}>
+        {value}
+        {unit && <span className={clsx('ml-1 text-body font-normal', isZero ? 'text-text-disabled' : 'text-text-secondary')}>{unit}</span>}
+      </dd>
+    </div>
+  );
+}
