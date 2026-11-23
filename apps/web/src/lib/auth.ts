@@ -74,7 +74,7 @@ export async function deleteAccount(): Promise<{ error: Error | null }> {
     return { error };
   }
   if (!data?.ok) {
-    return { error: new Error(data?.error || '회원 탈퇴에 실패했습니다.') };
+    return { error: new Error(data?.error || '탈퇴하지 못했어요. 잠시 뒤 다시 시도해 주세요.') };
   }
   return { error: null };
 }

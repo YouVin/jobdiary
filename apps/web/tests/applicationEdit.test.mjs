@@ -81,7 +81,7 @@ test('삭제된 지원을 저장하면 수정창을 유지하고 새로고침을
   await e.form.save();
   assert.equal(e.getWrites(), 0);
   assert.equal(e.getCloses(), 0);
-  assert.match(e.state.error, /삭제/);
+  assert.match(e.state.error, /지워졌어요/);
 });
 
 test('최신 버전의 마감 지난 지원은 정상적으로 자동 분류하고 저장한다', async () => {
