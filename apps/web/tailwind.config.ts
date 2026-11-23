@@ -50,6 +50,12 @@ const config: Config = {
         // 예전 이름 (#206에서 걷어냄): card → xl, section → md
         card: "20px",
         section: "14px",
+        // 로그인 소개의 기기 목업 전용 (#202). 겹친 모서리는 바깥 − 안쪽 여백으로 맞춘다.
+        "device-phone": "46px", // 아이폰 바깥 금속 테두리
+        "device-phone-bezel": "45px", // 테두리 1px 안쪽 검은 베젤
+        "device-phone-screen": "41px", // 베젤 4px 안쪽 화면
+        "device-lid": "24px", // 맥북 화면 덮개 위쪽
+        "device-lid-inner": "23px",
       },
       // 그림자 — 그레이지 바탕에 맞춘 무채색 그림자 2단계. 카드 경계는 주로 card-border 테두리로 그린다.
       // 기존 shadow-sm/md/lg/xl(Tailwind 기본값)은 그대로 둔다 — 이름이 겹치지 않는 새 키만 추가.
@@ -183,6 +189,16 @@ const config: Config = {
           muted: "#5A6478", // 예전 이름 → text-secondary (#206에서 걷어냄)
         },
         page: "#F5F7FA", // 페이지 바탕 (디자인 시스템 bg-page)
+        // 로그인 소개의 기기 목업 전용 (#202). 기기 고유의 금속·유리 색이라 화면 역할 색과 따로 둔다.
+        device: {
+          edge: "#E6E9EF", // 금속 테두리 밝은 쪽
+          steel: "#8F98AD", // 금속 테두리 어두운 쪽, 옆 버튼
+          shade: "#C9CFDA", // 맥북 바닥판 그늘
+          glass: "#1B2230", // 화면 베젤, 노치
+          hinge: "#2A3242", // 맥북 경첩, 카메라 점
+          "hinge-light": "#5A6478",
+          base: "#F5F7FA", // 맥북 바닥판 윗면
+        },
         // 예전 이름 (#206에서 걷어냄)
         column: "#F5F7FA", // → subtle
         card: "#FFFFFF", // → surface
