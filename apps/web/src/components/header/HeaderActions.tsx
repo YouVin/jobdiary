@@ -1,17 +1,24 @@
 'use client';
 
-import Link from 'next/link';
+import { clsx } from 'clsx';
 import { useState } from 'react';
-import { buttonClassName } from '@/components/common/buttonStyles';
 import { Icon } from '@/components/common/Icon';
+import { useExtensionImportState } from '@/components/import/ExtensionImportProvider';
 import { AddApplicationModal } from '@/components/modal/AddApplicationModal';
+import { Button } from '@/components/ui/Button';
+import { Menu } from '@/components/ui/Menu';
 import { signOut } from '@/lib/auth';
 import { captureApplicationSession, useApplicationStore } from '@/store/applicationStore';
 
-export function HeaderActions() {
+const NO_EXTENSION_HINT = '크롬 익스텐션을 설치하면 세 사이트의 지원 내역을 한 번에 가져올 수 있어요';
+
+// 헤더 오른쪽 (#203): 익스텐션에서 가져오기(보조) · 지원 추가(주요) · 내 계정 메뉴(계정 설정·로그아웃).
+// 모바일(640 미만)에서는 가져오기 버튼 글자를 숨기고 아이콘만 둔다. 접근성 이름은 그대로 남는다.
+export function HeaderActions({ className }: { className?: string }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const resetApplications = useApplicationStore((state) => state.resetApplications);
+  const { requestImport, isRequesting, isExtensionAvailable } = useExtensionImportState();
 
   // 로그아웃: signOut이 성공했을 때만 로컬 데이터를 비운다.
   // 실패한 채로 먼저 비우면 세션은 남아있는데 데이터만 사라지는 손실이 생긴다.
@@ -22,7 +29,7 @@ export function HeaderActions() {
 
     if (error) {
       console.error('로그아웃 실패:', error);
-      setLogoutError('로그아웃에 실패했습니다. 다시 시도해주세요.');
+      setLogoutError('로그아웃하지 못했어요. 다시 시도해 주세요.');
       return;
     }
 
@@ -31,45 +38,37 @@ export function HeaderActions() {
   };
 
   return (
-    <>
-      <div className="flex flex-col items-end gap-1">
-        {/* 모바일은 한 줄에 맞추기 위해 계정 설정·로그아웃을 아이콘만 보여준다. 접근성 이름은 aria-label로 유지한다. */}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className={buttonClassName('primary')}
-          >
-            <Icon name="plus" className="h-4 w-4" />
-            지원추가
-          </button>
+    <div className={clsx('relative flex items-center gap-2', className)}>
+      <Button
+        variant="secondary"
+        icon="download"
+        onClick={requestImport}
+        disabled={!isExtensionAvailable}
+        isLoading={isRequesting}
+        loadingLabel="가져오는 중"
+        title={isExtensionAvailable ? undefined : NO_EXTENSION_HINT}
+        className="max-sm:w-10 max-sm:px-0"
+      >
+        <span className="max-sm:sr-only">익스텐션에서 가져오기</span>
+      </Button>
+      <Button icon="plus" onClick={() => setIsAddModalOpen(true)}>
+        지원 추가
+      </Button>
+      <Menu
+        label="내 계정"
+        trigger={<Icon name="user" className="h-5 w-5" />}
+        triggerClassName="grid h-10 w-10 place-items-center rounded-full bg-selected text-text-brand-strong transition-colors duration-fast hover:bg-muted"
+        items={[
+          { label: '계정 설정', icon: 'settings', href: '/account' },
+          { label: '로그아웃', icon: 'logout', onSelect: handleLogout },
+        ]}
+      />
 
-          <Link
-            href="/account"
-            aria-label="계정 설정"
-            title="계정 설정"
-            className={buttonClassName('secondary')}
-          >
-            <Icon name="settings" className="h-4 w-4" />
-            <span className="hidden md:inline">계정 설정</span>
-          </Link>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            aria-label="로그아웃"
-            title="로그아웃"
-            className={buttonClassName('secondary')}
-          >
-            <Icon name="logout" className="h-4 w-4" />
-            <span className="hidden md:inline">로그아웃</span>
-          </button>
-        </div>
-
-        {logoutError && <p className="text-legacy-caption text-status-rejected">{logoutError}</p>}
-      </div>
+      <p role="alert" className={logoutError ? 'absolute top-full right-0 mt-1 text-label whitespace-nowrap text-danger-text' : 'sr-only'}>
+        {logoutError}
+      </p>
 
       <AddApplicationModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
-    </>
+    </div>
   );
 }

@@ -40,12 +40,12 @@ export function useExtensionImport() {
 
   const requestImport = useCallback(async () => {
     if (!isChromeRuntimeAvailable()) {
-      setImportSummary(failedSummary('익스텐션이 설치되어 있지 않거나 이 브라우저에서 사용할 수 없습니다.'));
+      setImportSummary(failedSummary('익스텐션이 설치되지 않았거나 이 브라우저에서 쓸 수 없어요.'));
       return;
     }
 
     if (useAuthStore.getState().status !== 'authenticated') {
-      setImportSummary(failedSummary('로그인이 필요합니다.'));
+      setImportSummary(failedSummary('로그인한 뒤 다시 시도해 주세요.'));
       return;
     }
 
@@ -57,7 +57,7 @@ export function useExtensionImport() {
       const response = await new Promise<unknown>((resolve, reject) => {
         chrome.runtime.sendMessage(JOBDIARY_EXTENSION_ID, JOBDIARY_COLLECT_REQUEST, (result) => {
           if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message || '익스텐션과 통신하지 못했습니다.'));
+            reject(new Error(chrome.runtime.lastError.message || '익스텐션과 연결하지 못했어요.'));
             return;
           }
           resolve(result);
@@ -70,7 +70,7 @@ export function useExtensionImport() {
       const result = sanitizeCollectResponse(response);
 
       if (!result) {
-        setImportSummary(failedSummary('익스텐션 응답 형식이 올바르지 않습니다.'));
+        setImportSummary(failedSummary('익스텐션이 보낸 내용을 읽지 못했어요.'));
         return;
       }
 
@@ -90,11 +90,13 @@ export function useExtensionImport() {
       }
     } catch (error) {
       if (!context.isCurrent()) return;
-      setImportSummary(failedSummary((error as Error).message || '익스텐션과 통신하지 못했습니다.'));
+      setImportSummary(failedSummary((error as Error).message || '익스텐션과 연결하지 못했어요.'));
     } finally {
       if (context.isCurrent()) setIsRequesting(false);
     }
   }, [addApplicationsFromExtension]);
+
+  const dismissImportSummary = useCallback(() => setImportSummary(null), []);
 
   return {
     requestImport,
@@ -102,6 +104,6 @@ export function useExtensionImport() {
     isExtensionAvailable,
     importSummary,
     lastImportAt,
-    dismissImportSummary: () => setImportSummary(null),
+    dismissImportSummary,
   };
 }

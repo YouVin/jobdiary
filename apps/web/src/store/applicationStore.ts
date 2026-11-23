@@ -42,7 +42,7 @@ interface ApplicationState {
 }
 
 const canceledImport: ImportSummary = {
-  addedCount: 0, duplicateCount: 0, skippedCount: 0, error: '계정이 변경되어 가져오기를 취소했습니다.',
+  addedCount: 0, duplicateCount: 0, skippedCount: 0, error: '계정이 바뀌어 가져오기를 멈췄어요.',
 };
 
 // 잠금을 기다리기 전에 요청 주체를 고정한다. A → 로그아웃 → A도 다른 세대로 취급한다.
