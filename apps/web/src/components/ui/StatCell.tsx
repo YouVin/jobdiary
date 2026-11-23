@@ -23,15 +23,15 @@ interface StatCellProps {
   unit?: string; // 건 · 곳 · 번 · %
 }
 
-// 0은 숫자를 낮춘 회색으로 둔다(24px 이상이라 3:1 기준). 문장에서는 "아직 없어요"라고 쓴다.
+// 0은 보조 글자색(text-secondary 5.95:1)으로 낮춘다. 디자인 시스템 처음 값 text-disabled(2.89:1)는 큰 글자 기준 3:1에도 못 미쳐 바꿨다(#201). 문장에서는 "아직 없어요"라고 쓴다.
 export function StatCell({ label, value, unit }: StatCellProps) {
   const isZero = value === 0 || value === '0';
   return (
     <div className="flex flex-col gap-1 border-line-divider px-4 first:pl-0 [&:not(:first-child)]:border-l">
       <dt className="text-label text-text-secondary">{label}</dt>
-      <dd className={clsx('text-title-1 tabular-nums', isZero ? 'text-text-disabled' : 'text-text-primary')}>
+      <dd className={clsx('text-title-1 tabular-nums', isZero ? 'text-text-secondary' : 'text-text-primary')}>
         {value}
-        {unit && <span className={clsx('ml-1 text-body font-normal', isZero ? 'text-text-disabled' : 'text-text-secondary')}>{unit}</span>}
+        {unit && <span className={clsx('ml-1 text-body font-normal', 'text-text-secondary')}>{unit}</span>}
       </dd>
     </div>
   );
