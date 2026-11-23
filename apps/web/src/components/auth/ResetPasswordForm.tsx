@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { buttonClassName } from '@/components/common/buttonStyles';
-import { fieldErrorClassName, inputClassName, labelClassName } from '@/components/common/formStyles';
+import { useEffect, useRef, useState } from 'react';
+import { Button, buttonClassName } from '@/components/ui/Button';
+import { TextField } from '@/components/ui/TextField';
+import { textLinkClassName } from '@/components/ui/TextLink';
 import { resetPasswordForEmail } from '@/lib/auth';
 import { getEmailError } from '@/utils/authValidation';
 
@@ -13,14 +14,23 @@ export function ResetPasswordForm() {
   const [emailTouched, setEmailTouched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const emailInput = useRef<HTMLInputElement>(null);
+  const doneMessage = useRef<HTMLDivElement>(null);
 
   const emailError = getEmailError(email);
 
+  // 보낸 뒤에는 폼이 사라지므로 포커스를 결과 안내로 옮겨 바로 읽히게 한다.
+  useEffect(() => {
+    if (isSubmitted) doneMessage.current?.focus();
+  }, [isSubmitted]);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
     setEmailTouched(true);
 
     if (emailError) {
+      emailInput.current?.focus();
       return;
     }
 
@@ -41,13 +51,12 @@ export function ResetPasswordForm() {
 
   if (isSubmitted) {
     return (
-      <div className="w-full max-w-105 rounded-card bg-card p-6 text-center shadow-float">
-        <p className="text-legacy-body text-text-primary">입력하신 이메일로 재설정 링크를 보냈습니다.</p>
-        <p className="mt-1 text-legacy-label text-text-muted">가입된 이메일이 맞다면 잠시 후 메일함을 확인해주세요.</p>
-        <Link
-          href="/login"
-          className={buttonClassName('primary', 'mt-5')}
-        >
+      <div className="flex flex-col gap-4">
+        <div ref={doneMessage} tabIndex={-1} role="status" className="flex flex-col gap-1 rounded-lg bg-subtle p-5 focus:outline-none">
+          <p className="text-body font-semibold text-text-primary">재설정 링크를 보냈어요</p>
+          <p className="text-label text-text-secondary">가입한 이메일이 맞다면 잠시 뒤 메일함에 도착해요. 메일이 없으면 스팸함도 확인해 주세요.</p>
+        </div>
+        <Link href="/login" className={buttonClassName({ size: 'lg', block: true })}>
           로그인으로 돌아가기
         </Link>
       </div>
@@ -55,46 +64,29 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-105 rounded-card bg-card p-6 shadow-float">
-      <h1 className="mb-1 text-heading-md text-text-primary">비밀번호 재설정</h1>
-      <p className="mb-5 text-legacy-label text-text-secondary">가입하신 이메일을 입력하면 재설정 링크를 보내드립니다.</p>
+    <form aria-label="비밀번호 재설정 링크 요청" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+      <TextField
+        ref={emailInput}
+        id="email"
+        label="이메일"
+        type="email"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+        onBlur={() => setEmailTouched(true)}
+        placeholder="you@example.com"
+        autoComplete="email"
+        aria-required="true"
+        readOnly={isSubmitting}
+        error={emailTouched ? emailError : null}
+      />
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
-        <div>
-          <label htmlFor="email" className={labelClassName}>
-            이메일
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            onBlur={() => setEmailTouched(true)}
-            placeholder="you@example.com"
-            className={inputClassName}
-            autoComplete="email"
-            aria-required="true"
-            aria-invalid={emailTouched && !!emailError}
-          />
-          {emailTouched && emailError && (
-            <p role="alert" className={fieldErrorClassName}>
-              {emailError}
-            </p>
-          )}
-        </div>
+      <Button type="submit" size="lg" block isLoading={isSubmitting} loadingLabel="링크를 보내는 중" className="mt-1">
+        재설정 링크 보내기
+      </Button>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={buttonClassName('primary', 'mt-2')}
-        >
-          {isSubmitting ? '처리 중...' : '재설정 링크 보내기'}
-        </button>
-
-        <Link href="/login" className="text-center text-legacy-label font-medium text-brand hover:underline">
-          로그인으로 돌아가기
-        </Link>
-      </form>
-    </div>
+      <Link href="/login" className={textLinkClassName('brand', 'self-center text-body')}>
+        로그인으로 돌아가기
+      </Link>
+    </form>
   );
 }
