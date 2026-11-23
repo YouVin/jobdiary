@@ -247,7 +247,7 @@ try {
   assert.equal(rows[1].status, 'screening');
   await viewGroup.getByRole('button', { name: '보드', exact: true }).click();
   await page.reload();
-  await visible(page.getByPlaceholder('회사명 또는 공고명 입력'));
+  await visible(page.getByRole('searchbox', { name: '회사나 직무 검색' }));
   assert.equal(await bTrack.count(), 0);
   await viewGroup.getByRole('button', { name: '주간', exact: true }).click();
   await visible(bTrack);
@@ -315,7 +315,7 @@ try {
   await visible(plainTrack.getByRole('button', { name: '서류 통과 (현재 단계)' }));
   const plainView = plain.getByRole('group', { name: '보기 선택' });
   await plainView.getByRole('button', { name: '보드', exact: true }).click();
-  await visible(plain.getByPlaceholder('회사명 또는 공고명 입력'));
+  await visible(plain.getByRole('searchbox', { name: '회사나 직무 검색' }));
   await plainView.getByRole('button', { name: '주간', exact: true }).click();
   await visible(plainTrack);
   assert.equal(await plain.evaluate(() => window.__viewTransitionCount ?? 0), 0);
@@ -330,28 +330,29 @@ try {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(origin + '/');
     const calendar = page.getByRole('region', { name: `${month}월 지원 달력` });
-    const cell = calendar.getByLabel(`${month}월 ${day}일 지원 1건`, { exact: true });
+    // #203: 칸 이름은 "11월 23일 월요일, 오늘, 지원 1곳"
+    const cell = calendar.getByRole('button', { name: new RegExp(`^${month}월 ${day}일 .요일, 오늘, 지원 1곳$`) });
     await visible(cell);
     const tip = cell.locator('[aria-hidden="true"]');
     assert.equal(await tip.isVisible(), false);
     await cell.hover();
     await visible(tip);
-    assert.match(await tip.innerText(), new RegExp(`${month}월 ${day}일 · 지원 1건\\s+달력 회사`));
+    assert.match(await tip.innerText(), new RegExp(`${month}월 ${day}일 · 지원 1곳\\s+달력 회사`));
     const [tipBox, cardBox] = [await tip.boundingBox(), await calendar.boundingBox()];
     assert(tipBox.x >= cardBox.x && tipBox.x + tipBox.width <= cardBox.x + cardBox.width, `${width}px 말풍선이 카드 안에 있음`);
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${width}px 가로 넘침`);
   }
   assert.deepEqual(errors, []);
   console.log('PASS 홈 지원 달력 날짜 말풍선(마우스)·카드 안 배치');
-  // 결과 기다리는 목록(#185): 회사 이름은 공고를 새 탭으로 열고(http(s) 주소만), 상세 패널은 별도 버튼으로 연다. 메뉴 이름은 '지원보드'.
+  // 결과 기다리는 목록(#185): 회사 이름은 공고를 새 탭으로 열고(http(s) 주소만), 상세 패널은 별도 버튼으로 연다. 제목은 '지원 보드'(#204).
   rows[1].url = 'https://jobs.example.test/b';
   rows.find(item => item.company === '달력 회사').url = 'javascript:alert(1)';
   await context.route('https://jobs.example.test/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: '<title>공고</title>' }));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(origin + '/');
   await openBoard(page);
-  await visible(page.getByRole('heading', { level: 1, name: '지원보드' }));
-  const bLink = page.getByRole('link', { name: 'B 회사 공고 열기 (새 탭)', exact: true });
+  await visible(page.getByRole('heading', { level: 1, name: '지원 보드' }));
+  const bLink = page.getByRole('link', { name: 'B 회사 공고 열기 (새 탭에서 열림)', exact: true });
   assert.deepEqual(await bLink.evaluate(element => [element.getAttribute('href'), element.target, element.rel]), ['https://jobs.example.test/b', '_blank', 'noopener noreferrer']);
   const [posting] = await Promise.all([context.waitForEvent('page'), bLink.click()]);
   await posting.waitForLoadState();
@@ -363,29 +364,29 @@ try {
   await visible(page.getByRole('dialog', { name: '달력 회사' }));
   await page.keyboard.press('Escape');
   assert.deepEqual(errors, []);
-  console.log('PASS 기다리는 목록 회사 이름으로 공고 새 탭 열기·상세 버튼·메뉴 이름 지원보드');
+  console.log('PASS 기다리는 목록 회사 이름으로 공고 새 탭 열기·상세 버튼·제목 지원 보드');
   // 중복 보기(#186): 같은 회사·공고를 다른 사이트에서 지원하면 묶음으로 보이고, 행마다 공고 열기·상세 보기를 쓰며, 고른 보기를 기억한다.
   rows.push({ ...row(users.b, 'B 회사', 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'), platform: 'saramin', applied_at: '2026-10-05T00:00:00Z', url: 'https://jobs.example.test/b-saramin' });
   await page.reload();
   await page.getByRole('group', { name: '보기 선택' }).getByRole('button', { name: /^중복/ }).click();
-  await visible(page.getByText('같은 공고를 여러 사이트에서 지원한 묶음이 1개 있어요.'));
-  const group = page.getByRole('article', { name: 'B 회사 개발자' });
+  await visible(page.getByText('같은 공고를 여러 사이트에서 지원한 묶음이 1개 있어요'));
+  const group = page.getByRole('article', { name: 'B 회사' });
   await visible(group.getByText('2개 사이트 · 2건'));
   assert.equal(await group.getByRole('listitem').count(), 2);
-  assert.equal(await group.getByRole('link', { name: 'B 회사 사람인 공고 열기 (새 탭)' }).getAttribute('href'), 'https://jobs.example.test/b-saramin');
+  assert.equal(await group.getByRole('link', { name: 'B 회사 사람인 공고 열기 (새 탭에서 열림)' }).getAttribute('href'), 'https://jobs.example.test/b-saramin');
   assert.equal(await page.getByRole('article').count(), 1, '중복이 아닌 지원은 묶지 않는다');
   await group.getByRole('button', { name: 'B 회사 사람인 10.05 지원 상세 보기' }).click();
   await visible(page.getByRole('dialog', { name: 'B 회사' }).getByText('사람인'));
   await page.keyboard.press('Escape');
   await page.reload();
-  await visible(page.getByRole('article', { name: 'B 회사 개발자' }));
+  await visible(page.getByRole('article', { name: 'B 회사' }));
   assert.deepEqual(errors, []);
   console.log('PASS 중복 보기 묶음·공고 열기·상세 보기·보기 기억');
   // 달력 날짜 → 회사 목록 → 상세 패널(#190): 마우스·키보드로 날짜를 고르면 그날 지원 목록이 열리고, 회사를 누르면 기록 남기기 패널이 열린다.
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto(origin + '/');
-  const dayButton = page.getByRole('button', { name: `${month}월 ${day}일 지원 1건`, exact: true });
-  const dayList = page.getByRole('region', { name: `${month}월 ${day}일 지원 목록` });
+  const dayButton = page.getByRole('button', { name: new RegExp(`^${month}월 ${day}일 .요일, 오늘, 지원 1곳$`) });
+  const dayList = page.getByRole('region', { name: `${month}월 ${day}일 · 지원 1곳` });
   await dayButton.click();
   await visible(dayList);
   assert.equal(await dayButton.getAttribute('aria-pressed'), 'true');
