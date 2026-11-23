@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { StageTrack } from '@/components/board/StageTrack';
+import { StageTrack } from '@/components/ui/StageTrack';
 import { buttonClassName } from '@/components/common/buttonStyles';
 import { Icon } from '@/components/common/Icon';
 import { DiaryComposer } from '@/components/diary/DiaryComposer';

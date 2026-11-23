@@ -34,6 +34,32 @@
 - `npm run check:ui`가 남은 예전 이름 개수를 알려 준다(#200 시점 645곳). Tailwind 기본 글자 크기(`text-sm` 등)는 실패로 막는다.
 - 개편 중 수치로 남길 트러블슈팅: [REDESIGN_TROUBLESHOOTING](REDESIGN_TROUBLESHOOTING.md).
 
+### 공통 부품 (#201) — `src/components/ui/`, `src/components/charts/`
+
+디자인 시스템 부품과 이름·모양을 1:1로 맞췄다. 새 화면은 이 부품만 조합하고, 화면에서 버튼·입력칸 스타일을 다시 만들지 않는다. 디자인이 바뀌면 부품 파일 하나를 고친다. 견본: 개발 서버의 `/dev/ui`(운영 404).
+
+| 부품 | 파일 | 접근성 기본값 |
+|---|---|---|
+| Button · `buttonClassName` | `ui/Button.tsx` | 진짜 `<button>`. 비활성·로딩은 `aria-disabled`(포커스·이름 유지, 누름·제출만 막음), 로딩은 `aria-busy` + 숨은 "처리 중" |
+| IconButton | `ui/IconButton.tsx` | `label` 필수 → `aria-label`, 44×44 |
+| TextField · PasswordField · SearchInput | `ui/TextField.tsx` | `<label for>` 자동 연결, 도움말·오류 `aria-describedby`, 오류 `aria-invalid`, 비밀번호 보기 `aria-pressed`, 검색 이름표는 sr-only |
+| Tabs | `ui/Tabs.tsx` | 주소가 있으면 링크 + `aria-current="page"`, 없으면 버튼 + `aria-pressed` |
+| FilterChip · ChipGroup | `ui/FilterChip.tsx` | `aria-pressed`, 묶음 `role="group"` + 이름 |
+| Badge · StageDot | `ui/Badge.tsx` | 색만으로 구분하지 않게 항상 글자. 단계 점 색 `STAGE_DOT_CLASS` |
+| CompanyRow · RowList · CompanyAvatar | `ui/CompanyRow.tsx` | `onOpen`이면 줄 전체가 버튼, 사이트 이름은 sr-only |
+| Card · CardHeader · CardSummary | `ui/Card.tsx` | 제목 h2/h3, `aria-labelledby` 연결용 `titleId` |
+| StatGroup · StatCell | `ui/StatCell.tsx` | `dl/dt/dd`로 "이름: 값" |
+| RatioBar · BarChart · DonutChart | `charts/` | `role="img"` + 모든 값을 담은 이름 |
+| CalendarCell | `ui/CalendarCell.tsx` | 칸 하나를 "11월 18일 수요일, 오늘, 지원 3곳, 면접 1개"로 읽음, 오늘 `aria-current="date"` |
+| StageTrack | `ui/StageTrack.tsx` | 점이 버튼, 현재 `aria-current="step"`, 24×24 |
+| EmptyState | `ui/EmptyState.tsx` | 상황 + 다음 행동 |
+| ToastProvider · useToast | `ui/Toast.tsx` | 항상 그려 둔 `role="status"` 영역, 3초(되돌리기 5초) |
+| Dialog · SidePanel | `ui/Overlay.tsx` | `useDialogFocus`: 포커스 이동·Tab 순환·Esc·되돌리기, 제목·설명 연결, 모바일 아래 시트 |
+| SkipLink | `ui/SkipLink.tsx` | 첫 Tab에 "본문으로 건너뛰기", 각 `<main id="main-content" tabIndex={-1}>` |
+
+- 검사: `npm run verify:ui`(개발 서버 실행 중, 기본 `http://localhost:3000`)가 `/dev/ui`를 axe(WCAG 2.2 AA + best-practice)와 키보드 시나리오로 검사한다.
+- 기존 `common/buttonStyles.ts`·`formStyles.ts`·`common/Modal.tsx`는 예전 화면이 쓰는 동안 남겨 두고, 화면을 바꿀 때(#202~#205) 새 부품으로 옮긴 뒤 #206에서 지운다.
+
 ## 간격과 크기
 
 - `h-4`, `w-4`, `gap-2`, `p-3`처럼 정수 Tailwind 단위만 사용한다. 기본 1단위는 4px다.

@@ -21,7 +21,8 @@ const rules = [
 
 // 예전 토큰 이름 (#200에서 새 값으로 연결, #206에서 걷어냄). 화면을 새 디자인으로 바꿀 때마다 줄어들어야 한다.
 // 지금은 실패로 막지 않고 남은 개수만 알린다. #206에서 실패 규칙으로 바꾼다.
-const LEGACY_TOKEN = /\b(?:text-legacy-(?:body|label|caption)|text-(?:heading-(?:xl|lg|md)|small|card-company|badge|lead)|(?:bg|text|border|outline|ring|fill|stroke)-(?:brand(?:-[a-z0-9]+)*|status-[a-z-]+|column|card|raised|card-border|border-strong|on-brand|heat-\d|text-muted)|rounded-(?:card|section)|shadow-(?:card|float))\b/g;
+// 클래스 이름 전체만 센다. \b로 시작하면 새 이름 text-text-brand 안의 text-brand도 예전 이름으로 잘못 센다(#201).
+const LEGACY_TOKEN = /(?<![\w-])(?:text-legacy-(?:body|label|caption)|text-(?:heading-(?:xl|lg|md)|small|card-company|badge|lead)|(?:bg|text|border|outline|ring|fill|stroke)-(?:brand(?:-[a-z0-9]+)*|status-[a-z-]+|column|card|raised|card-border|border-strong|on-brand|heat-\d|text-muted)|rounded-(?:card|section)|shadow-(?:card|float))\b/g;
 
 // 데이터로 모양이 정해지는 차트(도넛 등)는 아이콘 파일로 만들 수 없어 src/components/charts/에서만 SVG 작성을 허용한다.
 // 색은 여전히 토큰 클래스만 쓴다(HEX 규칙은 그대로 적용).

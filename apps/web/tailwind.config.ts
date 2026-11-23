@@ -108,7 +108,7 @@ const config: Config = {
         scrim: "rgba(27, 34, 48, 0.4)", // 패널·모달 뒤를 덮는 막
         line: {
           divider: "#E6E9EF", // 목록 구분선, 카드 안 나눔선
-          input: "#C9CFDA", // 입력칸·테두리 버튼 테두리
+          input: "#848DA4", // 입력칸·테두리 버튼 테두리 (흰 바탕 3.32:1, 조작 경계 기준 3:1 — #201에서 #C9CFDA 1.56:1에서 올림)
           focus: "#3461D1", // 입력칸을 눌렀을 때 테두리
         },
         // 키보드 포커스 바깥 테두리. 디자인 시스템 값 #7898E2는 흰 바탕 대비 2.84:1이라 포커스 기준(3:1)에 못 미쳐
@@ -214,7 +214,7 @@ const config: Config = {
         "on-brand": "#FFFFFF", // → text-on-color
         overlay: "#000000", // → scrim
         "card-border": "#E6E9EF", // → line-divider
-        "border-strong": "#C9CFDA", // → line-input
+        "border-strong": "#848DA4", // → line-input
       },
       fontFamily: {
         sans: ["var(--font-pretendard)"],

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { SkipLink } from "@/components/ui/SkipLink";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, SEARCH_INDEXABLE } from "@/lib/siteMetadata";
 import "./globals.css";
 
@@ -27,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="ko" className={`${pretendard.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <SkipLink />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
