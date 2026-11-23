@@ -36,6 +36,25 @@ main(`502b728`) 이후 dev 변경(#171·#173~#176, 44개 파일)을 운영에 �
 - 비밀값: 변경 diff에서 키·토큰·개인키 패턴 없음(검사 명령을 적은 릴리즈 스킬 문서 한 줄만 걸린다). 저장소가 추적하는 환경 파일은 `apps/web/.env.example`뿐이다.
 - 코드: 웹앱·익스텐션 소스에 `dangerouslySetInnerHTML`·`eval`·`new Function`이 없고 `innerHTML`은 익스텐션 테스트에만 있다. 새 탭 링크 4개(상세 패널 "공고 열기" 추가)는 모두 `rel="noopener noreferrer"`이고, "공고 열기"는 http(s) 주소일 때만 보인다. 기록 남기기는 React 텍스트로만 표시하고 2000자로 자르며, 저장은 기존 `expectedUpdatedAt` 충돌 검사를 거친다.
 
+### 디자인 개편 운영 반영 전 점검 (#214, 2026-11-24)
+
+main(`a0628c7`) 이후 dev 변경(#199 디자인 개편 #200~#206, PR #207~#213, 177개 파일)을 운영에 반영하기 전에 확인했다. DB(`supabase/`) 변경과 의존성 변경(lockfile)은 없다.
+
+- 운영 의존성: `npm audit --omit=dev` 0건.
+- 개발 의존성: `npm audit` 전체 13건(높음 4, 중간 9)으로 #181 때와 같다. vite·vitest·undici·zod·source-map-js·minimatch·@typescript-eslint/* 등 빌드·테스트·린트 도구라 배포물에는 포함되지 않는다. 계속 #167에서 추적한다.
+- 비밀값: 변경 diff에서 키·토큰·개인키 패턴 없음. 저장소가 추적하는 환경 파일은 `apps/web/.env.example`뿐이다.
+- 코드: 웹앱·익스텐션 소스에 `dangerouslySetInnerHTML`·`eval`·`new Function`이 없고 `innerHTML`은 익스텐션 테스트에만 있다. 새 탭 링크 6개(약관·개인정보 링크, 중복 보기·결과 기다리는 목록·상세 패널의 공고 링크, 홈 요약 카드)는 모두 `rel="noopener noreferrer"`다. 화면 부품을 바꾸는 개편이라 인증(`AuthGuard`)·저장 경로(`applicationStore` → `applicationsApi`)는 그대로이고, 운영 빌드 fixture 검증(release 14 등)으로 계정 전환 격리·편집 충돌을 다시 확인했다.
+- 복구 기준: 이전 main `a0628c7`, 이전 Production 배포 `jobdiary-24u4tr3bh-youvins-projects.vercel.app`.
+
+### 화면 피드백 운영 반영 전 점검 (#217, 2026-11-24)
+
+main(`f80dd16`) 이후 dev 변경(#215 화면 피드백, PR #216, 7개 파일: 화면 4개·문서 3개)을 운영에 반영하기 전에 확인했다. DB·의존성·익스텐션 변경은 없다.
+
+- 운영 의존성: `npm audit --omit=dev` 0건. 개발 의존성 13건(높음 4, 중간 9)은 #214 때와 같고 #167에서 추적한다.
+- 비밀값: 변경 diff에서 키·토큰·개인키 패턴 0건. 환경 파일은 `apps/web/.env.example`뿐이다.
+- 코드: `dangerouslySetInnerHTML`·`eval`·`new Function` 0건. 바뀐 것은 배치·글자 표시와 로고 이미지 불러오기 시점(`loading="eager"`)뿐이다.
+- 복구 기준: 이전 main `f80dd16`, 이전 Production 배포 `jobdiary-7gweocwx2-youvins-projects.vercel.app`.
+
 ## 릴리즈 판단 (#96·#97)
 
 계정 격리(#90), 편집 충돌(#93), 날짜 검증(#94)을 dev에 병합했다. #96·#97에서 정책 페이지·동의 확인을 추가하고 마이그레이션 이력 3건을 원격과 맞췄다. 브라우저 검증과 제한은 [RELEASE_CHECK](RELEASE_CHECK.md)에 기록한다. 사용자가 후속 검증과 main 병합까지 승인했으며, CI 통과를 확인한 커밋만 병합한다.
