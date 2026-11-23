@@ -33,7 +33,7 @@ export function ImportSummaryNotice({ summary, onDismiss }: ImportSummaryNoticeP
         type="button"
         onClick={onDismiss}
         aria-label="알림 닫기"
-        className="shrink-0 text-label font-medium underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        className="shrink-0 text-legacy-label font-medium underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         닫기
       </button>

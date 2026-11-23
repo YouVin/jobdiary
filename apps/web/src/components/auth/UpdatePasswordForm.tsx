@@ -66,7 +66,7 @@ export function UpdatePasswordForm() {
   if (status === 'loading') {
     return (
       <div className="w-full max-w-105 rounded-card bg-card p-6 shadow-float">
-        <p className="text-center text-body text-text-muted">확인 중...</p>
+        <p className="text-center text-legacy-body text-text-muted">확인 중...</p>
       </div>
     );
   }
@@ -76,8 +76,8 @@ export function UpdatePasswordForm() {
   if (status !== 'recovering') {
     return (
       <div className="w-full max-w-105 rounded-card bg-card p-6 text-center shadow-float">
-        <p className="text-body text-text-primary">유효하지 않거나 만료된 링크입니다.</p>
-        <p className="mt-1 text-label text-text-muted">비밀번호 재설정을 다시 요청해주세요.</p>
+        <p className="text-legacy-body text-text-primary">유효하지 않거나 만료된 링크입니다.</p>
+        <p className="mt-1 text-legacy-label text-text-muted">비밀번호 재설정을 다시 요청해주세요.</p>
         <Link
           href="/reset-password"
           className={buttonClassName('primary', 'mt-5')}
@@ -91,7 +91,7 @@ export function UpdatePasswordForm() {
   return (
     <div className="w-full max-w-105 rounded-card bg-card p-6 shadow-float">
       <h1 className="mb-1 text-heading-md text-text-primary">새 비밀번호 설정</h1>
-      <p className="mb-5 text-label text-text-secondary">새로 사용할 비밀번호를 입력해주세요.</p>
+      <p className="mb-5 text-legacy-label text-text-secondary">새로 사용할 비밀번호를 입력해주세요.</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
         <div>
@@ -156,7 +156,7 @@ export function UpdatePasswordForm() {
         </div>
 
         {errorMessage && (
-          <p role="alert" className="text-label text-status-rejected">
+          <p role="alert" className="text-legacy-label text-status-rejected">
             {errorMessage}
           </p>
         )}

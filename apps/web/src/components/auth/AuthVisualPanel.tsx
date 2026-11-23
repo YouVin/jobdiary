@@ -82,7 +82,7 @@ export function AuthVisualPanel({ className }: AuthVisualPanelProps) {
           <span className="text-brand">한 곳에서</span>
         </p>
         {/* 모바일은 카피를 짧게 유지 — 부제는 데스크탑 전체 무대에서만 보여준다 */}
-        <p className="mt-2 hidden text-body text-text-secondary md:block">
+        <p className="mt-2 hidden text-legacy-body text-text-secondary md:block">
           지원부터 합격까지, 취준 여정을 한 곳에서 기록하고 관리하세요.
         </p>
 
@@ -109,7 +109,7 @@ export function AuthVisualPanel({ className }: AuthVisualPanelProps) {
               <div className="flex items-center justify-between gap-2">
                 <span
                   className={clsx(
-                    'text-caption font-medium whitespace-nowrap lg:text-label',
+                    'text-legacy-caption font-medium whitespace-nowrap lg:text-legacy-label',
                     PLATFORM_TEXT_CLASS[card.platform],
                   )}
                 >
@@ -119,7 +119,7 @@ export function AuthVisualPanel({ className }: AuthVisualPanelProps) {
                   <span className="rounded bg-brand-tint px-2 py-1 text-badge text-brand-text">NEW</span>
                 )}
               </div>
-              <p className="mt-2 text-badge text-text-secondary lg:text-caption">{card.position}</p>
+              <p className="mt-2 text-badge text-text-secondary lg:text-legacy-caption">{card.position}</p>
               <p className="mt-1 text-heading-md text-brand-text lg:text-heading-lg">D-{card.dday}</p>
             </div>
           ))}
@@ -149,8 +149,8 @@ function PhoneMockup() {
 
         {/* Good Luck 헤딩 — 별도 폰트 없이 기존 Pretendard 볼드로 표현 */}
         <div className="mt-3 text-center lg:mt-6">
-          <p className="text-label font-black leading-tight text-brand lg:text-heading-xl">Good</p>
-          <p className="text-label font-black leading-tight text-brand lg:text-heading-xl">Luck!</p>
+          <p className="text-legacy-label font-black leading-tight text-brand lg:text-heading-xl">Good</p>
+          <p className="text-legacy-label font-black leading-tight text-brand lg:text-heading-xl">Luck!</p>
           <p className="mt-1 text-illustration-xs text-text-secondary lg:mt-2 lg:text-badge">오늘도 응원할게요 🙂</p>
         </div>
 

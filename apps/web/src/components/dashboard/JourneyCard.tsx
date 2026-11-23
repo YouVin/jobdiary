@@ -22,7 +22,7 @@ export function JourneyCard({ stage }: JourneyCardProps) {
       title="전형 여정"
       titleId="journey-card-title"
       className="flex flex-col"
-      action={<span className="text-caption text-text-secondary tabular-nums">진행 중 {stage.inProgress}건</span>}
+      action={<span className="text-legacy-caption text-text-secondary tabular-nums">진행 중 {stage.inProgress}건</span>}
     >
       <ol className="grid flex-1 grid-cols-2 gap-2 md:grid-cols-4">
         {steps.map((step, index) => (
@@ -35,13 +35,13 @@ export function JourneyCard({ stage }: JourneyCardProps) {
               index > 0 && 'md:before:absolute md:before:top-1/2 md:before:-left-2 md:before:w-2 md:before:border-t md:before:border-dashed md:before:border-border-strong',
             )}
           >
-            <span className="flex items-center gap-2 text-label text-text-secondary">
+            <span className="flex items-center gap-2 text-legacy-label text-text-secondary">
               <span className={`h-2 w-2 shrink-0 rounded-full ${step.dotClass}`} />
               {step.label}
             </span>
             <span className="flex items-baseline gap-1">
               <span className="text-heading-xl font-bold text-text-primary tabular-nums">{step.count}</span>
-              <span className="text-label font-normal text-text-secondary">건</span>
+              <span className="text-legacy-label font-normal text-text-secondary">건</span>
             </span>
           </li>
         ))}

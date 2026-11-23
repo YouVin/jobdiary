@@ -57,7 +57,7 @@ export function DiaryComposer({ application, onSavingChange }: DiaryComposerProp
         void handleSave();
       }}
     >
-      <label htmlFor={fieldId} className="text-label text-text-secondary">{DIARY_PROMPTS[application.status]}</label>
+      <label htmlFor={fieldId} className="text-legacy-label text-text-secondary">{DIARY_PROMPTS[application.status]}</label>
       <textarea
         id={fieldId}
         value={content}
@@ -75,14 +75,14 @@ export function DiaryComposer({ application, onSavingChange }: DiaryComposerProp
         }}
         rows={3}
         placeholder="짧게 적어도 괜찮아요."
-        className="field-sizing-content min-h-20 w-full resize-none rounded-sm border border-card-border bg-card px-3 py-2 text-body text-text-primary placeholder:text-text-muted focus-visible:outline-2 focus-visible:outline-brand"
+        className="field-sizing-content min-h-20 w-full resize-none rounded-sm border border-card-border bg-card px-3 py-2 text-legacy-body text-text-primary placeholder:text-text-muted focus-visible:outline-2 focus-visible:outline-brand"
       />
-      {error && <p role="alert" className="text-label text-status-rejected-text">{error}</p>}
+      {error && <p role="alert" className="text-legacy-label text-status-rejected-text">{error}</p>}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-caption text-text-muted" role="status">
+        <span className="text-legacy-caption text-text-muted" role="status">
           {savedNotice ? '기록을 남겼어요.' : `${content.length} / ${DIARY_MAX_LENGTH}`}
         </span>
-        <button type="submit" disabled={!canSave} className={buttonClassName('primary', 'px-3 py-1 text-label')}>
+        <button type="submit" disabled={!canSave} className={buttonClassName('primary', 'px-3 py-1 text-legacy-label')}>
           {isSaving ? '남기는 중...' : '기록 남기기'}
         </button>
       </div>

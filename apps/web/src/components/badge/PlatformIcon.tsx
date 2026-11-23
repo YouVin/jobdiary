@@ -31,7 +31,7 @@ export function PlatformIcon({ platform, size = 'md', className }: PlatformIconP
 
   if (platform === 'manual') {
     return (
-      <span aria-hidden="true" className={clsx(tile, 'bg-column font-bold text-text-secondary', size === 'sm' ? 'text-badge' : 'text-body')}>
+      <span aria-hidden="true" className={clsx(tile, 'bg-column font-bold text-text-secondary', size === 'sm' ? 'text-badge' : 'text-legacy-body')}>
         +
       </span>
     );

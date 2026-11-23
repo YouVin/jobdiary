@@ -66,7 +66,7 @@ export function HeaderActions() {
           </button>
         </div>
 
-        {logoutError && <p className="text-caption text-status-rejected">{logoutError}</p>}
+        {logoutError && <p className="text-legacy-caption text-status-rejected">{logoutError}</p>}
       </div>
 
       <AddApplicationModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />

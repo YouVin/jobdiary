@@ -114,7 +114,7 @@ export function BoardClient() {
       <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-heading-lg font-semibold text-text-primary">지원보드</h1>
-          <p className="mt-1 text-body text-text-secondary">
+          <p className="mt-1 text-legacy-body text-text-secondary">
             {view === 'duplicates'
               ? duplicateLede(duplicateGroups.length)
               : weekLede(weekOffset, timeline.interviewCount, timeline.deadlineCount)}
@@ -128,7 +128,7 @@ export function BoardClient() {
               aria-pressed={view === option.value}
               onClick={() => changeView(option.value)}
               className={clsx(
-                'h-8 rounded-sm px-4 text-label focus-visible:outline-2 focus-visible:outline-brand',
+                'h-8 rounded-sm px-4 text-legacy-label focus-visible:outline-2 focus-visible:outline-brand',
                 view === option.value ? 'bg-text-primary text-on-brand' : 'text-text-secondary hover:bg-column hover:text-text-primary',
               )}
             >
@@ -153,7 +153,7 @@ export function BoardClient() {
           {view === 'week' && (
             <>
               {!error && applications.length === 0 && (
-                <p className="mb-4 rounded-section bg-column p-4 text-body text-text-secondary">{EMPTY_MESSAGE}</p>
+                <p className="mb-4 rounded-section bg-column p-4 text-legacy-body text-text-secondary">{EMPTY_MESSAGE}</p>
               )}
               <StagePills counts={waiting.stageCounts} resultTotal={waiting.resultTotal} stage={stage} onStageChange={changeStage} />
               <WeekTimeline timeline={timeline} offset={weekOffset} onOffsetChange={moveWeek} onSelect={setSelectedId} />
@@ -178,7 +178,7 @@ export function BoardClient() {
                 totalCount={applications.length}
               />
               {!error && visibleApplications.length === 0 && (
-                <p className="mb-4 rounded-section bg-column p-4 text-body text-text-secondary">
+                <p className="mb-4 rounded-section bg-column p-4 text-legacy-body text-text-secondary">
                   {applications.length === 0 ? EMPTY_MESSAGE : '조건에 맞는 지원 내역이 없습니다. 검색어나 필터를 변경해보세요.'}
                 </p>
               )}

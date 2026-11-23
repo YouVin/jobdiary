@@ -33,10 +33,10 @@ export function RecentCard({ applications, onSelect }: RecentCardProps) {
                     <span className="block truncate text-card-company text-text-primary">{application.company}</span>
                     <span className="mt-1 flex items-center gap-2">
                       <PlatformBadge platform={application.platform} />
-                      <span className="text-caption text-text-muted tabular-nums">{formatDate(application.appliedAt)}</span>
+                      <span className="text-legacy-caption text-text-muted tabular-nums">{formatDate(application.appliedAt)}</span>
                     </span>
                   </span>
-                  <span className="flex shrink-0 items-center gap-1 text-caption text-text-secondary">
+                  <span className="flex shrink-0 items-center gap-1 text-legacy-caption text-text-secondary">
                     <span className={`h-2 w-2 rounded-full ${STATUS_DOT_CLASS[application.status]}`} />
                     {statusLabel}
                   </span>

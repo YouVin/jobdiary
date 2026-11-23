@@ -96,7 +96,7 @@ export function DiaryHeader({
             <span className="text-diary-month tracking-widest text-text-secondary uppercase">{MONTH_LABELS[month - 1]}</span>
             <span className="text-diary-day text-text-primary tabular-nums">{day}</span>
           </time>
-          <span className="mt-1 text-label text-text-secondary">{year}년 · {weekday}</span>
+          <span className="mt-1 text-legacy-label text-text-secondary">{year}년 · {weekday}</span>
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
@@ -105,14 +105,14 @@ export function DiaryHeader({
           </p>
           <ul className="flex flex-wrap gap-2">
             {facts.map((fact) => (
-              <li key={fact.label} className="flex items-center gap-2 rounded-full bg-column px-3 py-1 text-label text-text-secondary">
+              <li key={fact.label} className="flex items-center gap-2 rounded-full bg-column px-3 py-1 text-legacy-label text-text-secondary">
                 <span aria-hidden="true" className={`h-2 w-2 rounded-full ${fact.dot}`} />
                 {fact.label}
                 <b className="font-semibold text-text-primary tabular-nums">{fact.value}</b>
               </li>
             ))}
             {stage.autoRejected > 0 && (
-              <li className="flex items-center gap-2 rounded-full bg-column px-3 py-1 text-label text-text-secondary">
+              <li className="flex items-center gap-2 rounded-full bg-column px-3 py-1 text-legacy-label text-text-secondary">
                 <span aria-hidden="true" className="h-2 w-2 rounded-full bg-status-rejected" />
                 마감 자동 탈락
                 <b className="font-semibold text-status-rejected-text tabular-nums">{stage.autoRejected}건</b>
@@ -124,7 +124,7 @@ export function DiaryHeader({
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-card-border bg-page px-5 py-3 md:px-8">
         <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-          <p className="text-label text-text-secondary tabular-nums">
+          <p className="text-legacy-label text-text-secondary tabular-nums">
             {lastImportAt ? `마지막 가져오기 ${formatKoreanDateTime(lastImportAt)}` : '가져온 기록 없음'}
           </p>
           <ul className="flex flex-wrap gap-2">
@@ -139,7 +139,7 @@ export function DiaryHeader({
                     rel="noopener noreferrer"
                     aria-label={`${label} ${platformCounts[platform]}건 저장됨, ${page.label} (새 탭)`}
                     title={`${label} ${page.label}`}
-                    className={`flex items-center gap-1 rounded-full py-1 pl-1 pr-2 text-label underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${className}`}
+                    className={`flex items-center gap-1 rounded-full py-1 pl-1 pr-2 text-legacy-label underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${className}`}
                   >
                     <PlatformIcon platform={platform} size="sm" />
                     {label}

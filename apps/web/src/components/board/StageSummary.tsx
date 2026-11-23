@@ -32,7 +32,7 @@ export function StagePills({ counts, resultTotal, stage, onStageChange }: StageP
               <span className={clsx('h-2 w-2 shrink-0 rounded-full', STATUS_DOT_CLASS[status])} aria-hidden="true" />
               {STATUS_INFO[status].label}
             </span>
-            <b className={clsx('text-body font-bold tabular-nums', !isPressed && 'text-text-primary')}>{counts[status]}</b>
+            <b className={clsx('text-legacy-body font-bold tabular-nums', !isPressed && 'text-text-primary')}>{counts[status]}</b>
           </button>
         );
       })}

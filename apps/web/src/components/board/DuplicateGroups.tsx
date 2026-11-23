@@ -29,7 +29,7 @@ function DuplicateRow({ application, onOpen }: { application: Application; onOpe
         <span className={clsx('h-2 w-2 shrink-0 rounded-full', STATUS_DOT_CLASS[application.status])} aria-hidden="true" />
         <span className="truncate">{STATUS_INFO[application.status].label}</span>
       </span>
-      <span className="shrink-0 text-caption text-text-muted tabular-nums">{appliedDate} 지원</span>
+      <span className="shrink-0 text-legacy-caption text-text-muted tabular-nums">{appliedDate} 지원</span>
       {postingUrl ? (
         <a
           href={postingUrl}
@@ -67,7 +67,7 @@ export function DuplicateGroups({ groups, onOpen }: DuplicateGroupsProps) {
           사이트 간 중복 지원
           <span className="text-small font-medium text-text-muted tabular-nums">{groups.length}</span>
         </h2>
-        <p className="text-caption text-text-muted">회사명과 공고명이 같은 지원을 묶었어요</p>
+        <p className="text-legacy-caption text-text-muted">회사명과 공고명이 같은 지원을 묶었어요</p>
       </div>
 
       {groups.length ? (
@@ -77,10 +77,10 @@ export function DuplicateGroups({ groups, onOpen }: DuplicateGroupsProps) {
               <article aria-label={`${group.company} ${group.position}`} className="h-full rounded-card border border-card-border bg-card p-4 shadow-card">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h3 className="truncate text-body font-semibold text-text-primary">{group.company}</h3>
-                    <p className="truncate text-caption text-text-muted">{group.position}</p>
+                    <h3 className="truncate text-legacy-body font-semibold text-text-primary">{group.company}</h3>
+                    <p className="truncate text-legacy-caption text-text-muted">{group.position}</p>
                   </div>
-                  <span className="shrink-0 rounded bg-status-rejected/10 px-2 py-1 text-caption font-medium text-status-rejected-text">
+                  <span className="shrink-0 rounded bg-status-rejected/10 px-2 py-1 text-legacy-caption font-medium text-status-rejected-text">
                     {group.platforms.length}개 사이트 · {group.applications.length}건
                   </span>
                 </div>

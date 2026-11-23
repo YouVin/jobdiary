@@ -61,7 +61,7 @@ export function DeleteAccountSection() {
 
   return (
     <section className="rounded-card border border-status-rejected/30 bg-status-rejected/5 p-5">
-      <h2 className="text-body font-semibold text-status-rejected">회원 탈퇴</h2>
+      <h2 className="text-legacy-body font-semibold text-status-rejected">회원 탈퇴</h2>
       <p className="mt-2 text-small text-text-secondary">
         탈퇴하면 계정과 모든 지원 내역이 영구적으로 삭제되며, 이 작업은 되돌릴 수 없습니다.
       </p>
@@ -81,7 +81,7 @@ export function DeleteAccountSection() {
       </div>
 
       {errorMessage && (
-        <p role="alert" className="mt-2 text-label text-status-rejected">
+        <p role="alert" className="mt-2 text-legacy-label text-status-rejected">
           {errorMessage}
         </p>
       )}

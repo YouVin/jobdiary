@@ -37,14 +37,14 @@ export function HeaderNav({ variant }: HeaderNavProps) {
             href={item.href}
             aria-current={isActive ? 'page' : undefined}
             className={clsx(
-              'flex items-center justify-center gap-2 rounded-full py-2 text-body font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
+              'flex items-center justify-center gap-2 rounded-full py-2 text-legacy-body font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand',
               isMobile ? 'flex-1' : 'px-4',
               isActive ? 'bg-brand text-on-brand' : 'text-text-secondary hover:bg-column hover:text-text-primary',
             )}
           >
             {item.label}
             {item.showCount && count !== null && (
-              <span className={clsx('text-label font-normal tabular-nums', isActive ? 'text-on-brand/70' : 'text-text-muted')}>{count}</span>
+              <span className={clsx('text-legacy-label font-normal tabular-nums', isActive ? 'text-on-brand/70' : 'text-text-muted')}>{count}</span>
             )}
           </Link>
         );

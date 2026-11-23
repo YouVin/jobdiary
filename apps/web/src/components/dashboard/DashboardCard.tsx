@@ -19,7 +19,7 @@ export function DashboardCard({ title, titleId, icon, action, className, childre
     >
       {title && (
         <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 id={titleId} className="flex items-center gap-2 text-body font-semibold text-text-primary">
+          <h2 id={titleId} className="flex items-center gap-2 text-legacy-body font-semibold text-text-primary">
             {icon && <Icon name={icon} className="h-4 w-4 text-text-secondary" />}
             {title}
           </h2>

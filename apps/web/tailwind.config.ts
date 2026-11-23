@@ -18,11 +18,12 @@ const config: Config = {
         "heading-xl": ["28px", { lineHeight: "40px", fontWeight: "600" }], // 페이지 제목
         "heading-lg": ["22px", { lineHeight: "32px", fontWeight: "500" }], // 섹션 제목
         "heading-md": ["18px", { lineHeight: "28px", fontWeight: "500" }], // 카드/모달 제목
-        body: ["14px", { lineHeight: "20px", fontWeight: "400" }], // 기본 본문
+        // 예전 이름 (#200에서 legacy-로 옮김, #206에서 걷어냄). 새 화면은 디자인 시스템 단계(display~caption)를 쓴다.
+        "legacy-body": ["14px", { lineHeight: "20px", fontWeight: "400" }], // 기본 본문
         small: ["13px", { lineHeight: "20px", fontWeight: "400" }], // 보조 본문
         "card-company": ["13px", { lineHeight: "20px", fontWeight: "500" }], // 지원 카드의 회사명
-        label: ["12px", { lineHeight: "16px", fontWeight: "500" }], // 폼 라벨, 보조 문구
-        caption: ["11px", { lineHeight: "16px", fontWeight: "400" }], // 카드 내 캡션(날짜 등)
+        "legacy-label": ["12px", { lineHeight: "16px", fontWeight: "500" }], // 폼 라벨, 보조 문구
+        "legacy-caption": ["11px", { lineHeight: "16px", fontWeight: "400" }], // 카드 내 캡션(날짜 등)
         badge: ["10px", { lineHeight: "12px", fontWeight: "500" }], // 플랫폼/상태 뱃지
         "illustration-xs": ["6px", { lineHeight: "8px" }], // aria-hidden 목업 전용
         "illustration-sm": ["8px", { lineHeight: "12px" }], // aria-hidden 목업 전용

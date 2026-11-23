@@ -49,11 +49,11 @@ export function ResendConfirmationButton({ email }: ResendConfirmationButtonProp
         disabled={isResending}
         aria-busy={isResending}
         aria-describedby={resendMessage ? messageId : undefined}
-        className="cursor-pointer rounded-xs text-label font-medium text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        className="cursor-pointer rounded-xs text-legacy-label font-medium text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
       >
         {isResending ? '재전송 중...' : '확인 메일 재전송'}
       </button>
-      <p id={messageId} role="status" aria-atomic="true" className={`mt-1 text-label ${resendFailed ? 'text-status-rejected-text' : 'text-status-offer-text'}`}>{isResending ? '확인 메일을 재전송하고 있습니다.' : resendMessage}</p>
+      <p id={messageId} role="status" aria-atomic="true" className={`mt-1 text-legacy-label ${resendFailed ? 'text-status-rejected-text' : 'text-status-offer-text'}`}>{isResending ? '확인 메일을 재전송하고 있습니다.' : resendMessage}</p>
     </div>
   );
 }

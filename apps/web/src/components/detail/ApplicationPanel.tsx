@@ -98,7 +98,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
         <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-5">
           {mode === 'edit' ? (
             <section aria-labelledby="panel-edit-title">
-              <h3 id="panel-edit-title" className="mb-3 text-label font-semibold text-text-muted">정보 수정</h3>
+              <h3 id="panel-edit-title" className="mb-3 text-legacy-label font-semibold text-text-muted">정보 수정</h3>
               <EditApplicationForm
                 application={application}
                 onClose={backToDetail}
@@ -109,21 +109,21 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
           ) : (
             <>
               <section aria-labelledby="panel-stage-title">
-                <h3 id="panel-stage-title" className="mb-2 flex items-baseline gap-2 text-label font-semibold text-text-muted">
+                <h3 id="panel-stage-title" className="mb-2 flex items-baseline gap-2 text-legacy-label font-semibold text-text-muted">
                   단계
                   <span className="font-medium text-text-primary">{STATUS_INFO[application.status].label}</span>
                 </h3>
                 <StageTrack company={application.company} stageIndex={stageIndex} onMove={(status) => onMove(application.id, status)} labelsClassName="" />
                 {stageIndex < 0 && (
-                  <p className="mt-2 text-caption text-text-muted">결과가 나온 지원이에요. 점을 누르면 진행 단계로 되돌릴 수 있어요.</p>
+                  <p className="mt-2 text-legacy-caption text-text-muted">결과가 나온 지원이에요. 점을 누르면 진행 단계로 되돌릴 수 있어요.</p>
                 )}
                 {moveError && (
-                  <p role="alert" className="mt-2 text-label text-status-rejected-text">{moveError}</p>
+                  <p role="alert" className="mt-2 text-legacy-label text-status-rejected-text">{moveError}</p>
                 )}
               </section>
 
               <section aria-labelledby="panel-info-title">
-                <h3 id="panel-info-title" className="mb-2 text-label font-semibold text-text-muted">정보</h3>
+                <h3 id="panel-info-title" className="mb-2 text-legacy-label font-semibold text-text-muted">정보</h3>
                 <dl className="grid grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-2 text-small">
                   <dt className="text-text-muted">플랫폼</dt>
                   <dd className="text-text-primary">{PLATFORM_INFO[application.platform].label}</dd>
@@ -135,12 +135,12 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
                   <dd className="text-text-primary tabular-nums">{dateText(application.deadlineAt)}</dd>
                 </dl>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button ref={editButtonRef} type="button" onClick={() => switchMode('edit')} className={buttonClassName('secondary', 'px-3 py-1 text-label')}>
+                  <button ref={editButtonRef} type="button" onClick={() => switchMode('edit')} className={buttonClassName('secondary', 'px-3 py-1 text-legacy-label')}>
                     <Icon name="pencil" className="h-3 w-3" />
                     정보 수정
                   </button>
                   {postingUrl && (
-                    <a href={postingUrl} target="_blank" rel="noopener noreferrer" className={buttonClassName('secondary', 'px-3 py-1 text-label')}>
+                    <a href={postingUrl} target="_blank" rel="noopener noreferrer" className={buttonClassName('secondary', 'px-3 py-1 text-legacy-label')}>
                       공고 열기
                       <Icon name="arrow-right" className="h-3 w-3" />
                     </a>

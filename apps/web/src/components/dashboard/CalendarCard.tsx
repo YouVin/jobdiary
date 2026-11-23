@@ -46,7 +46,7 @@ function DayTooltip({ month, day, dayIndex }: { month: number; day: CalendarDay;
     <span
       aria-hidden="true"
       className={clsx(
-        'pointer-events-none absolute bottom-full z-10 mb-2 hidden w-max max-w-40 flex-col gap-1 rounded-sm bg-text-primary px-3 py-2 text-left text-caption text-on-brand shadow-float group-hover:flex',
+        'pointer-events-none absolute bottom-full z-10 mb-2 hidden w-max max-w-40 flex-col gap-1 rounded-sm bg-text-primary px-3 py-2 text-left text-legacy-caption text-on-brand shadow-float group-hover:flex',
         day.count > 0 ? 'group-focus-visible:flex' : 'group-focus:flex',
         tooltipAlignClass(dayIndex),
       )}
@@ -79,7 +79,7 @@ function DayApplications({ id, label, applications, onSelect, onClose }: DayAppl
   return (
     <div id={id} role="region" aria-label={`${label} 지원 목록`} className="mt-3 rounded-section bg-column p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-label font-semibold text-text-primary">
+        <p className="text-legacy-label font-semibold text-text-primary">
           {label} · 지원 {applications.length}건
         </p>
         <button
@@ -102,10 +102,10 @@ function DayApplications({ id, label, applications, onSelect, onClose }: DayAppl
             >
               <span className="min-w-0 flex-1">
                 <b className="block truncate text-small font-semibold text-text-primary">{application.company}</b>
-                <span className="block truncate text-caption text-text-muted">{application.position}</span>
+                <span className="block truncate text-legacy-caption text-text-muted">{application.position}</span>
               </span>
               <PlatformBadge platform={application.platform} />
-              <span className="flex shrink-0 items-center gap-1 text-caption text-text-secondary">
+              <span className="flex shrink-0 items-center gap-1 text-legacy-caption text-text-secondary">
                 <span className={clsx('h-2 w-2 rounded-full', STATUS_DOT_CLASS[application.status])} aria-hidden="true" />
                 {STATUS_INFO[application.status].label}
               </span>
@@ -142,14 +142,14 @@ export function CalendarCard({ calendar, applications, onSelect }: CalendarCardP
     <DashboardCard
       title={title}
       titleId="calendar-card-title"
-      action={<span className="text-caption text-text-secondary tabular-nums">이번 달 {calendar.monthTotal}건</span>}
+      action={<span className="text-legacy-caption text-text-secondary tabular-nums">이번 달 {calendar.monthTotal}건</span>}
     >
       <table className="w-full table-fixed border-separate border-spacing-1">
         <caption className="sr-only">{calendar.year}년 {calendar.month}월 날짜별 지원 건수</caption>
         <thead>
           <tr>
             {WEEKDAYS.map((weekday) => (
-              <th key={weekday} scope="col" aria-label={`${weekday}요일`} className="pb-1 text-caption font-medium text-text-muted">
+              <th key={weekday} scope="col" aria-label={`${weekday}요일`} className="pb-1 text-legacy-caption font-medium text-text-muted">
                 {weekday}
               </th>
             ))}
@@ -215,7 +215,7 @@ export function CalendarCard({ calendar, applications, onSelect }: CalendarCardP
           onClose={() => setSelectedDate(null)}
         />
       )}
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-caption text-text-secondary">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-legacy-caption text-text-secondary">
         <span>색이 진할수록 많이 지원한 날이에요. 날짜를 누르면 회사 목록이 열려요</span>
         <span className="flex items-center gap-1" aria-hidden="true">
           적음

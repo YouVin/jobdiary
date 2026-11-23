@@ -25,12 +25,12 @@ export function JourneyList({ application }: { application: Application }) {
 
   return (
     <section aria-labelledby="journey-title">
-      <h3 id="journey-title" className="mb-3 text-label font-semibold text-text-muted">지나온 기록</h3>
+      <h3 id="journey-title" className="mb-3 text-legacy-label font-semibold text-text-muted">지나온 기록</h3>
       <ol className="relative flex flex-col gap-4 border-l border-card-border pl-4">
         {items.map((item) => (
           <li key={item.key} className="relative">
             <span className={clsx('absolute top-1 -left-5 h-2 w-2 rounded-full ring-4 ring-card', DOT_CLASS[item.kind])} aria-hidden="true" />
-            <p className="flex flex-wrap items-baseline gap-x-2 text-caption text-text-muted tabular-nums">
+            <p className="flex flex-wrap items-baseline gap-x-2 text-legacy-caption text-text-muted tabular-nums">
               {formatDateWithWeekday(item.date)}
               <span className="font-semibold text-text-secondary">
                 {KIND_LABEL[item.kind]}
@@ -44,7 +44,7 @@ export function JourneyList({ application }: { application: Application }) {
           </li>
         ))}
       </ol>
-      <p className="mt-4 text-caption text-text-muted">단계가 바뀐 시점은 아직 저장되지 않아요. 남기고 싶은 일은 기록으로 적어 두세요.</p>
+      <p className="mt-4 text-legacy-caption text-text-muted">단계가 바뀐 시점은 아직 저장되지 않아요. 남기고 싶은 일은 기록으로 적어 두세요.</p>
     </section>
   );
 }
