@@ -17,10 +17,16 @@ const ICON_PATHS = {
   'chevron-left': '/icons/chevron-left.svg',
   'chevron-right': '/icons/chevron-right.svg',
   external: '/icons/external.svg',
+  search: '/icons/search.svg',
+  check: '/icons/check.svg',
+  'chevron-down': '/icons/chevron-down.svg',
+  user: '/icons/user.svg',
 } as const;
 
+export type IconName = keyof typeof ICON_PATHS;
+
 interface IconProps {
-  name: keyof typeof ICON_PATHS;
+  name: IconName;
   className?: string;
 }
 
