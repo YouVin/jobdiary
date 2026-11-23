@@ -14,7 +14,7 @@ interface StageTrackProps {
 // 진행 막대 길이. 첫 점부터 현재 점까지(전체 선은 1/8 ~ 7/8 지점). Tailwind가 읽도록 리터럴로 둔다.
 const FILL_CLASS = ['w-0', 'w-1/4', 'w-2/4', 'w-3/4'];
 
-// 받침이 있으면 "으로", 없거나 ㄹ 받침이면 "로" (면접예정으로, 서류통과로)
+// 받침이 있으면 "으로", 없거나 ㄹ 받침이면 "로" (면접 예정으로, 서류 통과로)
 function withDirection(word: string): string {
   const code = word.charCodeAt(word.length - 1) - 0xac00;
   if (code < 0 || code > 11171) return `${word}로`;

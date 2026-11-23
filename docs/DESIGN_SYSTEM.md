@@ -49,7 +49,7 @@
 | FilterChip · ChipGroup | `ui/FilterChip.tsx` | `aria-pressed`, 묶음 `role="group"` + 이름 |
 | Badge · StageDot | `ui/Badge.tsx` | 색만으로 구분하지 않게 항상 글자. 단계 점 색 `STAGE_DOT_CLASS` |
 | CompanyRow · RowList · CompanyAvatar | `ui/CompanyRow.tsx` | `onOpen`이면 줄 전체가 버튼, 사이트 이름은 sr-only |
-| Card · CardHeader · CardSummary | `ui/Card.tsx` | 제목 h2/h3, `aria-labelledby` 연결용 `titleId` |
+| Card · CardHeader · CardSummary | `ui/Card.tsx` | 제목 h2/h3, `aria-labelledby` 연결용 `titleId`. 여백·간격은 `padding`(md·sm·xs·flush)·`gap`(md·lg·none) 속성으로 바꾼다. className에 p-·gap-·flex-row를 덧붙이면 같은 속성 클래스 두 개 중 어느 쪽이 이길지 CSS 순서에 달려 있다(#204) |
 | StatGroup · StatCell | `ui/StatCell.tsx` | `dl/dt/dd`로 "이름: 값". `animate`면 숫자가 0부터 올라간다(CountUp) |
 | CountUp | `ui/CountUp.tsx` | 600ms 감속(`duration-count`). 움직임 줄이기면 바로 최종 값, 스크린리더는 최종 숫자(sr-only)만 읽음 |
 | Menu | `ui/Menu.tsx` | 공개(disclosure) 방식: 버튼 `aria-expanded`·`aria-controls`, 열면 첫 항목 포커스, Esc 닫고 버튼으로 복귀, 바깥 누름·Tab 이탈 시 닫힘 |
