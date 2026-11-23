@@ -29,7 +29,9 @@ export function TextField({ label, hint, error, labelAction, endAdornment, id, c
   const hintId = `${inputId}-hint`;
   const errorId = `${inputId}-error`;
   // 화면이 이미 넘긴 설명 id가 있으면 뒤에 붙인다.
-  const describedByIds = [describedBy, hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined;
+  // 오류가 있으면 도움말은 숨기므로 설명 id에서도 뺀다. 없는 id를 가리키면 스크린리더가 설명을 못 읽는다(#202).
+  const isHintShown = Boolean(hint) && !error;
+  const describedByIds = [describedBy, isHintShown ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className={clsx('flex flex-col gap-2', className)}>
@@ -49,7 +51,7 @@ export function TextField({ label, hint, error, labelAction, endAdornment, id, c
         />
         {endAdornment && <div className="absolute top-1 right-1">{endAdornment}</div>}
       </div>
-      {hint && !error && (
+      {isHintShown && (
         <p id={hintId} className="text-label text-text-secondary">
           {hint}
         </p>
