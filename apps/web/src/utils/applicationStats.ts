@@ -36,6 +36,7 @@ export interface UpcomingEvent {
   applicationId: string;
   company: string;
   position: string;
+  platform: Platform; // 회사 한 줄(CompanyRow)의 사이트 아이콘 (#203)
   kind: 'interview' | 'deadline';
   date: string; // YYYY-MM-DD
   daysLeft: number; // 0이면 오늘
@@ -143,6 +144,7 @@ export function getUpcomingEvents(applications: Application[], today = getTodayI
         applicationId: application.id,
         company: application.company,
         position: application.position,
+        platform: application.platform,
         kind,
         date,
         daysLeft: daysBetween(today, date),
@@ -153,10 +155,50 @@ export function getUpcomingEvents(applications: Application[], today = getTodayI
   return events.sort((a, b) => a.date.localeCompare(b.date) || (a.kind === b.kind ? 0 : a.kind === 'interview' ? -1 : 1));
 }
 
+const WEEK_ORDINALS = ['첫째', '둘째', '셋째', '넷째', '다섯째', '여섯째'];
+
+// 다가오는 일정을 주별로 묶을 때의 이름 (#203). 이번 주·다음 주는 그대로, 그 뒤는 "12월 첫째 주".
+// 주는 월요일에 시작하고, "몇째 주"는 그 날짜가 속한 달의 1일이 있는 주를 첫째 주로 센다.
+export function getUpcomingWeekLabel(date: string, today = getTodayInKorea()): string {
+  const weekGap = daysBetween(getWeekStart(today), getWeekStart(date)) / 7;
+  if (weekGap === 0) return '이번 주';
+  if (weekGap === 1) return '다음 주';
+  const [year, month, day] = date.split('-').map(Number);
+  const firstWeekday = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
+  const ordinal = Math.floor((day + firstWeekday - 1) / 7);
+  return `${month}월 ${WEEK_ORDINALS[ordinal]} 주`;
+}
+
+export interface WeeklyCount {
+  weekStart: string; // 그 주 월요일 (YYYY-MM-DD)
+  count: number; // 그 주에 지원한 건수 (이번 주는 오늘까지)
+  isThisWeek: boolean;
+}
+
+// 최근 N주(이번 주 포함) 주별 지원 건수, 오래된 주부터 (#203 주간 지원 막대).
+export function getWeeklyApplications(applications: Application[], today = getTodayInKorea(), weekCount = 8): WeeklyCount[] {
+  const thisWeek = getWeekStart(today);
+  const weeks: WeeklyCount[] = [];
+  for (let index = weekCount - 1; index >= 0; index -= 1) {
+    const weekStart = new Date(Date.parse(`${thisWeek}T00:00:00.000Z`) - index * 7 * DAY_MS).toISOString().slice(0, 10);
+    weeks.push({ weekStart, count: 0, isThisWeek: index === 0 });
+  }
+  for (const application of applications) {
+    const date = toDateOnly(application.appliedAt);
+    if (!date || date > today || date < weeks[0].weekStart) continue;
+    const weekIndex = Math.floor(daysBetween(weeks[0].weekStart, date) / 7);
+    weeks[weekIndex].count += 1;
+  }
+  return weeks;
+}
+
 export interface CalendarDay {
   date: string; // YYYY-MM-DD
   day: number;
   count: number; // 그날 지원한 건수
+  companies: string[]; // 그날 지원한 회사 이름 (목록 순서, 날짜 칸 말풍선용)
+  applicationIds: string[]; // companies와 같은 순서의 지원 ID (날짜를 누르면 여는 회사 목록용, #190)
+  events: Array<UpcomingEvent['kind']>; // 오늘 이후 그날의 면접·공고 마감 (진행 중인 지원만, #203)
   isToday: boolean;
   isFuture: boolean;
 }
@@ -166,18 +208,33 @@ export interface MonthCalendar {
   month: number; // 1~12
   weeks: Array<Array<CalendarDay | null>>; // 월요일 시작, 앞뒤 빈 칸은 null
   monthTotal: number;
+  topDate: string | null; // 이 달에 가장 많이 지원한 날 하나 (2건 이상일 때만, 같으면 앞 날짜)
 }
 
-// 오늘이 속한 달의 지원 달력. 익스텐션 팝업 달력과 같이 월요일에 시작한다.
-export function getMonthCalendar(applications: Application[], today = getTodayInKorea()): MonthCalendar {
-  const [year, month] = today.split('-').map(Number);
-  const prefix = today.slice(0, 8); // YYYY-MM-
-  const counts = new Map<string, number>();
+// 기준 달에서 offset만큼 옮긴 달 (YYYY-MM). 달력의 지난달·다음 달 버튼용.
+export function shiftMonth(month: string, offset: number): string {
+  const [year, monthNumber] = month.split('-').map(Number);
+  const date = new Date(Date.UTC(year, monthNumber - 1 + offset, 1));
+  return date.toISOString().slice(0, 7);
+}
+
+// 한 달의 지원 달력(기본은 오늘이 속한 달). 익스텐션 팝업 달력과 같이 월요일에 시작한다.
+export function getMonthCalendar(applications: Application[], today = getTodayInKorea(), targetMonth = today.slice(0, 7)): MonthCalendar {
+  const [year, month] = targetMonth.split('-').map(Number);
+  const prefix = `${targetMonth}-`; // YYYY-MM-
+  const appliedByDate = new Map<string, Application[]>();
+  const eventsByDate = new Map<string, Array<UpcomingEvent['kind']>>();
+  for (const event of getUpcomingEvents(applications, today)) {
+    if (!event.date.startsWith(prefix)) continue;
+    eventsByDate.set(event.date, [...(eventsByDate.get(event.date) ?? []), event.kind]);
+  }
   let monthTotal = 0;
   for (const application of applications) {
     const date = toDateOnly(application.appliedAt);
     if (!date || !date.startsWith(prefix)) continue;
-    counts.set(date, (counts.get(date) ?? 0) + 1);
+    const applied = appliedByDate.get(date) ?? [];
+    applied.push(application);
+    appliedByDate.set(date, applied);
     monthTotal += 1;
   }
 
@@ -193,10 +250,29 @@ export function getMonthCalendar(applications: Application[], today = getTodayIn
       continue;
     }
     const date = `${prefix}${String(day).padStart(2, '0')}`;
-    weeks[weeks.length - 1].push({ date, day, count: counts.get(date) ?? 0, isToday: date === today, isFuture: date > today });
+    const applied = appliedByDate.get(date) ?? [];
+    weeks[weeks.length - 1].push({
+      date,
+      day,
+      count: applied.length,
+      companies: applied.map((application) => application.company.trim()),
+      applicationIds: applied.map((application) => application.id),
+      events: eventsByDate.get(date) ?? [],
+      isToday: date === today,
+      isFuture: date > today,
+    });
   }
 
-  return { year, month, weeks, monthTotal };
+  let topDate: string | null = null;
+  let topCount = 1;
+  for (const [date, applied] of [...appliedByDate].sort(([a], [b]) => a.localeCompare(b))) {
+    if (applied.length > topCount) {
+      topDate = date;
+      topCount = applied.length;
+    }
+  }
+
+  return { year, month, weeks, monthTotal, topDate };
 }
 
 // 지원일 최신순, 같은 날이면 최근 수정순

@@ -1,20 +1,16 @@
 import type { Metadata } from 'next';
+import { AuthHeading, AuthShell } from '@/components/auth/AuthShell';
 import { UpdatePasswordForm } from '@/components/auth/UpdatePasswordForm';
 import { PRIVATE_ROBOTS } from '@/lib/siteMetadata';
 
 export const metadata: Metadata = { title: '새 비밀번호 설정', robots: PRIVATE_ROBOTS };
 
+// 로그인과 같은 틀(#202). 메일 링크로 바로 들어오므로 1024px 미만에서는 폼부터 보여준다.
 export default function UpdatePasswordPage() {
   return (
-    <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-page px-4 py-10">
-      <div className="mb-6 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-body font-bold text-on-brand">
-          J
-        </div>
-        <span className="text-heading-md font-bold text-text-primary">취준일기</span>
-      </div>
-
+    <AuthShell mobileIntro={false}>
+      <AuthHeading title="새 비밀번호 설정" description="앞으로 쓸 비밀번호를 입력해 주세요." />
       <UpdatePasswordForm />
-    </div>
+    </AuthShell>
   );
 }

@@ -15,9 +15,9 @@
 
 ### Google 인증 재시도·동의 흐름 (#101, 2026-10-18)
 
-- 로그인/가입 탭 모두 Google 인증 시작 전에 이메일 폼의 검증·약관 체크를 요구하지 않는다. Google 인증 후 현재 정책 버전 동의가 없는 계정만 ConsentGate를 거친다. 이미 동의한 계정은 다시 요구하지 않는다. Google에서 이메일·프로필 공유에 동의하는 것과 우리 서비스 약관 확인은 별개다.
+- 로그인(`/login`)·가입(`/signup`) 화면 모두 Google 인증 시작 전에 이메일 폼의 검증·약관 체크를 요구하지 않는다. Google 인증 후 현재 정책 버전 동의가 없는 계정만 ConsentGate를 거친다. 이미 동의한 계정은 다시 요구하지 않는다. Google에서 이메일·프로필 공유에 동의하는 것과 우리 서비스 약관 확인은 별개다.
 - 이메일 폼 값은 Google 요청에 전달하지 않는다. Google에서 선택한 계정으로 인증한다. 실제 이메일 가입 계정과 같은 검증된 이메일의 OAuth identity는 Supabase 자동 연결 대상이다. 미인증 identity에는 탈취 방지 처리가 있으며, 클라이언트가 입력 이메일만으로 계정을 합치지 않는다.
-- 이메일 요청 중에는 모드/필드/Google 전환을 막고, Google 이동 중에도 이메일 제출을 막는다. ref로 연타를 차단한다. 실패·정상 뒤로가기는 다시 시도할 수 있다. BFCache 복원은 pageshow.persisted에서 Google 잠금만 해제하며 이전 요청의 늦은 오류는 무시한다.
+- 이메일 요청 중에는 입력칸과 Google 버튼을 막고(제출 버튼은 `aria-disabled`라 포커스가 남는다, #202), Google 이동 중에도 이메일 제출을 막는다. ref로 연타를 차단한다. 실패·정상 뒤로가기는 다시 시도할 수 있다. BFCache 복원은 pageshow.persisted에서 Google 잠금만 해제하며 이전 요청의 늦은 오류는 무시한다.
 - Google SDK는 location.assign 후에도 Promise가 성공 resolve할 수 있으므로 성공 직후 잠금을 풀지 않는다. 반환 오류와 throw 예외는 모두 안내하고 잠금을 해제한다.
 - OAuth redirectTo는 같은 origin의 `/login`과 허용된 `?import=1`만 사용한다. 콜백 오류·토큰·이메일·이전 일회성 알림을 다음 요청에 복사하지 않는다. 로그인 성공 후 보드 이동도 이 허용 목록을 따른다. error/error_description/error_code만 온 경우를 모두 안내하고 URL에서 제거한다.
 - 검증 범위, 재현 및 재실행: [AUTH_CHECK](AUTH_CHECK.md). 실제 Google 진입/뒤로가기는 확인했고 개인 계정 승인·실제 이메일 identity 연결 완료는 확인하지 않았다.
@@ -28,13 +28,13 @@
 - **상태 관리**: [`src/store/authStore.ts`](../src/store/authStore.ts)의 `authStore`가 `status: 'loading' | 'authenticated' | 'unauthenticated' | 'recovering'`과 `session`을 보관한다. `setSession(session)`은 일반 세션 상태를 확정하고, 복구 상태에서는 `setRecovering()`과 `completeRecovery()`가 상태 전환을 담당한다.
 - **세션 부트스트랩/구독**: [`AuthProvider`](../src/components/auth/AuthProvider.tsx)가 루트 레이아웃에서 한 번만 마운트된다. 마운트 시 `getSession()`으로 새로고침 후 세션을 복원하고, `onAuthStateChange`로 이후 로그인/로그아웃 등 변화를 실시간 반영한다.
 - **라우트 가드**: [`AuthGuard`](../src/components/auth/AuthGuard.tsx)는 [`(protected)` 레이아웃](../src/app/(protected)/layout.tsx)에서 `/`와 `/account`를 함께 감싼다. `status==='unauthenticated'`면 현재 쿼리를 보존해 `/login`으로, `status==='recovering'`이면 `/update-password`로 이동한다. `status==='authenticated'`면 자식을 렌더링하고, `loading`이면 로딩 화면만 보여준다. `/login`은 가드를 거치지 않으며 로그인 상태에서 홈으로 돌려보내는 처리는 `LoginForm` 내부의 `useEffect`가 담당한다. 이 가드는 브라우저 UI 제어이며 서버 측 접근 제어가 아니다. 렌더링 경계는 [RENDERING](RENDERING.md)을 참고한다.
-- **로그인/회원가입 폼**: [`LoginForm`](../src/components/auth/LoginForm.tsx) 하나가 탭 토글로 로그인·회원가입을 겸한다.
+- **로그인/회원가입 폼**: [`LoginForm`](../src/components/auth/LoginForm.tsx) 하나를 `/login`(`mode="signin"`)과 `/signup`(`mode="signup"`)이 함께 쓴다(#202, 예전에는 한 화면의 탭 토글). 둘 사이는 폼 아래 "가입하기 / 로그인하기" 링크로 오가며 `?import=1`만 유지한다. 화면이 바뀌면 입력·오류 상태도 새로 시작한다. 공통 틀은 `AuthShell`, 문구는 해요체다.
   - 이메일 형식과 비밀번호 최소 6자(`MIN_PASSWORD_LENGTH`)를 로컬에서 검증한다. 입력 후 400ms 멈추거나 입력한 필드를 벗어나면 오류를 안내하고, 올바르게 수정하면 즉시 제거한다. 빈 칸은 포커스 이탈만으로 오류를 표시하지 않으며 제출 시 필수값을 즉시 확인한다. 가입에서는 비밀번호 확인과 약관 확인도 검사한다.
   - Supabase 에러 메시지를 한글로 매핑하는 `getFriendlyErrorMessage`는 인증 실패·중복·형식·이메일 미인증·요청 제한·네트워크 오류를 안내한다. 나머지는 공용 문구를 사용한다.
   - `isSubmitting`으로 제출 중 버튼을 비활성화하고 "처리 중..." 문구를 보여준다.
   - 회원가입 성공 후에도 세션이 없으면(이메일 확인 대기 상태) 리다이렉트하지 않고 "확인 메일을 발송했습니다..." 안내만 표시한다.
   - **리다이렉트 소유권은 단 하나의 `useEffect`**(`status==='authenticated'`를 구독)가 갖는다. `redirectToBoard()`는 허용된 `?import=1`만 보존해 홈으로 이동한다. 다른 폼 경로는 직접 리다이렉트하지 않는다.
-- **로그아웃**: `HeaderActions`가 `signOut()`을 호출하고, 인증 이벤트가 `authStore.setSession(null)`로 전달될 때 지원 목록을 초기화한다. 다른 탭의 로그아웃도 같은 경로를 사용한다. 실패 시 현재 세션의 목록을 임의로 지우지 않는다.
+- **로그아웃**: 헤더의 "내 계정" 메뉴(#203, `HeaderActions`)에서 `signOut()`을 호출하고, 인증 이벤트가 `authStore.setSession(null)`로 전달될 때 지원 목록을 초기화한다. 다른 탭의 로그아웃도 같은 경로를 사용한다. 실패 시 현재 세션의 목록을 임의로 지우지 않는다.
 
 ### 계정 전환과 지연 응답 보호 (#90, 2026-10-17)
 
@@ -94,9 +94,11 @@
 
 ---
 
-## 3. 페이지/라우팅 구조 (검토/제안 — 최종은 논의 후 결정)
+## 3. 페이지/라우팅 구조
 
-현재는 `/login` 한 페이지가 로그인·회원가입을 토글로 겸한다. 기능이 늘어나면(비밀번호 확인, 약관 동의, 강도 표시 등) 한 폼 안에서 모드 전환으로 다 처리하기엔 복잡도가 커진다. 아래는 분리안 제안이며, 실제로 나눌지·어디까지 나눌지는 구현 착수 전 별도로 논의한다.
+> #202(2026-11-23)에서 아래 분리안대로 `/login`·`/signup`을 나눴다. 둘은 `app/(entry)/` 묶음의 같은 틀과 같은 `LoginForm`을 쓴다. 아래는 분리 전 검토 기록이다.
+
+당시에는 `/login` 한 페이지가 로그인·회원가입을 토글로 겸했다. 기능이 늘어나면(비밀번호 확인, 약관 동의, 강도 표시 등) 한 폼 안에서 모드 전환으로 다 처리하기엔 복잡도가 커진다. 아래는 분리안 제안이며, 실제로 나눌지·어디까지 나눌지는 구현 착수 전 별도로 논의한다.
 
 | 경로 | 역할 | 접근 조건 | 비고 |
 | --- | --- | --- | --- |
@@ -331,7 +333,7 @@ if (status === 'authenticated') {
 - **현재 비밀번호 재확인 — 확정 제안: 요구한다.** `updateUser`는 API 차원에서 현재 비밀번호를 요구하지 않는다(이미 유효한 세션이 있으면 그것으로 충분하다고 간주한다). 하지만 세션이 탈취되거나(XSS, 공용 PC에 로그인 상태로 방치 등) 잠깐 자리를 비운 사이 제3자가 접근하면, 재확인 없이 비밀번호를 그대로 바꿔 계정을 탈취/잠금할 수 있다. 그래서 새 비밀번호를 받기 전에 **현재 비밀번호를 한 번 더 입력받아 확인**한다.
   - Supabase SDK엔 "비밀번호만 검증"하는 전용 API가 없으므로, 현재 로그인 이메일 + 입력받은 현재 비밀번호로 `supabase.auth.signInWithPassword(...)`를 다시 호출해 성공 여부로 검증한다(재로그인처럼 보이지만 실제로는 "확인" 용도). 성공해야만 이어서 `updateUser({ password: newPassword })`를 호출한다.
   - 이 재확인은 **이메일/비밀번호(email) identity가 있는 계정에만** 적용한다 — 구글 전용 계정에는 확인할 기존 비밀번호가 없다(§6.5.7 엣지케이스 3).
-- 새 비밀번호 입력 UI는 Phase 1의 `PasswordStrengthMeter`/`getConfirmPasswordError`/`PasswordToggleButton`을 그대로 재사용(새 비밀번호 + 새 비밀번호 확인 2필드, 강도 표시).
+- 새 비밀번호 입력 UI는 Phase 1의 `PasswordStrengthMeter`/`getConfirmPasswordError`와 비밀번호 보기 버튼을 재사용(새 비밀번호 + 새 비밀번호 확인 2필드, 강도 표시). #205부터 보기 버튼은 공통 `PasswordField`(`components/ui/TextField.tsx`)에 들어 있다.
 - 성공 후: 폼을 초기화하고 "비밀번호가 변경됐습니다" 안내만 표시(페이지 이동 없음 — 이미 `/account`에 있고 세션은 그대로 유효하다). 로그아웃을 강제하지 않는다 — §6.3.2의 "재설정 후 로그아웃"은 **복구 세션**(누가 열었을지 알 수 없는 이메일 링크발 세션)에 대한 조치였지만, 여기서는 이미 현재 비밀번호로 재확인까지 마친 "확실히 본인" 세션이라 성격이 다르다.
 
 #### 6.5.3 이메일 변경

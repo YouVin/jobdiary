@@ -12,7 +12,7 @@ for (const isSignUp of [false, true]) {
     assert.match(html, /role="status"/);
     assert.doesNotMatch(html, /aria-busy="true"/);
     assert.match(html, /aria-atomic="true"/);
-    assert(html.includes(`${isSignUp ? '회원가입' : '로그인'} 화면을 준비하고 있습니다.`));
+    assert(html.includes(`${isSignUp ? '회원가입' : '로그인'} 화면을 준비하고 있어요.`));
     assert.match(html, /aria-hidden="true"/);
     assert.match(html, /motion-reduce:animate-none/);
     assert.doesNotMatch(html, /<(?:button|input|a|select|textarea)(?:\s|>)/);

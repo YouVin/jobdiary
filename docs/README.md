@@ -33,14 +33,15 @@
 | 작업 | 문서 | 코드 진입점 |
 |---|---|---|
 | 디자인·문서 AI 스킬 사용 기준 (#165) | [AI_SKILLS](AI_SKILLS.md) | 사용자 환경 `~/.claude` 플러그인·스킬, 저장소에는 포함하지 않음 |
-| UI 스타일·SVG 규칙 (#81) | [DESIGN_SYSTEM](DESIGN_SYSTEM.md) | `apps/web/tailwind.config.ts`, `apps/web/src/components/common/`, `apps/web/public/icons/` |
+| UI 스타일·SVG 규칙 (#81), 그레이지·검정 강조 개편 (#193), 새 디자인 시스템 (#199·#200) | [DESIGN_SYSTEM](DESIGN_SYSTEM.md) | `apps/web/tailwind.config.ts`, `apps/web/src/components/common/`, `apps/web/public/icons/` |
+| 디자인 개편 트러블슈팅 수치 기록 (#199) | [REDESIGN_TROUBLESHOOTING](REDESIGN_TROUBLESHOOTING.md) | `apps/web/tailwind.config.ts`, `apps/web/scripts/check-ui-style.mjs` |
 | 미사용 후보 조사 (#81) | [UNUSED_AUDIT](UNUSED_AUDIT.md) | 소스·자산·직접 의존성 참조 근거 |
 | 개발 순서·현황 | [ROADMAP](ROADMAP.md), [CONVENTION](CONVENTION.md) | `package.json`, `.github/workflows/ci.yml` |
 | 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `apps/web/src/app/(protected)/`, `apps/web/src/components/dashboard/`, `apps/web/src/components/board/` |
 | Server/Client 렌더링 (#83) | [RENDERING](RENDERING.md) | `apps/web/src/app/(protected)/layout.tsx`, `apps/web/src/components/auth/AuthGuard.tsx` |
-| 인증 스켈레톤·SEO (#105·#106) | [SEO](SEO.md), [RENDERING](RENDERING.md) | `login/layout.tsx`, `AuthFormSkeleton.tsx`, `siteMetadata.ts`, `robots.ts`, `sitemap.ts` |
-| 홈 통계 대시보드 (#146~#150) | [HOME_DASHBOARD](HOME_DASHBOARD.md) | `apps/web/src/utils/applicationStats.ts` |
-| 지원 보드 주간 타임라인·기다리는 목록·상세 패널과 기록·화면 전환 (#173~#176) | [BOARD](BOARD.md) | `apps/web/src/utils/weekTimeline.ts`, `waitingList.ts`, `applicationJourney.ts`, `apps/web/src/components/board/`, `detail/`, `diary/` |
+| 인증 스켈레톤·SEO (#105·#106) | [SEO](SEO.md), [RENDERING](RENDERING.md) | `(entry)/layout.tsx`, `AuthShell.tsx`, `AuthFormSkeleton.tsx`, `siteMetadata.ts`, `robots.ts`, `sitemap.ts` |
+| 홈 통계 대시보드 (#146~#150, 달력 말풍선 #184, 날짜 회사 목록 #190) | [HOME_DASHBOARD](HOME_DASHBOARD.md) | `apps/web/src/utils/applicationStats.ts` |
+| 지원보드 주간 타임라인·기다리는 목록·상세 패널과 기록·화면 전환 (#173~#176), 회사 이름 공고 링크 (#185), 중복 보기 (#186) | [BOARD](BOARD.md) | `apps/web/src/utils/weekTimeline.ts`, `waitingList.ts`, `applicationJourney.ts`, `postingUrl.ts`, `duplicateDetection.ts`, `apps/web/src/components/board/`, `detail/`, `diary/` |
 | 검색·필터 (#73) | [DASHBOARD](DASHBOARD.md) | `apps/web/src/utils/applicationFilters.ts`, `apps/web/src/components/dashboard/ApplicationFilters.tsx` |
 | 공고 마감일·자동 탈락 (#85) | [DEADLINE](DEADLINE.md) | `apps/web/src/utils/applicationDeadline.ts`, `apps/web/src/lib/applicationsApi.ts`, `supabase/migrations/` |
 | 헤더 로고·홈 이동 (#79) | [TECH_DESIGN](TECH_DESIGN.md) | `apps/web/src/components/header/Header.tsx` |

@@ -5,7 +5,7 @@ import { createSourceLoader } from './loadSource.mjs';
 const load = createSourceLoader();
 const {
   getApplicationOverview, getStageSummary, getPlatformShares, getUpcomingEvents, getRecentApplications, getWeekStart, toDateOnly,
-  getMonthCalendar,
+  getMonthCalendar, getWeeklyApplications, getUpcomingWeekLabel, shiftMonth,
 } = load('@/utils/applicationStats');
 
 const row = (id, changes = {}) => ({
@@ -114,11 +114,69 @@ test('지원 달력은 월요일 시작으로 이번 달 지원만 날짜별로 
   const days = calendar.weeks.flat().filter(Boolean);
   assert.equal(days.length, 30);
   assert.equal(days.find((day) => day.day === 16).count, 2);
+  assert.deepEqual(days.find((day) => day.day === 16).companies, ['회사 b', '회사 c']);
+  assert.deepEqual(days.find((day) => day.day === 16).applicationIds, ['b', 'c']);
+  assert.deepEqual(days.find((day) => day.day === 2).companies, []);
   assert.equal(days.find((day) => day.day === 17).isToday, true);
   assert.equal(days.find((day) => day.day === 18).isFuture, true);
   // 윤년 2월
   const february = getMonthCalendar([], '2028-02-10');
   assert.equal(february.weeks.flat().filter(Boolean).length, 29);
+});
+
+test('달력은 가장 많이 지원한 날 하나(2건 이상)와 오늘 이후 일정 점을 담는다 (#203)', () => {
+  const rows = [
+    row('a', { appliedAt: '2026-11-03' }),
+    row('b', { appliedAt: '2026-11-10' }), row('c', { appliedAt: '2026-11-10' }),
+    row('d', { appliedAt: '2026-11-12' }), row('e', { appliedAt: '2026-11-12' }),
+    // 일정만 보는 지원은 지원일을 지난달로 둬 이 달 지원 수에 섞이지 않게 한다.
+    row('meet', { appliedAt: '2026-10-01', status: 'interview', interviewDate: '2026-11-25', deadlineAt: '2026-11-25' }),
+    row('done', { appliedAt: '2026-10-01', status: 'rejected', deadlineAt: '2026-11-26' }),
+    row('past', { appliedAt: '2026-10-01', deadlineAt: '2026-11-05' }),
+  ];
+  const calendar = getMonthCalendar(rows, '2026-11-17');
+  assert.equal(calendar.topDate, '2026-11-10'); // 같은 2건이면 앞 날짜
+  const days = calendar.weeks.flat().filter(Boolean);
+  assert.deepEqual(days.find((day) => day.day === 25).events, ['interview', 'deadline']);
+  assert.deepEqual(days.find((day) => day.day === 26).events, []); // 끝난 지원 제외
+  assert.deepEqual(days.find((day) => day.day === 5).events, []); // 지난 날 제외
+  assert.equal(getMonthCalendar([row('one', { appliedAt: '2026-11-03' })], '2026-11-17').topDate, null);
+});
+
+test('달력은 다른 달도 그릴 수 있고 달 이동은 연도를 넘긴다', () => {
+  assert.equal(shiftMonth('2026-12', 1), '2027-01');
+  assert.equal(shiftMonth('2026-01', -1), '2025-12');
+  const october = getMonthCalendar([row('oct', { appliedAt: '2026-10-31' })], '2026-11-17', '2026-10');
+  assert.equal(october.month, 10);
+  assert.equal(october.monthTotal, 1);
+  assert.equal(october.weeks.flat().filter(Boolean).every((day) => !day.isFuture && !day.isToday), true);
+});
+
+test('주간 지원은 이번 주 포함 최근 8주를 오래된 주부터 센다 (#203)', () => {
+  const rows = [
+    row('this-week', { appliedAt: '2026-11-17' }),
+    row('future', { appliedAt: '2026-11-20' }), // 오늘 이후는 세지 않는다
+    row('last-week-mon', { appliedAt: '2026-11-09' }),
+    row('last-week-sun', { appliedAt: '2026-11-15' }),
+    row('oldest', { appliedAt: '2026-09-28' }), // 8주 전 월요일
+    row('too-old', { appliedAt: '2026-09-27' }),
+  ];
+  const weeks = getWeeklyApplications(rows, '2026-11-18');
+  assert.equal(weeks.length, 8);
+  assert.equal(weeks[0].weekStart, '2026-09-28');
+  assert.equal(weeks[7].weekStart, '2026-11-16');
+  assert.deepEqual(weeks.map((week) => week.count), [1, 0, 0, 0, 0, 0, 2, 1]);
+  assert.deepEqual(weeks.map((week) => week.isThisWeek), [false, false, false, false, false, false, false, true]);
+});
+
+test('일정 주 묶음 이름은 이번 주·다음 주, 그 뒤는 달의 몇째 주', () => {
+  const today = '2026-11-23'; // 월요일
+  assert.equal(getUpcomingWeekLabel('2026-11-29', today), '이번 주');
+  assert.equal(getUpcomingWeekLabel('2026-11-30', today), '다음 주');
+  assert.equal(getUpcomingWeekLabel('2026-12-04', today), '다음 주'); // 11/30 월요일에 시작하는 주
+  assert.equal(getUpcomingWeekLabel('2026-12-07', today), '12월 둘째 주'); // 12/1 화요일이 있는 주가 첫째 주
+  assert.equal(getUpcomingWeekLabel('2026-12-16', today), '12월 셋째 주');
+  assert.equal(getUpcomingWeekLabel('2026-12-31', today), '12월 다섯째 주');
 });
 
 test('요일 날짜 표시는 연도 선택과 요일을 함께 쓴다', () => {

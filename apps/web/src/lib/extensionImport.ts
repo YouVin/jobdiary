@@ -97,7 +97,7 @@ export function sanitizeCollectResponse(response: unknown): CollectResponseResul
   }
 
   if (!response.ok) {
-    return { ok: false, error: response.error || '익스텐션에서 오류가 발생했습니다.' };
+    return { ok: false, error: response.error || '익스텐션에서 문제가 생겼어요.' };
   }
 
   if (!Array.isArray(response.applications)) {

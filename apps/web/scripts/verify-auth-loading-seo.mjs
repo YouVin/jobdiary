@@ -9,7 +9,7 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true });
 try {
   const context = await browser.newContext({ javaScriptEnabled: false, reducedMotion: 'reduce' });
   const page = await context.newPage();
-  for (const [path, title] of [['/login?import=1', '로그인 및 회원가입'], ['/terms', '이용약관'], ['/privacy', '개인정보처리방침']]) {
+  for (const [path, title] of [['/login?import=1', '로그인'], ['/signup?import=1', '회원가입'], ['/terms', '이용약관'], ['/privacy', '개인정보처리방침']]) {
     const response = await page.goto(origin + path);
     assert.equal(response.status(), 200);
     assert.equal(await page.title(), `${title} | 취준일기`);
@@ -32,8 +32,8 @@ try {
   const sitemap = await context.request.get(origin + '/sitemap.xml');
   assert.equal(sitemap.status(), 200);
   const xml = await sitemap.text();
-  assert.equal((xml.match(/<loc>/g) || []).length, 3);
-  for (const path of ['/login', '/terms', '/privacy']) assert(xml.includes(`${canonicalOrigin}${path}`));
+  assert.equal((xml.match(/<loc>/g) || []).length, 4);
+  for (const path of ['/login', '/signup', '/terms', '/privacy']) assert(xml.includes(`${canonicalOrigin}${path}`));
   assert(!xml.includes('/account'));
   assert(!xml.includes('/board'));
   console.log('PASS 개인/복구 페이지 noindex, robots/sitemap HTTP');
@@ -73,7 +73,7 @@ try {
     assert.deepEqual(violations, []);
     release();
     await pendingPage.getByRole('button', { name: 'Google로 계속하기', exact: true }).waitFor();
-    assert.equal(await pendingPage.getByRole('status').filter({ hasText: '화면을 준비하고 있습니다.' }).count(), 0);
+    assert.equal(await pendingPage.getByRole('status').filter({ hasText: '화면을 준비하고 있어요.' }).count(), 0);
     assert.deepEqual(errors, []);
     console.log('PASS 세션 지연 중 스켈레톤/axe → 종료 후 실제 폼, 브라우저 예외 0건');
   } finally {

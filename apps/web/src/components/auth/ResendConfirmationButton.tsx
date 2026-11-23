@@ -1,11 +1,15 @@
 'use client';
 
+import { clsx } from 'clsx';
 import { useId, useRef, useState } from 'react';
+import { Button } from '@/components/ui/Button';
 import { resendSignUpEmail } from '@/lib/auth';
 
 interface ResendConfirmationButtonProps {
   email: string;
 }
+
+const RESEND_FAILED_MESSAGE = '확인 메일을 다시 보내지 못했어요. 잠시 뒤 다시 시도해 주세요.';
 
 // 이메일 미인증으로 로그인이 막혔을 때 확인 메일을 다시 보내는 버튼 (docs/AUTH.md §6.3.3)
 export function ResendConfirmationButton({ email }: ResendConfirmationButtonProps) {
@@ -27,14 +31,14 @@ export function ResendConfirmationButton({ email }: ResendConfirmationButtonProp
       if (error) {
         setResendFailed(true);
         console.error('[resend] 실패:', error);
-        setResendMessage('재전송에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        setResendMessage(RESEND_FAILED_MESSAGE);
         return;
       }
 
-      setResendMessage('확인 메일을 다시 보냈습니다. 메일함을 확인해주세요.');
+      setResendMessage('확인 메일을 다시 보냈어요. 메일함을 확인해 주세요.');
     } catch {
       setResendFailed(true);
-      setResendMessage('재전송에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      setResendMessage(RESEND_FAILED_MESSAGE);
     } finally {
       pending.current = false;
       setIsResending(false);
@@ -42,18 +46,21 @@ export function ResendConfirmationButton({ email }: ResendConfirmationButtonProp
   };
 
   return (
-    <div className="mt-1">
-      <button
-        type="button"
+    <div className="flex flex-col items-start gap-1">
+      <Button
+        variant="text"
+        size="sm"
         onClick={handleResend}
-        disabled={isResending}
-        aria-busy={isResending}
+        isLoading={isResending}
+        loadingLabel="확인 메일을 다시 보내는 중"
         aria-describedby={resendMessage ? messageId : undefined}
-        className="cursor-pointer rounded-sm text-label font-medium text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        className="-ml-2"
       >
-        {isResending ? '재전송 중...' : '확인 메일 재전송'}
-      </button>
-      <p id={messageId} role="status" aria-atomic="true" className={`mt-1 text-label ${resendFailed ? 'text-status-rejected-text' : 'text-status-offer-text'}`}>{isResending ? '확인 메일을 재전송하고 있습니다.' : resendMessage}</p>
+        확인 메일 다시 보내기
+      </Button>
+      <p id={messageId} role="status" aria-atomic="true" className={clsx('text-label', resendFailed ? 'text-danger-text' : 'text-success-text')}>
+        {isResending ? '확인 메일을 다시 보내고 있어요.' : resendMessage}
+      </p>
     </div>
   );
 }

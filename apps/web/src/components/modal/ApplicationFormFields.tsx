@@ -1,8 +1,8 @@
-import { useId } from 'react';
-import { inputClassName, labelClassName } from '@/components/common/formStyles';
+import { SelectField, TextField } from '@/components/ui/TextField';
 import { PLATFORM_INFO } from '@/constants/platform';
 import { STATUS_INFO, STATUS_ORDER } from '@/constants/status';
-import { Platform, Status } from '@/types/application';
+import type { Platform, Status } from '@/types/application';
+import type { ApplicationFormErrors, ApplicationFormField } from '@/utils/applicationFormValidation';
 
 const PLATFORM_OPTIONS = (Object.keys(PLATFORM_INFO) as Platform[]).map((platform) => ({
   value: platform,
@@ -15,6 +15,7 @@ const STATUS_OPTIONS = STATUS_ORDER.map((status) => ({
 }));
 
 interface ApplicationFormFieldsProps {
+  idPrefix: string; // 칸 id 앞부분. 제출 때 첫 오류 칸을 찾아 포커스한다 (`${idPrefix}-company`)
   company: string;
   onCompanyChange: (value: string) => void;
   position: string;
@@ -29,9 +30,18 @@ interface ApplicationFormFieldsProps {
   onDeadlineAtChange: (value: string) => void;
   interviewDate?: string;
   onInterviewDateChange?: (value: string) => void;
+  errors?: ApplicationFormErrors;
+  disabled?: boolean;
 }
 
+export function fieldId(idPrefix: string, field: ApplicationFormField | 'position' | 'platform' | 'status'): string {
+  return `${idPrefix}-${field}`;
+}
+
+// 지원 추가·수정 칸 (#205): 디자인 시스템 입력칸·선택칸. 꼭 넣어야 하는 칸은 이름표에 "(필수)"를 글자로 적는다.
+// 오류는 칸 아래에 보이고, 제출 때 부모가 첫 오류 칸으로 포커스를 옮긴다.
 export function ApplicationFormFields({
+  idPrefix,
   company,
   onCompanyChange,
   position,
@@ -46,104 +56,72 @@ export function ApplicationFormFields({
   onDeadlineAtChange,
   interviewDate,
   onInterviewDateChange,
+  errors = {},
+  disabled = false,
 }: ApplicationFormFieldsProps) {
-  const fieldId = useId();
   return (
-    <div className="flex flex-col gap-3">
-      <div>
-        <label htmlFor={`${fieldId}-company`} className={labelClassName}>회사명 *</label>
-        <input
-          id={`${fieldId}-company`}
-          type="text"
-          value={company}
-          onChange={(event) => onCompanyChange(event.target.value)}
-          placeholder="예: 카카오"
-          className={inputClassName}
+    <fieldset disabled={disabled} className="flex min-w-0 flex-col gap-4">
+      <legend className="sr-only">지원 정보</legend>
+      <TextField
+        id={fieldId(idPrefix, 'company')}
+        label="회사명 (필수)"
+        value={company}
+        onChange={(event) => onCompanyChange(event.target.value)}
+        placeholder="예: 가람소프트"
+        aria-required="true"
+        error={errors.company}
+      />
+      <TextField
+        id={fieldId(idPrefix, 'position')}
+        label="공고명"
+        value={position}
+        onChange={(event) => onPositionChange(event.target.value)}
+        placeholder="예: 프론트엔드 개발자"
+      />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <SelectField
+          id={fieldId(idPrefix, 'platform')}
+          label="지원 경로"
+          value={platform}
+          onChange={(event) => onPlatformChange(event.target.value as Platform)}
+          options={PLATFORM_OPTIONS}
+        />
+        <SelectField
+          id={fieldId(idPrefix, 'status')}
+          label="단계"
+          value={status}
+          onChange={(event) => onStatusChange(event.target.value as Status)}
+          options={STATUS_OPTIONS}
         />
       </div>
-
-      <div>
-        <label htmlFor={`${fieldId}-position`} className={labelClassName}>공고명</label>
-        <input
-          id={`${fieldId}-position`}
-          type="text"
-          value={position}
-          onChange={(event) => onPositionChange(event.target.value)}
-          placeholder="예: 프론트엔드 개발자"
-          className={inputClassName}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor={`${fieldId}-platform`} className={labelClassName}>플랫폼</label>
-          <select
-            id={`${fieldId}-platform`}
-            value={platform}
-            onChange={(event) => onPlatformChange(event.target.value as Platform)}
-            className={inputClassName}
-          >
-            {PLATFORM_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor={`${fieldId}-status`} className={labelClassName}>상태</label>
-          <select
-            id={`${fieldId}-status`}
-            value={status}
-            onChange={(event) => onStatusChange(event.target.value as Status)}
-            className={inputClassName}
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor={`${fieldId}-appliedAt`} className={labelClassName}>지원일 *</label>
-        <input
-          id={`${fieldId}-appliedAt`}
-          type="date"
-          required
-          value={appliedAt}
-          onChange={(event) => onAppliedAtChange(event.target.value)}
-          className={inputClassName}
-        />
-      </div>
-
-      <div>
-        <label htmlFor={`${fieldId}-deadlineAt`} className={labelClassName}>공고 마감일 (선택)</label>
-        <input
-          id={`${fieldId}-deadlineAt`}
-          type="date"
-          value={deadlineAt}
-          onChange={(event) => onDeadlineAtChange(event.target.value)}
-          className={inputClassName}
-        />
-        <p className="mt-1 text-caption text-text-muted">상시채용은 비워두세요. 마감 다음 날까지 지원완료라면 자동 탈락 처리됩니다.</p>
-      </div>
-
+      <TextField
+        id={fieldId(idPrefix, 'appliedAt')}
+        label="지원일 (필수)"
+        type="date"
+        value={appliedAt}
+        onChange={(event) => onAppliedAtChange(event.target.value)}
+        aria-required="true"
+        error={errors.appliedAt}
+      />
+      <TextField
+        id={fieldId(idPrefix, 'deadlineAt')}
+        label="공고 마감일"
+        type="date"
+        value={deadlineAt}
+        onChange={(event) => onDeadlineAtChange(event.target.value)}
+        hint="상시 채용이면 비워 두세요. 마감 다음 날에도 지원 완료면 자동으로 탈락 처리돼요."
+        error={errors.deadlineAt}
+      />
       {onInterviewDateChange && (
-        <div>
-          <label htmlFor={`${fieldId}-interviewDate`} className={labelClassName}>면접일</label>
-          <input
-            id={`${fieldId}-interviewDate`}
-            type="date"
-            value={interviewDate ?? ''}
-            onChange={(event) => onInterviewDateChange(event.target.value)}
-            className={inputClassName}
-          />
-        </div>
+        <TextField
+          id={fieldId(idPrefix, 'interviewDate')}
+          label="면접일"
+          type="date"
+          value={interviewDate ?? ''}
+          onChange={(event) => onInterviewDateChange(event.target.value)}
+          error={errors.interviewDate}
+        />
       )}
-    </div>
+    </fieldset>
   );
 }

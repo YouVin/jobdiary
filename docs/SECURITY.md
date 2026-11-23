@@ -27,6 +27,15 @@ main(`b67d7b2`) 이후 dev 변경(#161·#163·#165, 12개 파일)을 운영에 �
 - 비밀값: 변경 diff에서 키·토큰·개인키 패턴 없음. 저장소가 추적하는 환경 파일은 `apps/web/.env.example`뿐이다.
 - 코드: 웹앱·익스텐션 소스에 `dangerouslySetInnerHTML`·`eval`·`new Function`이 없고 `innerHTML`은 테스트에만 있다. 새 탭 링크 3개는 모두 `rel="noopener noreferrer"`다. `/board`는 `(protected)` 레이아웃의 `AuthGuard` 아래에 있고 noindex·사이트맵 제외를 검증 스크립트로 확인한다. 마지막 가져오기 시각은 사용자 ID별 브라우저 키에 시각만 저장한다.
 
+### 지원 보드 개편 운영 반영 전 점검 (#181, 2026-11-19)
+
+main(`502b728`) 이후 dev 변경(#171·#173~#176, 44개 파일)을 운영에 반영하기 전에 확인했다. DB(`supabase/`) 변경은 없다.
+
+- 운영 의존성: `npm audit --omit=dev` 0건. 이번 변경은 의존성을 추가하거나 올리지 않았다. 화면 전환은 Next.js 16.4.6에 포함된 React의 `ViewTransition`을 쓰고, 타입 참조(`react/canary`)만 추가했다.
+- 개발 의존성: `npm audit` 전체 13건(높음 4, 중간 9)으로 #168 때 22건보다 줄었다. vite·vitest·undici·zod·source-map-js·minimatch·@typescript-eslint/* 등 빌드·테스트·린트 도구라 배포물에는 포함되지 않는다. 계속 #167에서 추적한다.
+- 비밀값: 변경 diff에서 키·토큰·개인키 패턴 없음(검사 명령을 적은 릴리즈 스킬 문서 한 줄만 걸린다). 저장소가 추적하는 환경 파일은 `apps/web/.env.example`뿐이다.
+- 코드: 웹앱·익스텐션 소스에 `dangerouslySetInnerHTML`·`eval`·`new Function`이 없고 `innerHTML`은 익스텐션 테스트에만 있다. 새 탭 링크 4개(상세 패널 "공고 열기" 추가)는 모두 `rel="noopener noreferrer"`이고, "공고 열기"는 http(s) 주소일 때만 보인다. 기록 남기기는 React 텍스트로만 표시하고 2000자로 자르며, 저장은 기존 `expectedUpdatedAt` 충돌 검사를 거친다.
+
 ## 릴리즈 판단 (#96·#97)
 
 계정 격리(#90), 편집 충돌(#93), 날짜 검증(#94)을 dev에 병합했다. #96·#97에서 정책 페이지·동의 확인을 추가하고 마이그레이션 이력 3건을 원격과 맞췄다. 브라우저 검증과 제한은 [RELEASE_CHECK](RELEASE_CHECK.md)에 기록한다. 사용자가 후속 검증과 main 병합까지 승인했으며, CI 통과를 확인한 커밋만 병합한다.

@@ -1,25 +1,25 @@
 'use client';
 
-import { clsx } from 'clsx';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { AuthFormSkeleton } from '@/components/auth/AuthFormSkeleton';
-import { PolicyLinks } from '@/components/auth/PolicyLinks';
+import { GOOGLE_FAILED_MESSAGE, GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
-import { PasswordToggleButton } from '@/components/auth/PasswordToggleButton';
+import { PolicyLinks } from '@/components/auth/PolicyLinks';
 import { ResendConfirmationButton } from '@/components/auth/ResendConfirmationButton';
-import { buttonClassName } from '@/components/common/buttonStyles';
-import { fieldErrorClassName, inputClassName, labelClassName, passwordInputClassName } from '@/components/common/formStyles';
-import { useOneTimeQueryMessage } from '@/hooks/useOneTimeQueryMessage';
+import { Button } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { PasswordField, TextField } from '@/components/ui/TextField';
+import { textLinkClassName } from '@/components/ui/TextLink';
 import { useFieldValidation } from '@/hooks/useFieldValidation';
+import { useOneTimeQueryMessage } from '@/hooks/useOneTimeQueryMessage';
 import { signIn, signUp } from '@/lib/auth';
 import { useAuthStore } from '@/store/authStore';
-import { getConfirmPasswordError, getEmailError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
 import { getBoardRedirectPath } from '@/utils/authRedirect';
+import { getConfirmPasswordError, getEmailError, getPasswordError, MIN_PASSWORD_LENGTH } from '@/utils/authValidation';
 
-type Mode = 'signin' | 'signup';
+export type AuthMode = 'signin' | 'signup';
 
 const noopSubscribe = () => () => {};
 
@@ -35,6 +35,11 @@ function getOAuthErrorSignal(): string | null {
   return params.get('error_description') || params.get('error') || params.get('error_code');
 }
 
+// 익스텐션이 붙인 ?import=1은 로그인 ↔ 가입 화면을 오가도 유지한다 (docs/AUTH.md 허용 목록과 같은 값만).
+function getImportQuery(): string {
+  return new URL(window.location.href).searchParams.get('import') === '1' ? '?import=1' : '';
+}
+
 // 로그인 실패 원인의 "종류" — 특정 종류일 때만 추가 UI(예: 인증 메일 재전송 버튼)를 보여주기 위해 구분한다.
 type AuthErrorKind = 'email-not-confirmed' | 'other';
 
@@ -43,56 +48,57 @@ interface FriendlyAuthError {
   kind: AuthErrorKind;
 }
 
-// Supabase 에러 메시지는 영어·기술적이라 사용자에게는 번역된 문구로 보여준다 (docs/AUTH.md §4)
+// Supabase 에러 메시지는 영어·기술적이라 사용자에게는 번역된 문구로 보여준다 (docs/AUTH.md §4). 문구는 해요체 (#202).
 function getFriendlyErrorMessage(rawMessage: string): FriendlyAuthError {
   if (rawMessage.includes('Invalid login credentials')) {
-    return { message: '이메일 또는 비밀번호가 올바르지 않습니다.', kind: 'other' };
+    return { message: '이메일이나 비밀번호가 맞지 않아요.', kind: 'other' };
   }
   if (rawMessage.includes('User already registered')) {
-    return { message: '이미 가입된 이메일입니다. 로그인을 이용해주세요.', kind: 'other' };
+    return { message: '이미 가입한 이메일이에요. 로그인해 주세요.', kind: 'other' };
   }
   if (rawMessage.includes('Password should be at least')) {
-    return { message: `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`, kind: 'other' };
+    return { message: `비밀번호를 ${MIN_PASSWORD_LENGTH}자 이상 입력해 주세요.`, kind: 'other' };
   }
   if (rawMessage.includes('Unable to validate email address')) {
-    return { message: '이메일 형식이 올바르지 않습니다.', kind: 'other' };
+    return { message: '이메일 형식을 확인해 주세요.', kind: 'other' };
   }
   if (rawMessage.includes('Email not confirmed')) {
     return {
-      message: '이메일 인증이 완료되지 않았습니다. 메일함에서 확인 메일을 확인해주세요.',
+      message: '이메일 인증이 아직 끝나지 않았어요. 메일함에서 확인 메일을 열어 주세요.',
       kind: 'email-not-confirmed',
     };
   }
   if (rawMessage.includes('For security purposes') || rawMessage.toLowerCase().includes('rate limit')) {
-    return { message: '요청이 너무 잦습니다. 잠시 후 다시 시도해주세요.', kind: 'other' };
+    return { message: '요청이 너무 잦아요. 잠시 뒤 다시 시도해 주세요.', kind: 'other' };
   }
   if (
     rawMessage.includes('Failed to fetch') ||
     rawMessage.includes('NetworkError') ||
     rawMessage.toLowerCase().includes('network')
   ) {
-    return { message: '네트워크 연결을 확인한 뒤 다시 시도해주세요.', kind: 'other' };
+    return { message: '인터넷 연결을 확인하고 다시 시도해 주세요.', kind: 'other' };
   }
   // 매칭 기준을 error.code(예: invalid_credentials, email_not_confirmed) 기반으로 옮기는 방안은
   // docs/AUTH.md §4.2에서 검토됐지만, 이번 Phase 범위를 넘어서 적용하지 않는다. 문자열 부분일치라
   // Supabase가 메시지 문구를 바꾸면 매칭이 조용히 깨질 수 있다는 한계는 남아있다.
-  return { message: '요청 처리 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.', kind: 'other' };
+  return { message: '요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.', kind: 'other' };
 }
 
-export function LoginForm() {
+interface LoginFormProps {
+  mode: AuthMode;
+}
+
+// /login(로그인)과 /signup(회원가입)이 함께 쓰는 폼 (#202). 예전에는 한 화면의 탭으로 오갔고,
+// 지금은 아래 "가입하기 / 로그인하기" 링크로 주소를 바꾼다. 화면이 바뀌면 입력·오류 상태도 새로 시작한다.
+export function LoginForm({ mode }: LoginFormProps) {
   const router = useRouter();
   const status = useAuthStore((state) => state.status);
+  const isSignUp = mode === 'signup';
 
-  const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-
-  // 비밀번호 표시/숨김은 필드별로 독립 — 비밀번호는 보이게 하고 확인란은 가려두는 등 조합이 자연스럽다.
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   // 약관은 체크·제출 시 확인하며 텍스트 입력은 아래 지연 검증 훅으로 안내한다.
   const [termsTouched, setTermsTouched] = useState(false);
 
@@ -106,7 +112,6 @@ export function LoginForm() {
   }, []);
   const [authError, setAuthError] = useState<FriendlyAuthError | null>(null);
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
-  const [modeMessage, setModeMessage] = useState('');
   const [focusRequest, setFocusRequest] = useState(0);
   const invalidField = useRef<string | null>(null);
 
@@ -117,8 +122,6 @@ export function LoginForm() {
     if (id) document.getElementById(id)?.focus();
   }, [focusRequest]);
 
-  const isSignUp = mode === 'signup';
-
   // 이메일/비밀번호 형식 검증은 로그인·회원가입 공통. 비밀번호 확인은 회원가입 전용.
   const emailError = getEmailError(email);
   const passwordError = getPasswordError(password);
@@ -126,6 +129,9 @@ export function LoginForm() {
   const emailFeedback = useFieldValidation(email, emailError);
   const passwordFeedback = useFieldValidation(password, passwordError);
   const confirmationFeedback = useFieldValidation(confirmPassword, confirmPasswordError);
+  const termsError = isSignUp && termsTouched && !agreedToTerms ? '이메일로 가입하려면 약관에 동의해 주세요.' : null;
+
+  const importQuery = useSyncExternalStore(noopSubscribe, getImportQuery, () => '');
 
   // /login에 붙은 쿼리(예: 익스텐션이 붙인 ?import=1)를 보존한 채 보드로 돌아간다.
   const redirectToBoard = useCallback(() => {
@@ -140,21 +146,20 @@ export function LoginForm() {
   }, [status, redirectToBoard]);
 
   // /update-password(비밀번호 변경 완료), 계정 탈퇴 완료 후 돌아온 경우의 1회성 안내.
-  // useOneTimeQueryMessage가 렌더 중 상태 조정 + URL 정리를 함께 처리한다 (아래 oauthErrorSignal과
-  // 동일한 기법을 여러 신호에 재사용할 수 있도록 일반화한 버전).
+  // useOneTimeQueryMessage가 렌더 중 상태 조정 + URL 정리를 함께 처리한다.
   const oneTimeMessage = useOneTimeQueryMessage({
-    passwordUpdated: '비밀번호가 변경됐습니다. 새 비밀번호로 로그인해주세요.',
-    accountDeleted: '탈퇴가 완료됐습니다. 그동안 이용해주셔서 감사합니다.',
+    passwordUpdated: '비밀번호를 바꿨어요. 새 비밀번호로 로그인해 주세요.',
+    accountDeleted: '탈퇴가 끝났어요. 그동안 이용해 주셔서 고마워요.',
   });
 
   // 구글 로그인 취소/실패 후 되돌아온 경우(#error=... 또는 ?error=...) 안내를 보여준다.
-  // 위 passwordUpdatedSignal과 동일한 패턴: 렌더 중 상태 조정 + 별도 effect로 URL 정리.
+  // 렌더 중 상태 조정 + 별도 effect로 URL 정리.
   const oauthErrorSignal = useSyncExternalStore(noopSubscribe, getOAuthErrorSignal, () => null);
   const [hasShownOAuthError, setHasShownOAuthError] = useState(false);
 
   if (oauthErrorSignal && !hasShownOAuthError) {
     setHasShownOAuthError(true);
-    setAuthError({ message: '구글 로그인에 실패했습니다. 다시 시도해주세요.', kind: 'other' });
+    setAuthError({ message: GOOGLE_FAILED_MESSAGE, kind: 'other' });
   }
 
   useEffect(() => {
@@ -170,22 +175,6 @@ export function LoginForm() {
     window.history.replaceState({}, '', url.toString());
   }, [oauthErrorSignal]);
 
-  const handleModeChange = (nextMode: Mode) => {
-    if (requestPending.current || nextMode === mode) return;
-    setMode(nextMode);
-    setModeMessage(nextMode === 'signup' ? '이메일 회원가입 양식입니다. 이메일, 비밀번호, 비밀번호 확인과 약관 동의가 필요합니다.' : '이메일 로그인 양식입니다. 이메일과 비밀번호를 입력해주세요.');
-    setAuthError(null);
-    setInfoMessage(null);
-    // 회원가입 전용 입력/터치/표시 상태는 모드를 바꾸면 초기화해 이전 모드의 흔적이 남지 않게 한다.
-    setConfirmPassword('');
-    setAgreedToTerms(false);
-    setShowConfirmPassword(false);
-    emailFeedback.reset();
-    passwordFeedback.reset();
-    confirmationFeedback.reset();
-    setTermsTouched(false);
-  };
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (requestPending.current) return;
@@ -193,7 +182,6 @@ export function LoginForm() {
     setInfoMessage(null);
 
     // 제출을 시도하면 아직 blur하지 않은 필드의 인라인 에러도 바로 보이게 한다.
-    setModeMessage('');
     emailFeedback.validate();
     passwordFeedback.validate();
     if (isSignUp) {
@@ -223,7 +211,7 @@ export function LoginForm() {
       // 이 경우 홈으로 보내지 않고 메일 확인 안내만 표시한다.
       if (isSignUp && !result.session) {
         console.log(`[${mode}] 성공 (이메일 확인 대기)`);
-        setInfoMessage('확인 메일을 발송했습니다. 메일함에서 인증 후 로그인해주세요.');
+        setInfoMessage('확인 메일을 보냈어요. 메일함에서 인증한 뒤 로그인해 주세요.');
         return;
       }
 
@@ -245,219 +233,132 @@ export function LoginForm() {
     return <AuthFormSkeleton isSignUp={isSignUp} />;
   }
 
+  const submitLabel = isSignUp ? '가입하기' : '로그인';
+  const notice = infoMessage ?? oneTimeMessage;
+
   return (
-    <div className="w-full max-w-105">
-      {/* 데스크탑 전용 로고 — 모바일에서는 비주얼 영역(AuthVisualPanel) 상단 로고가 이 역할을 한다 */}
-      <div className="mb-6 hidden items-center gap-2 md:flex">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-body font-bold text-on-brand">
-          J
-        </div>
-        <span className="text-heading-md text-text-primary">취준일기</span>
-      </div>
-
-      <div className="mb-6">
-        <h2 id="auth-title" className="text-heading-lg text-text-primary">{isSignUp ? '환영해요' : '다시 오셨네요'}</h2>
-        <p className="mt-1 text-label text-text-secondary">
-          {isSignUp ? '지원 여정을 함께 기록해봐요' : '지원 현황을 이어서 관리해보세요'}
-        </p>
-      </div>
-
-      <div role="group" aria-label="로그인 또는 회원가입 선택" className="mb-5 flex rounded-lg bg-column p-1">
-        <button
-          type="button"
-          onClick={() => handleModeChange('signin')}
-          disabled={isBusy}
-          aria-pressed={!isSignUp}
-          aria-controls="email-auth-form"
-          className={clsx(
-            'flex-1 cursor-pointer rounded-md py-2 text-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
-            !isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary enabled:hover:bg-card enabled:hover:text-text-primary',
-          )}
-        >
-          로그인
-        </button>
-        <button
-          type="button"
-          onClick={() => handleModeChange('signup')}
-          disabled={isBusy}
-          aria-pressed={isSignUp}
-          aria-controls="email-auth-form"
-          className={clsx(
-            'flex-1 cursor-pointer rounded-md py-2 text-body font-medium transition-colors active:bg-brand-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50',
-            isSignUp ? 'bg-card text-text-primary shadow-card' : 'text-text-secondary enabled:hover:bg-card enabled:hover:text-text-primary',
-          )}
-        >
-          회원가입
-        </button>
-      </div>
-
-      {/* 처리 중인 폼 밖에 미리 둔다. disabled/aria-busy 컨트롤의 문구 변경에만 의존하지 않는다. */}
+    <div className="flex flex-col gap-8">
+      {/* 처리 중 안내는 폼 밖에 미리 둔 알림 영역으로 읽는다. 버튼 글자 변화에만 기대지 않는다. */}
       <p role="status" aria-atomic="true" className="sr-only">
-        {isSubmitting ? (isSignUp ? '이메일 회원가입을 처리하고 있습니다.' : '이메일 로그인을 처리하고 있습니다.') : isOAuthPending ? 'Google 인증 화면으로 이동하고 있습니다.' : modeMessage}
+        {isSubmitting ? (isSignUp ? '이메일로 가입하고 있어요.' : '이메일로 로그인하고 있어요.') : isOAuthPending ? 'Google 로그인 화면으로 이동하고 있어요.' : ''}
       </p>
 
-      <form id="email-auth-form" aria-label={isSignUp ? '이메일 회원가입' : '이메일 로그인'} aria-busy={isSubmitting} onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
-        <fieldset disabled={isBusy} className="flex min-w-0 flex-col gap-3">
-          <legend className="sr-only">{isSignUp ? '이메일 회원가입 정보' : '이메일 로그인 정보'}</legend>
-          <div>
-            <label htmlFor="email" className={labelClassName}>
-              이메일
-            </label>
-            <input
+      <div className="flex flex-col gap-4">
+        <form
+          id="email-auth-form"
+          aria-label={isSignUp ? '이메일 회원가입' : '이메일 로그인'}
+          aria-busy={isSubmitting}
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-4"
+          noValidate
+        >
+          {/* 처리 중에는 입력만 잠근다. 제출 버튼은 밖에 두어 포커스가 버튼에 남는다(aria-disabled). */}
+          <fieldset disabled={isBusy} className="flex min-w-0 flex-col gap-4">
+            <legend className="sr-only">{isSignUp ? '이메일 회원가입 정보' : '이메일 로그인 정보'}</legend>
+            <TextField
               id="email"
+              label="이메일"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               onBlur={emailFeedback.onBlur}
               placeholder="you@example.com"
-              className={inputClassName}
               autoComplete="email"
               aria-required="true"
-              aria-invalid={!!emailFeedback.error}
-              aria-describedby={emailFeedback.error ? 'email-error' : undefined}
+              error={emailFeedback.error}
             />
-            <p id="email-error" role="status" aria-atomic="true" className={emailFeedback.error ? fieldErrorClassName : undefined}>
-              {emailFeedback.error}
-            </p>
-          </div>
 
-          <div>
-            <label htmlFor="password" className={labelClassName}>
-              비밀번호
-            </label>
-            <div className="relative">
-              <input
+            <div className="flex flex-col gap-2">
+              <PasswordField
                 id="password"
-                type={showPassword ? 'text' : 'password'}
+                label="비밀번호"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 onBlur={passwordFeedback.onBlur}
-                placeholder="6자 이상"
-                className={passwordInputClassName}
+                placeholder={`${MIN_PASSWORD_LENGTH}자 이상`}
                 autoComplete={isSignUp ? 'new-password' : 'current-password'}
                 aria-required="true"
-                aria-invalid={!!passwordFeedback.error}
-                aria-describedby={[
-                  isSignUp ? 'password-hint' : null,
-                  isSignUp && password ? 'password-strength' : null,
-                  passwordFeedback.error ? 'password-error' : null,
-                ].filter(Boolean).join(' ') || undefined}
+                hint={isSignUp ? `${MIN_PASSWORD_LENGTH}자 이상 입력해 주세요.` : undefined}
+                aria-describedby={isSignUp && password ? 'password-strength' : undefined}
+                error={passwordFeedback.error}
+                labelAction={
+                  isSignUp ? undefined : (
+                    <Link href="/reset-password" className={textLinkClassName('brand', 'text-label')}>
+                      비밀번호 찾기
+                    </Link>
+                  )
+                }
               />
-              <PasswordToggleButton
-                isVisible={showPassword}
-                onToggle={() => setShowPassword((prev) => !prev)}
-                fieldLabel="비밀번호"
-                controls="password"
-              />
+              {isSignUp && password && <PasswordStrengthMeter id="password-strength" password={password} />}
             </div>
-            <p id="password-error" role="status" aria-atomic="true" className={passwordFeedback.error ? fieldErrorClassName : undefined}>
-              {passwordFeedback.error}
-            </p>
 
-            {isSignUp && <p id="password-hint" className="mt-1 text-label text-text-secondary">비밀번호는 {MIN_PASSWORD_LENGTH}자 이상 입력해주세요.</p>}
-            {isSignUp && password && <PasswordStrengthMeter id="password-strength" password={password} />}
-
-            {!isSignUp && (
-              <div className="mt-2 text-right">
-                <Link href="/reset-password" className="cursor-pointer rounded-sm text-label text-brand transition-colors hover:text-brand-hover hover:underline active:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-                  비밀번호를 잊으셨나요?
-                </Link>
-              </div>
+            {isSignUp && (
+              <PasswordField
+                id="confirmPassword"
+                label="비밀번호 확인"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                onBlur={confirmationFeedback.onBlur}
+                placeholder="비밀번호를 한 번 더 입력해 주세요"
+                autoComplete="new-password"
+                aria-required="true"
+                error={confirmationFeedback.error}
+              />
             )}
-          </div>
 
-          {isSignUp && (
-            <div>
-              <label htmlFor="confirmPassword" className={labelClassName}>
-                비밀번호 확인
-              </label>
-              <div className="relative">
-                <input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  onBlur={confirmationFeedback.onBlur}
-                  placeholder="비밀번호를 한 번 더 입력해주세요"
-                  className={passwordInputClassName}
-                  autoComplete="new-password"
-                  aria-required="true"
-                  aria-invalid={!!confirmationFeedback.error}
-                  aria-describedby={confirmationFeedback.error ? 'confirm-password-error' : undefined}
-                />
-                <PasswordToggleButton
-                  isVisible={showConfirmPassword}
-                  onToggle={() => setShowConfirmPassword((prev) => !prev)}
-                  fieldLabel="비밀번호 확인"
-                  controls="confirmPassword"
-                />
-              </div>
-              <p id="confirm-password-error" role="status" aria-atomic="true" className={confirmationFeedback.error ? fieldErrorClassName : undefined}>
-                {confirmationFeedback.error}
-              </p>
-            </div>
-          )}
+            {isSignUp && (
+              <Checkbox
+                id="terms"
+                checked={agreedToTerms}
+                onChange={(event) => {
+                  setAgreedToTerms(event.target.checked);
+                  setTermsTouched(true);
+                }}
+                aria-required="true"
+                error={termsError}
+              >
+                [필수] <PolicyLinks />을 확인했고, 이용약관에 동의해요.
+              </Checkbox>
+            )}
+          </fieldset>
 
-          {isSignUp && (
-            <div>
-              <div className="flex items-start gap-2">
-                <input
-                  id="terms"
-                  type="checkbox"
-                  checked={agreedToTerms}
-                  onChange={(event) => {
-                    setAgreedToTerms(event.target.checked);
-                    setTermsTouched(true);
-                  }}
-                  className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-brand hover:ring-2 hover:ring-brand/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-required="true"
-                  aria-invalid={termsTouched && !agreedToTerms}
-                  aria-describedby={termsTouched && !agreedToTerms ? 'terms-error' : undefined}
-                />
-                <label htmlFor="terms" className="cursor-pointer text-label text-text-secondary">
-                  [이메일 가입 필수] <PolicyLinks />을 확인하고 이용약관에 동의합니다.
-                </label>
-              </div>
-              <p id="terms-error" role="status" aria-atomic="true" className={termsTouched && !agreedToTerms ? fieldErrorClassName : undefined}>
-                {termsTouched && !agreedToTerms ? '약관에 동의해야 이메일로 회원가입할 수 있습니다.' : ''}
-              </p>
-            </div>
-          )}
-
-          <button
+          <Button
             type="submit"
-            disabled={isBusy}
-            aria-busy={isSubmitting}
-            className={buttonClassName('primary', 'mt-2')}
+            size="lg"
+            block
+            disabled={isOAuthPending}
+            isLoading={isSubmitting}
+            loadingLabel={isSignUp ? '가입하는 중' : '로그인하는 중'}
+            className="mt-1"
           >
-            {isSubmitting ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
-          </button>
-        </fieldset>
-      </form>
+            {submitLabel}
+          </Button>
+        </form>
 
-      {/* 이메일/구글 공통 에러·안내 — 두 로그인 방식 모두 여기 하나로 표시한다 */}
-      <p role="alert" aria-atomic="true" className={clsx('text-label text-status-rejected-text', authError && 'mt-3')}>
-        {authError?.message}
-      </p>
-      {authError?.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
-      <p role="status" aria-atomic="true" className={clsx('text-label text-status-offer-text', (infoMessage ?? oneTimeMessage) && 'mt-3')}>{infoMessage ?? oneTimeMessage}</p>
+        {/* 이메일/구글 공통 오류·안내 — 처음부터 있는 알림 영역에 글자만 바꿔 넣어 스크린리더가 놓치지 않게 한다 */}
+        <p role="alert" aria-atomic="true" className={authError ? 'text-label text-danger-text' : 'sr-only'}>
+          {authError?.message}
+        </p>
+        {authError?.kind === 'email-not-confirmed' && <ResendConfirmationButton email={email} />}
+        <p role="status" aria-atomic="true" className={notice ? 'text-label text-success-text' : 'sr-only'}>
+          {notice}
+        </p>
 
-      <div className="my-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-card-border" />
-        <span className="text-label text-text-secondary">또는</span>
-        <div className="h-px flex-1 bg-card-border" />
-      </div>
+        <div aria-hidden="true" className="flex items-center gap-3 text-label text-text-secondary">
+          <span className="h-px flex-1 bg-line-divider" />
+          또는
+          <span className="h-px flex-1 bg-line-divider" />
+        </div>
 
-      <section aria-label="Google 인증">
         <GoogleSignInButton
           disabled={isBusy}
+          describedBy="google-auth-hint"
           onPendingChange={handleOAuthPendingChange}
           onStart={() => {
             if (requestPending.current) return false;
             requestPending.current = true;
             setAuthError(null);
             setInfoMessage(null);
-            setModeMessage('');
             emailFeedback.reset();
             passwordFeedback.reset();
             confirmationFeedback.reset();
@@ -466,10 +367,20 @@ export function LoginForm() {
           }}
           onError={(message) => setAuthError({ message, kind: 'other' })}
         />
-        <p id="google-auth-hint" className="mt-3 text-label text-text-secondary">
-          Google에서 이메일·프로필을 전달받습니다. 서비스 약관 확인은 인증 후 필요한 경우 한 번 진행합니다. <PolicyLinks />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <p className="text-body text-text-secondary">
+          {isSignUp ? '이미 회원인가요? ' : '아직 회원이 아닌가요? '}
+          <Link href={`${isSignUp ? '/login' : '/signup'}${importQuery}`} className={textLinkClassName('brand')}>
+            {isSignUp ? '로그인하기' : '가입하기'}
+          </Link>
         </p>
-      </section>
+        <p id="google-auth-hint" className="text-label text-text-secondary">
+          Google에서는 이메일과 프로필만 받아요. 약관 동의가 필요하면 로그인한 뒤 한 번만 물어봐요.{' '}
+          <PolicyLinks joiner=" · " />
+        </p>
+      </div>
     </div>
   );
 }

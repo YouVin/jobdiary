@@ -4,18 +4,18 @@
 
 | 경로 | 서버 컴포넌트 | 클라이언트 컴포넌트 |
 |---|---|---|
-| `/`, `/board`, `/account` | `src/app/(protected)/layout.tsx`의 공통 헤더·본문 틀과 각 `page.tsx` | `AuthGuard`, `HeaderNav`, `DashboardClient`, `BoardClient`, 계정 관리 폼·동작 |
-| `/login` | `login/layout.tsx`의 배치·소개·h1, `page.tsx`의 메타데이터, `loading.tsx`의 스켈레톤 | `LoginForm`과 인증 동작·세션 확인 중 스켈레톤 |
-| `/reset-password`, `/update-password` | 각 `page.tsx`의 배치 | 재설정 폼과 복구 세션 처리 |
+| `/`, `/board`, `/account` | `src/app/(protected)/layout.tsx`의 공통 헤더·본문 틀(내용 폭 1200)과 각 `page.tsx` | `AuthGuard`, `ToastProvider`, `ExtensionImportProvider`(가져오기 상태·`?import=1`, #203), `HeaderNav`, `HeaderActions`, `DashboardClient`, `BoardClient`, 계정 관리 폼·동작 |
+| `/login`, `/signup` | `(entry)/layout.tsx`의 `AuthShell`(배치·맥북/아이폰 소개), 각 `page.tsx`의 h1(`AuthHeading`)·메타데이터, `loading.tsx`의 스켈레톤 | `LoginForm`과 인증 동작·세션 확인 중 스켈레톤 |
+| `/reset-password`, `/update-password` | 각 `page.tsx`의 `AuthShell`(1024px 미만 소개 없음)과 h1 | 재설정 폼과 복구 세션 처리 |
 | 모든 경로 | `src/app/layout.tsx`의 문서·폰트 설정 | `AuthProvider`의 세션 구독 |
 
 `(protected)`는 URL에 포함되지 않는 route group이다. `/`, `/board`, `/account`만 공통 레이아웃을 거치고 로그인·비밀번호 재설정 화면은 거치지 않는다. 레이아웃은 Server Component이며 `AuthGuard`에 서버에서 만든 자식 UI를 `children`으로 전달한다. `AuthGuard`는 브라우저에서 인증 상태를 확인한 뒤 자식을 보여준다.
 
-현재 Supabase 클라이언트는 브라우저 세션을 사용한다. 홈·지원 보드 데이터는 `DashboardClient`·`BoardClient`가 인증 후 공통 `useApplicationsLoader`로 `applicationStore`를 통해 조회하며, 서버 페이지는 개인 지원 내역을 읽지 않는다. 따라서 이 구조를 사용자별 데이터 SSR이나 서버 측 접근 제어로 간주하지 않는다. 데이터 권한은 Supabase RLS가 담당한다. 인증 상세는 [AUTH](AUTH.md), 데이터 정책은 [SUPABASE](SUPABASE.md)를 따른다.
+현재 Supabase 클라이언트는 브라우저 세션을 사용한다. 홈·지원보드 데이터는 `DashboardClient`·`BoardClient`가 인증 후 공통 `useApplicationsLoader`로 `applicationStore`를 통해 조회하며, 서버 페이지는 개인 지원 내역을 읽지 않는다. 따라서 이 구조를 사용자별 데이터 SSR이나 서버 측 접근 제어로 간주하지 않는다. 데이터 권한은 Supabase RLS가 담당한다. 인증 상세는 [AUTH](AUTH.md), 데이터 정책은 [SUPABASE](SUPABASE.md)를 따른다.
 
 새 화면은 서버에서 처리할 수 있는 정적 구조를 `page.tsx`나 `layout.tsx`에 두고, 상태·이벤트·브라우저 API가 필요한 부분만 Client Component로 분리한다. 사용자별 데이터의 서버 렌더링이 필요해지면 서버에서 읽을 수 있는 세션 방식, 서버 측 사용자 검증, 데이터 조회 위치, 로그인·복구 흐름을 함께 설계한다. 현재 브라우저 세션만 서버 컴포넌트에서 재사용하는 방식으로 옮기지 않는다.
 
-`AuthFormSkeleton`은 라우트 로딩과 브라우저 세션 초기화에서 재사용한다. 서버의 브랜드 소개·h1은 유지하며, 로그인/가입 변형과 reduced-motion을 지원한다. 실제 폼 제출은 기존 busy/disabled 안내를 유지하고 입력을 스켈레톤으로 지우지 않는다. 정적 캐시·빠른 이동에서는 route loading이 보이지 않을 수 있어 가짜 지연을 추가하지 않는다.
+`AuthFormSkeleton`은 라우트 로딩과 브라우저 세션 초기화에서 재사용한다. 서버의 소개 영역·h1(`AuthHeading`)은 유지하며, 로그인/가입 변형과 reduced-motion을 지원한다. 실제 폼 제출은 기존 busy/disabled 안내를 유지하고 입력을 스켈레톤으로 지우지 않는다. 정적 캐시·빠른 이동에서는 route loading이 보이지 않을 수 있어 가짜 지연을 추가하지 않는다.
 
 검색 메타데이터와 공개/개인 경로 정책은 [SEO](SEO.md)를 참고한다.
 

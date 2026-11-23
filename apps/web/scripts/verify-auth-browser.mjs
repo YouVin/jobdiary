@@ -85,8 +85,8 @@ try {
     assert.equal(await page.locator('#email-error').textContent(), '');
     assert.equal(await page.locator('#password-error').textContent(), '');
     await page.getByRole('button', { name: '로그인', exact: true }).last().click();
-    await page.getByText('이메일을 입력해주세요.', { exact: true }).waitFor();
-    await page.getByText('비밀번호를 입력해주세요.', { exact: true }).waitFor();
+    await page.getByText('이메일을 입력해 주세요.', { exact: true }).waitFor();
+    await page.getByText('비밀번호를 입력해 주세요.', { exact: true }).waitFor();
     assert.equal(calls.email.length, 0);
   });
   await scenario('400ms 입력 정지 후 상세 안내, 수정 즉시 해제, 서버 요청 없음', async ({ page, calls }) => {
@@ -97,31 +97,47 @@ try {
     await page.clock.runFor(399);
     assert.equal(await page.locator('#email-error').textContent(), '');
     await page.clock.runFor(1);
-    await page.getByText('이메일에 @를 포함해주세요. 예: name@example.com', { exact: true }).waitFor();
+    await page.getByText('이메일에 @를 넣어 주세요. 예: name@example.com', { exact: true }).waitFor();
     await email.fill('name@');
     assert.equal(await page.locator('#email-error').textContent(), '');
     await page.clock.runFor(400);
-    await page.getByText('@ 뒤에 도메인을 입력해주세요. 예: gmail.com', { exact: true }).waitFor();
+    await page.getByText('@ 뒤에 도메인을 입력해 주세요. 예: gmail.com', { exact: true }).waitFor();
     await email.fill('name@example.com');
     assert.equal(await page.locator('#email-error').textContent(), '');
-    assert.equal(await email.getAttribute('aria-invalid'), 'false');
+    assert.notEqual(await email.getAttribute('aria-invalid'), 'true');
     assert.equal(calls.email.length, 0);
     assert.equal(calls.google.length, 0);
   });
-  await scenario('입력 후 blur 즉시 검사, 모드 변경 시 지연 검사 초기화', async ({ page }) => {
+  await scenario('입력 후 blur 즉시 검사, 가입 화면으로 옮기면 지연 검사 초기화', async ({ page }) => {
     await page.clock.install();
     await page.clock.pauseAt(new Date(Date.now() + 1000));
     const email = page.getByLabel('이메일', { exact: true });
     await email.fill('name@');
     await page.getByLabel('비밀번호', { exact: true }).focus();
-    await page.getByText('@ 뒤에 도메인을 입력해주세요. 예: gmail.com', { exact: true }).waitFor();
+    await page.getByText('@ 뒤에 도메인을 입력해 주세요. 예: gmail.com', { exact: true }).waitFor();
     await email.fill('name');
-    await page.getByRole('button', { name: '회원가입', exact: true }).first().click();
-    await page.clock.runFor(500);
+    // 400ms 지연 검사가 걸린 채로 화면을 옮긴다. 멈춘 시계에서는 Next.js 화면 이동이 진행되지 않아 시계를 먼저 돌린다.
+    await page.clock.resume();
+    await page.getByRole('link', { name: '가입하기', exact: true }).click();
+    await page.getByRole('form', { name: '이메일 회원가입', exact: true }).waitFor();
+    await page.waitForTimeout(500);
     assert.equal(await page.locator('#email-error').textContent(), '');
   });
-  await scenario('가입 탭에서도 Google 시작 전 중복 약관 체크 없음', async ({ page, google, calls }) => {
-    await page.getByRole('button', { name: '회원가입', exact: true }).first().click();
+  await scenario('틀린 이메일 칸에서 바로 아래 링크를 눌러도 오류 문구에 밀려 클릭이 사라지지 않음', async ({ page }) => {
+    // #202: 누르는 순간 오류 문구가 생기면 링크가 14px(모바일 28px) 밀려 클릭이 사라졌다.
+    await page.getByLabel('이메일', { exact: true }).fill('name');
+    const link = page.getByRole('link', { name: '가입하기', exact: true });
+    const box = await link.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(120);
+    assert.equal((await link.boundingBox()).y, box.y, '누르는 동안 링크가 밀리지 않음');
+    await page.mouse.up();
+    await page.getByRole('form', { name: '이메일 회원가입', exact: true }).waitFor();
+  });
+  await scenario('가입 화면에서도 Google 시작 전 중복 약관 체크 없음', async ({ page, google, calls }) => {
+    await page.getByRole('link', { name: '가입하기', exact: true }).click();
+    await page.getByRole('form', { name: '이메일 회원가입', exact: true }).waitFor();
     assert.equal(await page.locator('#terms').isChecked(), false);
     assert.equal(await google().evaluate(element => element.closest('form') === null), true);
     const googleBox = await google().boundingBox();
@@ -137,7 +153,7 @@ try {
     await page.waitForURL('https://*.supabase.co/auth/v1/authorize**');
     await page.goBack();
     await google().waitFor();
-    assert(await google().isEnabled());
+    assert.equal(await google().getAttribute('aria-disabled'), null);
     await google().click();
     await page.waitForURL('https://*.supabase.co/auth/v1/authorize**');
     assert.equal(calls.google.length, 2);
@@ -156,7 +172,7 @@ try {
     await page.goto(origin + '/login?import=1');
     await google().click();
     await page.getByRole('link', { name: '취소', exact: true }).click();
-    await page.getByText('구글 로그인에 실패했습니다. 다시 시도해주세요.', { exact: true }).waitFor();
+    await page.getByText('구글 로그인에 실패했어요. 다시 시도해 주세요.', { exact: true }).waitFor();
     assert.equal(new URL(page.url()).search, '?import=1');
     assert.equal(new URL(page.url()).hash, '');
     await google().click();
@@ -167,7 +183,7 @@ try {
   });
   await scenario('error_code만 있는 콜백도 안내하고 정리', async ({ page }) => {
     await page.goto(origin + '/login?import=1&error_code=access_denied');
-    await page.getByText('구글 로그인에 실패했습니다. 다시 시도해주세요.', { exact: true }).waitFor();
+    await page.getByText('구글 로그인에 실패했어요. 다시 시도해 주세요.', { exact: true }).waitFor();
     assert.equal(new URL(page.url()).search, '?import=1');
   });
   await scenario('신규 Google 계정은 복귀 후 한 번 동의, 재로그인 생략', async ({ page, user, google, calls }) => {
@@ -178,13 +194,14 @@ try {
     assert.equal(calls.applications, 0);
     await page.locator('#policy-consent').check();
     await page.getByRole('button', { name: '동의하고 시작하기', exact: true }).click();
-    await page.getByRole('button', { name: '지원추가', exact: true }).waitFor();
+    await page.getByRole('button', { name: '지원 추가', exact: true }).waitFor();
     assert.equal(calls.consent, 1);
     assert.deepEqual({ terms_version: user.user_metadata.terms_version, privacy_version: user.user_metadata.privacy_version }, policy);
-    await page.getByRole('button', { name: '로그아웃', exact: true }).click();
+    await page.getByRole('button', { name: '내 계정', exact: true }).click();
+  await page.getByRole('button', { name: '로그아웃', exact: true }).click();
     await google().click();
     await page.getByRole('link', { name: '승인', exact: true }).click();
-    await page.getByRole('button', { name: '지원추가', exact: true }).waitFor();
+    await page.getByRole('button', { name: '지원 추가', exact: true }).waitFor();
     assert.equal(calls.consent, 1);
     assert.equal(new URL(page.url()).hash, '');
   });
@@ -200,45 +217,48 @@ try {
     assert(await page.locator('#policy-consent').isChecked());
     const errorRegion = await page.getByRole('main').getByRole('alert').elementHandle();
     await page.addScriptTag({ content: fs.readFileSync('node_modules/.release-tools/node_modules/axe-core/axe.min.js', 'utf8') });
-    const scan = async () => assert.deepEqual(await page.evaluate(async () => (await window.axe.run(document)).violations.map(item => ({ id: item.id, targets: item.nodes.map(node => node.target) }))), []);
+    // 버튼 색 전환(duration-fast 150ms)이 끝난 뒤 잰다. 전환 도중에는 글자 대비를 중간색으로 계산한다(#205).
+    const scan = async () => assert.deepEqual(await page.waitForTimeout(250).then(() => page.evaluate(async () => (await window.axe.run(document)).violations.map(item => ({ id: item.id, targets: item.nodes.map(node => node.target) })))), []);
     await scan();
     await page.getByRole('button', { name: '동의하고 시작하기', exact: true }).click();
-    await page.getByRole('status').filter({ hasText: '약관 동의를 저장하고 있습니다.' }).waitFor();
+    await page.getByRole('status').filter({ hasText: '약관 동의를 저장하고 있어요.' }).waitFor();
     assert(await page.locator('#policy-consent').isDisabled());
     await scan();
     for (let i = 0; !options.releaseConsent && i < 100; i++) await new Promise(resolve => setTimeout(resolve, 20));
     assert(options.releaseConsent);
     options.releaseConsent();
-    await page.getByRole('alert').filter({ hasText: '동의를 저장하지 못했습니다.' }).waitFor();
+    await page.getByRole('alert').filter({ hasText: '동의를 저장하지 못했어요.' }).waitFor();
     assert(await errorRegion.evaluate(element => element === document.querySelector('[role="alert"]')));
     await scan();
     await page.getByRole('button', { name: '동의하고 시작하기', exact: true }).click();
-    await page.getByRole('button', { name: '지원추가', exact: true }).waitFor();
+    await page.getByRole('button', { name: '지원 추가', exact: true }).waitFor();
   });
   await scenario('이메일 가입 인증 대기 후 Google 전환 가능', async ({ page, google, calls }) => {
-    await page.getByRole('button', { name: '회원가입', exact: true }).first().click();
+    await page.getByRole('link', { name: '가입하기', exact: true }).click();
+    await page.getByRole('form', { name: '이메일 회원가입', exact: true }).waitFor();
     await page.getByLabel('이메일', { exact: true }).fill('typed-email@example.test');
     await page.getByLabel('비밀번호', { exact: true }).fill('Password-123!');
     await page.getByLabel('비밀번호 확인', { exact: true }).fill('Password-123!');
     await page.locator('#terms').check();
-    await page.getByRole('button', { name: '회원가입', exact: true }).last().click();
-    await page.getByText('확인 메일을 발송했습니다.', { exact: false }).waitFor();
+    await page.getByRole('button', { name: '가입하기', exact: true }).click();
+    await page.getByText('확인 메일을 보냈어요.', { exact: false }).waitFor();
     await google().click();
     await page.getByRole('link', { name: '승인', exact: true }).click();
     await page.getByRole('heading', { name: '서비스 이용 안내' }).waitFor();
     assert.equal(calls.email.length, 1);
   });
-  await scenario('이메일 요청 중 Google/모드 전환 차단, 실패 후 재시도', async ({ page, google, calls, options, waitEmail, releaseEmail }) => {
+  await scenario('이메일 요청 중 Google 차단·버튼 포커스 유지, 실패 후 재시도', async ({ page, google, calls, options, waitEmail, releaseEmail }) => {
     options.delayEmail = true;
     await page.getByLabel('이메일', { exact: true }).fill('typed-email@example.test');
     await page.getByLabel('비밀번호', { exact: true }).fill('Password-123!');
     await page.getByRole('button', { name: '로그인', exact: true }).last().click();
     await waitEmail();
-    assert(await google().isDisabled());
-    assert(await page.getByRole('button', { name: '회원가입', exact: true }).first().isDisabled());
+    // 처리 중에도 제출 버튼은 포커스를 잃지 않는다(aria-disabled, #202).
+    assert.equal(await google().getAttribute('aria-disabled'), 'true');
+    assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-busy')), 'true');
     releaseEmail();
-    await page.getByText('이메일 또는 비밀번호가 올바르지 않습니다.', { exact: true }).waitFor();
-    assert(await google().isEnabled());
+    await page.getByText('이메일이나 비밀번호가 맞지 않아요.', { exact: true }).waitFor();
+    assert.equal(await google().getAttribute('aria-disabled'), null);
     assert.equal(calls.email.length, 1);
   });
 } catch (error) {
