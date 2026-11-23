@@ -39,7 +39,7 @@
 | 개발 순서·현황 | [ROADMAP](ROADMAP.md), [CONVENTION](CONVENTION.md) | `package.json`, `.github/workflows/ci.yml` |
 | 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `apps/web/src/app/(protected)/`, `apps/web/src/components/dashboard/`, `apps/web/src/components/board/` |
 | Server/Client 렌더링 (#83) | [RENDERING](RENDERING.md) | `apps/web/src/app/(protected)/layout.tsx`, `apps/web/src/components/auth/AuthGuard.tsx` |
-| 인증 스켈레톤·SEO (#105·#106) | [SEO](SEO.md), [RENDERING](RENDERING.md) | `login/layout.tsx`, `AuthFormSkeleton.tsx`, `siteMetadata.ts`, `robots.ts`, `sitemap.ts` |
+| 인증 스켈레톤·SEO (#105·#106) | [SEO](SEO.md), [RENDERING](RENDERING.md) | `(entry)/layout.tsx`, `AuthShell.tsx`, `AuthFormSkeleton.tsx`, `siteMetadata.ts`, `robots.ts`, `sitemap.ts` |
 | 홈 통계 대시보드 (#146~#150, 달력 말풍선 #184, 날짜 회사 목록 #190) | [HOME_DASHBOARD](HOME_DASHBOARD.md) | `apps/web/src/utils/applicationStats.ts` |
 | 지원보드 주간 타임라인·기다리는 목록·상세 패널과 기록·화면 전환 (#173~#176), 회사 이름 공고 링크 (#185), 중복 보기 (#186) | [BOARD](BOARD.md) | `apps/web/src/utils/weekTimeline.ts`, `waitingList.ts`, `applicationJourney.ts`, `postingUrl.ts`, `duplicateDetection.ts`, `apps/web/src/components/board/`, `detail/`, `diary/` |
 | 검색·필터 (#73) | [DASHBOARD](DASHBOARD.md) | `apps/web/src/utils/applicationFilters.ts`, `apps/web/src/components/dashboard/ApplicationFilters.tsx` |

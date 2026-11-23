@@ -101,10 +101,12 @@ try {
   await page.getByRole('status').filter({ hasText: '지원 3건을 가져왔어요' }).waitFor();
   console.log('PASS 토스트 읽기 영역');
 
-  // 비밀번호 보기 버튼: 눌림 상태와 이름이 바뀐다
+  // 비밀번호 보기 버튼: 이름은 그대로, 눌림 상태만 바뀌고 어느 칸을 바꾸는지 가리킨다 (#202)
   const toggle = page.getByRole('button', { name: '비밀번호 보기' });
   await toggle.click();
-  assert.equal(await page.getByRole('button', { name: '비밀번호 숨기기' }).getAttribute('aria-pressed'), 'true');
+  assert.equal(await toggle.getAttribute('aria-pressed'), 'true');
+  const controlled = await toggle.getAttribute('aria-controls');
+  assert.equal(await page.locator(`[id="${controlled}"]`).getAttribute('type'), 'text');
   console.log('PASS 비밀번호 보기 버튼');
 
   assert.deepEqual(pageErrors, [], '페이지 오류 없음');

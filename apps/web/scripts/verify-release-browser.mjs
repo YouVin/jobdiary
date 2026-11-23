@@ -127,17 +127,16 @@ try {
     }
   }
   console.log('PASS 공개 정책 페이지 및 3개 화면 너비');
-  await page.goto(`${origin}/login`);
-  await page.getByRole('button', { name: '회원가입', exact: true }).first().click();
+  await page.goto(`${origin}/signup`);
   await page.getByLabel('이메일', { exact: true }).fill('new@example.test');
   await page.getByLabel('비밀번호', { exact: true }).fill('Test-password-123!');
   await page.getByLabel('비밀번호 확인', { exact: true }).fill('Test-password-123!');
-  await page.getByRole('button', { name: '회원가입', exact: true }).last().click();
+  await page.getByRole('button', { name: '가입하기', exact: true }).click();
   assert.equal(signupCount, 0);
-  await visible(page.getByText('약관에 동의해야 이메일로 회원가입할 수 있습니다.'));
+  await visible(page.getByText('이메일로 가입하려면 약관에 동의해 주세요.'));
   await page.locator('#terms').check();
-  await page.getByRole('button', { name: '회원가입', exact: true }).last().click();
-  await visible(page.getByText('확인 메일을 발송했습니다.', { exact: false }));
+  await page.getByRole('button', { name: '가입하기', exact: true }).click();
+  await visible(page.getByText('확인 메일을 보냈어요.', { exact: false }));
   assert.equal(signupCount, 1);
   console.log('PASS 이메일 미동의 차단 및 동의 버전 저장');
   await login(page, 'google');

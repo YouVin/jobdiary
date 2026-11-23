@@ -49,7 +49,7 @@ test('OAuth SDK가 예외를 던져도 오류를 안내하고 다시 시도할 �
   const h = setup(async () => { count++; throw new Error('network'); });
   try {
     await h.render().props.onClick();
-    assert.equal(h.render().props.disabled, false);
+    assert.equal(h.render().props.isLoading, false);
     assert.deepEqual(h.pending, [true, false]);
     assert.equal(h.messages.length, 1);
     await h.render().props.onClick();
@@ -61,7 +61,7 @@ test('SDK 반환 오류도 동일하게 잠금을 해제한다', async () => {
   const h = setup(async () => ({ error: new Error('provider disabled') }));
   try {
     await h.render().props.onClick();
-    assert.equal(h.render().props.disabled, false);
+    assert.equal(h.render().props.isLoading, false);
     assert.equal(h.messages.length, 1);
   } finally { h.cleanup(); }
 });
@@ -73,9 +73,9 @@ test('SDK 성공 반환 뒤 실제 이동 전까지 연타를 막고 BFCache 복
     const button = h.render();
     await Promise.all([button.props.onClick(), button.props.onClick()]);
     assert.deepEqual(urls, ['https://app.example/login?import=1']);
-    assert.equal(h.render().props.disabled, true);
+    assert.equal(h.render().props.isLoading, true);
     h.pageshow(true);
-    assert.equal(h.render().props.disabled, false);
+    assert.equal(h.render().props.isLoading, false);
     await h.render().props.onClick();
     assert.equal(urls.length, 2);
   } finally { h.cleanup(); }
@@ -91,7 +91,7 @@ test('복원 전 요청의 늦은 오류는 새 요청 잠금과 안내를 덮�
     await h.render().props.onClick();
     rejectOld(new Error('late failure'));
     await old;
-    assert.equal(h.render().props.disabled, true);
+    assert.equal(h.render().props.isLoading, true);
     assert.deepEqual(h.messages, []);
   } finally { h.cleanup(); }
 });
