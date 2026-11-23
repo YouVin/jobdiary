@@ -44,10 +44,11 @@ lib/storage.ts는 이전 localStorage 구현이며 현재 지원 내역 저장 �
 | 홈 통계 대시보드 서버 페이지 | src/app/(protected)/page.tsx |
 | 지원보드 서버 페이지 | src/app/(protected)/board/page.tsx |
 | 계정 서버 페이지 | src/app/(protected)/account/page.tsx |
-| 홈 통계·가져오기 | src/components/dashboard/DashboardClient.tsx |
+| 홈 통계 | src/components/dashboard/DashboardClient.tsx |
+| 가져오기 상태·?import=1 (#203) | src/components/import/ExtensionImportProvider.tsx |
 | 지원 내역 조회(두 페이지 공통) | src/hooks/useApplicationsLoader.ts |
 | 검색·필터·칸반·드래그 | src/components/board/BoardClient.tsx, src/components/board/ |
-| 헤더 탭(대시보드/지원보드) | src/components/header/HeaderNav.tsx |
+| 헤더 메뉴(홈/지원 보드) | src/components/header/HeaderNav.tsx |
 | 지원 추가·편집·삭제 | src/components/modal/ |
 | 헤더 로고·홈 이동 | src/components/header/Header.tsx |
 | 헤더 버튼 동작 | src/components/header/HeaderActions.tsx |

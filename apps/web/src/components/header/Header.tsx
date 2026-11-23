@@ -3,25 +3,22 @@ import { HeaderActions } from '@/components/header/HeaderActions';
 import { HeaderNav } from '@/components/header/HeaderNav';
 import { BrandLogo } from '@/components/common/BrandMark';
 
-// 헤더 (#193, #197): 흰 줄 없이 바탕과 이어지고, 취준일기 글자 로고와 알약 메뉴를 쓴다.
+// 헤더 (#203, 캔버스 메인 시안). 흰 바탕 + 아래 구분선, 높이 64, 내용 폭 1200.
+// 데스크톱(768 이상): 로고 · 메뉴 · 오른쪽 버튼이 한 줄. 모바일: 로고와 버튼이 위, 메뉴가 아래 줄 전체 폭.
 export function Header() {
   return (
-    <header className="bg-page">
-      <div className="mx-auto flex w-full max-w-360 items-center justify-between gap-4 px-4 pb-2 pt-4 md:px-6 md:py-4 lg:px-8">
-        <div className="flex min-w-0 items-center gap-6">
-          <Link
-            href="/"
-            aria-label="취준일기 홈으로 이동"
-            className="flex shrink-0 items-center gap-2 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand"
-          >
-            <BrandLogo className="h-8 w-auto md:h-9" alt="" />
-          </Link>
-          <HeaderNav variant="desktop" />
-        </div>
-
-        <HeaderActions />
+    <header className="border-b border-line-divider bg-surface">
+      <div className="mx-auto flex min-h-16 w-full max-w-300 flex-wrap items-center gap-x-8 gap-y-2 px-4 py-3 sm:px-6 md:py-0 lg:px-10">
+        <Link
+          href="/"
+          aria-label="취준일기 홈으로 이동"
+          className="flex shrink-0 items-center rounded-sm focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus-ring"
+        >
+          <BrandLogo className="h-7 w-auto" alt="" />
+        </Link>
+        <HeaderNav className="order-last w-full md:order-none md:w-auto md:flex-1" />
+        <HeaderActions className="ml-auto md:ml-0" />
       </div>
-      <HeaderNav variant="mobile" />
     </header>
   );
 }

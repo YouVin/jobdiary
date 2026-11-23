@@ -194,13 +194,14 @@ try {
     assert.equal(calls.applications, 0);
     await page.locator('#policy-consent').check();
     await page.getByRole('button', { name: '동의하고 시작하기', exact: true }).click();
-    await page.getByRole('button', { name: '지원추가', exact: true }).waitFor();
+    await page.getByRole('button', { name: '지원 추가', exact: true }).waitFor();
     assert.equal(calls.consent, 1);
     assert.deepEqual({ terms_version: user.user_metadata.terms_version, privacy_version: user.user_metadata.privacy_version }, policy);
-    await page.getByRole('button', { name: '로그아웃', exact: true }).click();
+    await page.getByRole('button', { name: '내 계정', exact: true }).click();
+  await page.getByRole('button', { name: '로그아웃', exact: true }).click();
     await google().click();
     await page.getByRole('link', { name: '승인', exact: true }).click();
-    await page.getByRole('button', { name: '지원추가', exact: true }).waitFor();
+    await page.getByRole('button', { name: '지원 추가', exact: true }).waitFor();
     assert.equal(calls.consent, 1);
     assert.equal(new URL(page.url()).hash, '');
   });
@@ -229,7 +230,7 @@ try {
     assert(await errorRegion.evaluate(element => element === document.querySelector('[role="alert"]')));
     await scan();
     await page.getByRole('button', { name: '동의하고 시작하기', exact: true }).click();
-    await page.getByRole('button', { name: '지원추가', exact: true }).waitFor();
+    await page.getByRole('button', { name: '지원 추가', exact: true }).waitFor();
   });
   await scenario('이메일 가입 인증 대기 후 Google 전환 가능', async ({ page, google, calls }) => {
     await page.getByRole('link', { name: '가입하기', exact: true }).click();

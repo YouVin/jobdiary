@@ -4,7 +4,7 @@ export interface DonutSegment {
   key: string;
   label: string;
   value: number;
-  strokeClass: string; // 토큰 stroke 클래스 (예: stroke-platform-saramin-chart)
+  strokeClass: string; // 토큰 stroke 클래스 (예: stroke-chart-1)
 }
 
 interface DonutChartProps {
@@ -15,11 +15,9 @@ interface DonutChartProps {
   children?: React.ReactNode; // 가운데 표시
 }
 
-// 원티드 조각은 공식 아이콘처럼 파랑→분홍→주황 그라데이션으로 칠한다(#193). 도넛은 한 화면에 하나라 id를 고정한다.
-const WANTED_GRADIENT_ID = 'jd-platform-wanted-gradient';
-export const WANTED_GRADIENT_STROKE = 'stroke-[url(#jd-platform-wanted-gradient)]';
-
-// 도넛 좌표. viewBox 기준 값이며 실제 크기는 부모(h-42 w-42 등)가 정한다.
+// 디자인 시스템 도넛 (#203): 강조 하나만 chart-1, 나머지는 chart-2 → chart-3 → chart-rest로 옅게(순위 기준). 빈 바탕은 chart-empty.
+// 스크린리더는 label(모든 값)을 읽는다. 옆에 글자 목록을 꼭 함께 둔다.
+// 도넛 좌표. viewBox 기준 값이며 실제 크기는 바깥 칸(h-37 w-37, 148px)이 정한다.
 const SIZE = 168;
 const RADIUS = 70;
 const THICKNESS = 16;
@@ -41,16 +39,9 @@ export function DonutChart({ segments, activeKey, onActiveChange, label, childre
   }
 
   return (
-    <div className="relative h-42 w-42 shrink-0">
+    <div className="relative h-37 w-37 shrink-0">
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} role="img" aria-label={label} className="block h-full w-full">
-        <defs>
-          <linearGradient id={WANTED_GRADIENT_ID} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" className="[stop-color:theme(colors.platform.wanted.chart)]" />
-            <stop offset="0.5" className="[stop-color:theme(colors.platform.wanted.mid)]" />
-            <stop offset="1" className="[stop-color:theme(colors.platform.wanted.end)]" />
-          </linearGradient>
-        </defs>
-        <circle cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} fill="none" strokeWidth={THICKNESS} className="stroke-column" />
+        <circle cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} fill="none" strokeWidth={THICKNESS} className="stroke-chart-empty" />
         {arcs.map(({ segment, drawn, start: arcStart }) => {
           const dashOffset = -arcStart;
           return (

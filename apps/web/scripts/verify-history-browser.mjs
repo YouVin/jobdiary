@@ -163,7 +163,8 @@ try {
     await waitFor(value => value?.entries.length === 3 && value.syncedAt !== beforeReload);
     const beforeImport = (await read()).syncedAt;
     await page.getByRole('button', { name: '익스텐션에서 가져오기', exact: true }).click();
-    await page.getByText(/건 추가/).first().waitFor();
+    // 결과는 토스트(role=status)로 알린다 (#203). 반복 가져오기라 새로 넣은 건은 없다.
+    await page.getByRole('status').filter({ hasText: '새로 가져온 지원이 없어요' }).waitFor();
     await waitFor(value => value?.entries.length === 3 && value.syncedAt !== beforeImport);
     assert.equal(rows.filter(value => value.external_id === 'apply-103').length, 1);
     assert.equal(rows.find(value => value.external_id === 'apply-103').deadline_at, '2030-11-30');
@@ -180,7 +181,8 @@ try {
     assert.equal((await read()).entries.length, 3);
   });
   await check('실제 로그아웃 UI→계정 캐시 삭제', async () => {
-    await page.getByRole('button', { name: '로그아웃', exact: true }).click();
+    await page.getByRole('button', { name: '내 계정', exact: true }).click();
+  await page.getByRole('button', { name: '로그아웃', exact: true }).click();
     await waitFor(value => value === null);
     await badgePage.waitForFunction(() => document.querySelectorAll('[data-jobdiary-history]').length === 0);
   });

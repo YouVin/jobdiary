@@ -4,7 +4,7 @@
 
 | 경로 | 서버 컴포넌트 | 클라이언트 컴포넌트 |
 |---|---|---|
-| `/`, `/board`, `/account` | `src/app/(protected)/layout.tsx`의 공통 헤더·본문 틀과 각 `page.tsx` | `AuthGuard`, `HeaderNav`, `DashboardClient`, `BoardClient`, 계정 관리 폼·동작 |
+| `/`, `/board`, `/account` | `src/app/(protected)/layout.tsx`의 공통 헤더·본문 틀(내용 폭 1200)과 각 `page.tsx` | `AuthGuard`, `ToastProvider`, `ExtensionImportProvider`(가져오기 상태·`?import=1`, #203), `HeaderNav`, `HeaderActions`, `DashboardClient`, `BoardClient`, 계정 관리 폼·동작 |
 | `/login`, `/signup` | `(entry)/layout.tsx`의 `AuthShell`(배치·맥북/아이폰 소개), 각 `page.tsx`의 h1(`AuthHeading`)·메타데이터, `loading.tsx`의 스켈레톤 | `LoginForm`과 인증 동작·세션 확인 중 스켈레톤 |
 | `/reset-password`, `/update-password` | 각 `page.tsx`의 `AuthShell`(1024px 미만 소개 없음)과 h1 | 재설정 폼과 복구 세션 처리 |
 | 모든 경로 | `src/app/layout.tsx`의 문서·폰트 설정 | `AuthProvider`의 세션 구독 |
