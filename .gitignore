@@ -23,6 +23,8 @@ coverage/
 .claude/*
 !.claude/skills/
 *.tsbuildinfo
+# 공고 분석 실측용 공고 원문·결과 (#226)
+apps/web/.eval/
 next-env.d.ts
 
 # Logs and editors
