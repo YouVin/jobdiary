@@ -116,6 +116,25 @@
 - 브라우저(`verify-company-info-browser.mjs`): 빈 상태 → 이미지 없이 만들기 안내(요청 0건) → 860×3000 PNG 파일 넣기 + 캡처 붙여넣기 + 빼기 → 만들기(3조각 JPEG만 전송) → 강점·기술·읽은 글 보기 → 이미지 칸에 글 붙여넣기 시 글 모드 전환 → 짧은 글·한도 초과·취소 → 다시 열기. axe 4상태, 3개 너비, 브라우저 예외 0건
 - Edge Function Deno 2.9.6 `deno check` 통과
 
+## 공고 페이지에서 가져오기 (#238, 결정 기록 003)
+
+캡처는 결과가 사용자가 무엇을 얼마나 잘 캡처했는지에 달려 있다(#237). 지원에 공고 주소가 저장돼 있으면 익스텐션이 공고 페이지를 읽는다.
+
+| 단계 | 하는 일 | 파일 |
+|---|---|---|
+| 1 | 상세 패널 "회사 정보" → "공고 페이지에서 가져오기"(잡코리아·사람인·원티드 공고 주소가 있을 때만) | `components/detail/CompanyInfoSection.tsx` |
+| 2 | 웹앱 → 익스텐션 `JOBDIARY_POSTING_READ`(공유 계약 `packages/shared`). 익스텐션이 공고 페이지를 쿠키 없이 읽어 본문 글·본문 이미지 주소·근무지·근무 일정을 돌려준다 | `apps/extension/src/lib/postingReader.ts`, `background/index.ts` |
+| 3 | 본문 이미지: 사람인(`*.saraminimage.co.kr`, CORS 허용)은 브라우저가 바로, 잡코리아(`file*.jobkorea.co.kr`, CORS 없음)는 Edge Function `posting-image`가 대신 받음 → 브라우저가 잘라 JPEG | `lib/postingPage.ts`, `supabase/functions/posting-image` |
+| 4 | `company-info`에 `postingPage`(글 + 이미지 조각 + 제목·근무지·근무 일정)로 보냄. 근무지·근무 일정은 **AI 값보다 페이지 값을 우선** | `_shared/companyInfo/handler.ts` (`preferPageFacts`) |
+| 5 | 익스텐션이 없거나 예전 버전이면 업데이트·캡처 안내, 이미지 받기에 실패하면 글이 100자 이상일 때만 글로 진행 | |
+
+사이트별 구조(2026-11-25 실물 확인): 잡코리아는 공고 페이지 JSON-LD에 정확한 근무지, 본문은 `/Recruit/GI_Read_Comt_Ifrm`(글 또는 이미지). 사람인은 `/zf_user/jobs/relay/view-detail`(글 + 이미지, 근무지는 "근무지 :" 줄). 원티드는 공고 페이지 `__NEXT_DATA__`(`props.pageProps.initialData`)에 칸별 본문·`address.full_location`, 이미지 없음.
+
+- **익스텐션 권한 변경 없음**(기존 `www.jobkorea.co.kr`·`*.saramin.co.kr`·`www.wanted.co.kr`). 출시 패키지 검사로 확인.
+- `posting-image`: 로그인 필요, 허용 목록(공유 계약 `isPostingImageUrl`과 같음, 테스트로 비교)·https·리다이렉트 거절·이미지 형식(PNG·JPEG·WebP·GIF)·10MB. 받은 이미지는 저장하지 않는다.
+- 지시문 버전 `2026-11-25.4`.
+- 검증: 익스텐션 테스트 229개(공고 읽기 8개, 실제 공고 4개로 별도 확인 — 잡코리아 2·사람인 1·원티드 1 모두 정확한 근무지), 웹 테스트 171개(공고 페이지 서버 경로 3·이미지 대신 받기 3·공유 계약 2), 브라우저(가짜 익스텐션: 예전 버전 안내 → 읽기 → 잡코리아 이미지 대신 받기 1번 → `postingPage` 전송), Deno 타입 검사 두 함수 통과.
+
 ## 결과 형식 개편 (#235)
 
 실제 공고 캡처로 써 본 사용자 피드백: 이유가 인용을 바꿔 말하는 수준이라 애매하고, 읽은 글 전체·기술 목록까지 정보가 너무 많다.
