@@ -101,7 +101,11 @@ export async function companyInfoErrorMessage(error: unknown): Promise<string> {
 }
 
 // 공고는 글 또는 이미지 조각(#232) 중 하나만 보낸다. 이미지는 lib/postingImage.ts가 잘라 만든 JPEG base64다.
-export type CompanyInfoPosting = { postingText: string } | { postingImages: Array<{ mediaType: 'image/jpeg'; data: string }> };
+// 공고 페이지 입력(#238): 익스텐션이 읽은 글·근무지 등 + 본문 이미지 조각. 근무지·근무 일정은 서버가 이 값을 우선한다.
+export type CompanyInfoPosting =
+  | { postingText: string }
+  | { postingImages: Array<{ mediaType: 'image/jpeg'; data: string }> }
+  | { postingPage: { text: string; title: string; location: string; workSchedule: string; images: Array<{ mediaType: 'image/jpeg'; data: string }> } };
 
 export async function requestCompanyInfo(
   applicationId: string,

@@ -136,7 +136,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
               </div>
             </section>
 
-            <CompanyInfoSection key={`company-${application.id}`} applicationId={application.id} />
+            <CompanyInfoSection key={`company-${application.id}`} applicationId={application.id} postingUrl={application.url} />
 
             <DiaryComposer key={application.id} application={application} onSavingChange={setIsBusy} />
             <JourneyList application={application} />

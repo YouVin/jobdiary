@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type ClipboardEvent, type DragEvent } from 'react';
+import { getPostingReference } from '@jobdiary/shared';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
@@ -16,13 +17,17 @@ import {
   type CompanyInfoPosting,
 } from '@/lib/companyInfoApi';
 import { MAX_POSTING_IMAGE_BYTES, MAX_POSTING_IMAGE_FILES, POSTING_IMAGE_TYPES, slicePostingImage } from '@/lib/postingImage';
+import { PostingPageError, preparePostingPage, readPostingFromExtension } from '@/lib/postingPage';
 import type { CompanyInfo } from '@/types/companyInfo';
 import { formatKoreanDateTime } from '@/utils/format';
 import { IMAGE_SLICE } from '@/utils/postingImageSlices';
 
 interface CompanyInfoSectionProps {
   applicationId: string;
+  postingUrl?: string; // 지원에 저장된 공고 주소. 잡코리아·사람인·원티드 공고면 "공고 페이지에서 가져오기"를 보여 준다(#238)
 }
+
+const PLATFORM_NAME = { jobkorea: '잡코리아', saramin: '사람인', wanted: '원티드' } as const;
 
 interface PickedImage {
   id: number;
@@ -34,13 +39,14 @@ interface PickedImage {
 // 이보다 좁은 캡처는 본문 글씨가 너무 작아 AI가 자격 요건 같은 긴 문장을 못 읽는다(#237: 페이지 전체를 한 장으로 줄인 캡처)
 const MIN_READABLE_WIDTH = 700;
 
-type Phase = 'idle' | 'preparing' | 'creating';
+type Phase = 'idle' | 'reading' | 'preparing' | 'creating';
 
 // 지원 상세의 "회사 정보" (#229, #232, 결정 기록 002). 공고를 넣으면 서버(Edge Function)가 Claude로
 // 회사 한 줄 소개·이 공고가 원하는 강점(공고 원문 근거)·기술을 정리한다. 결과는 본인 것만 저장·조회된다.
 // 채용 공고 본문은 이미지인 경우가 많아 이미지(캡처 붙여넣기·파일·끌어 놓기)가 기본이고, 글 붙여넣기는 보조다.
 // 부모가 지원마다 key를 바꿔 다시 그리므로 처음 상태는 항상 "불러오는 중"이다.
-export function CompanyInfoSection({ applicationId }: CompanyInfoSectionProps) {
+export function CompanyInfoSection({ applicationId, postingUrl }: CompanyInfoSectionProps) {
+  const pageReference = getPostingReference(postingUrl);
   const [info, setInfo] = useState<CompanyInfo | null>(null);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'failed'>('loading');
   const [isEditing, setIsEditing] = useState(false); // 결과가 있는데 다시 만들기를 누른 상태
@@ -50,6 +56,7 @@ export function CompanyInfoSection({ applicationId }: CompanyInfoSectionProps) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nextImageId = useRef(1);
   const previewUrls = useRef(new Set<string>());
@@ -170,17 +177,48 @@ export function CompanyInfoSection({ applicationId }: CompanyInfoSectionProps) {
       setError(result.error);
       return;
     }
+    showResult(result.data, result.cached);
+  };
+
+  // 공고 페이지에서 가져오기(#238): 익스텐션이 공고 페이지를 읽고 → 본문 이미지를 받아 나누고 → 회사 정보를 만든다.
+  const handleFromPage = async () => {
+    if (isBusy || !pageReference) return;
+    setPageError(null);
+    setError(null);
+    setNotice(null);
+    try {
+      setPhase('reading');
+      const posting = await readPostingFromExtension(pageReference.url);
+      setPhase('preparing');
+      const page = await preparePostingPage(posting, IMAGE_SLICE.maxSlices);
+      setPhase('creating');
+      const result = await requestCompanyInfo(applicationId, { postingPage: page }, info !== null);
+      if (result.error || !result.data) {
+        setPageError(result.error);
+        return;
+      }
+      showResult(result.data, result.cached);
+    } catch (caught) {
+      setPageError(caught instanceof PostingPageError ? caught.message : '공고 페이지에서 가져오지 못했어요. 공고 화면을 캡처해 넣어 주세요.');
+    } finally {
+      setPhase('idle');
+    }
+  };
+
+  const showResult = (data: CompanyInfo, cached: boolean) => {
     for (const image of images) URL.revokeObjectURL(image.previewUrl);
     previewUrls.current.clear();
     setImages([]);
     setPosting('');
-    setInfo(result.data);
+    setInfo(data);
     setIsEditing(false);
-    setNotice(result.cached ? '같은 공고로 만든 회사 정보를 불러왔어요. 오늘 횟수는 쓰지 않았어요.' : '회사 정보를 만들었어요.');
+    setNotice(cached ? '같은 공고로 만든 회사 정보를 불러왔어요. 오늘 횟수는 쓰지 않았어요.' : '회사 정보를 만들었어요.');
   };
 
   const showForm = loadState === 'ready' && (info === null || isEditing);
-  const progressText = phase === 'preparing'
+  const progressText = phase === 'reading'
+    ? '익스텐션이 공고 페이지를 읽고 있어요.'
+    : phase === 'preparing'
     ? '이미지를 나누고 있어요.'
     : inputMode === 'image'
       ? '이미지에서 공고를 읽고 정리하고 있어요. 20초쯤 걸려요.'
@@ -216,7 +254,22 @@ export function CompanyInfoSection({ applicationId }: CompanyInfoSectionProps) {
             void handleCreate();
           }}
         >
-          {!info && <p className="text-label text-text-secondary">공고 화면을 캡처해 넣으면 이 공고가 원하는 강점과 기술을 정리해 드려요.</p>}
+          {pageReference ? (
+            <div className="flex flex-col gap-2 rounded-md bg-surface p-3">
+              <p className="text-label text-text-secondary">
+                저장된 {PLATFORM_NAME[pageReference.platform]} 공고 페이지를 익스텐션이 읽어 와요. 캡처하지 않아도 되고, 근무지도 정확하게 나와요.
+              </p>
+              <Button size="sm" disabled={isBusy} isLoading={phase === 'reading'} loadingLabel="공고 페이지 읽는 중" onClick={() => void handleFromPage()}>
+                공고 페이지에서 가져오기
+              </Button>
+              <p role="alert" className={pageError ? 'text-label text-danger-text' : 'sr-only'}>
+                {pageError}
+              </p>
+              <p className="pt-1 text-caption font-normal text-text-secondary">또는 아래에 공고 화면을 직접 넣어도 돼요.</p>
+            </div>
+          ) : (
+            !info && <p className="text-label text-text-secondary">공고 화면을 캡처해 넣으면 이 공고가 원하는 강점과 기술을 정리해 드려요.</p>
+          )}
 
           {inputMode === 'image' ? (
             <div className="flex flex-col gap-2">
