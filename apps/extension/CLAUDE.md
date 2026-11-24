@@ -11,8 +11,10 @@
 - React + TypeScript
 - chrome.storage
 
-## 개발 단계 (중요)
-현재: 사람인 수집부터 검증. 사람인 1개를 끝까지 완성(파싱→저장→전달)한 뒤 잡코리아, 원티드로 복제.
+## 현재 상태 (중요)
+3개 사이트(사람인·잡코리아·원티드) 수집과 웹앱 연동이 크롬 웹스토어에 배포돼 있다(버전은 `package.json`, 릴리즈 기록은 `docs/RELEASE_*.md`).
+웹앱이 먼저 요청하고(`externally_connectable` + `chrome.runtime.sendMessage`, pull) 익스텐션의 `onMessageExternal`이 수집해 둔 데이터로 응답한다. 계약은 루트 `docs/INTEGRATION.md` §6이 기준이다.
+(처음에는 "사람인 1개를 끝까지 완성한 뒤 잡코리아·원티드로 복제"하는 순서로 개발했다.)
 
 ## 검증 완료
 3개 사이트 HTML 실제 분석해 전부 수집 가능 확인. 셀렉터는 docs/SELECTORS.md에 정리됨. **개발 시 반드시 SELECTORS.md 참조.**
@@ -20,7 +22,8 @@
 ## 폴더 구조 핵심
 - `src/content/{site}.ts` — 사이트별 content script (파싱)
 - `src/content/selectors/{site}.ts` — 사이트별 셀렉터 상수
-- `src/background/index.ts` — service worker (저장·매핑·전달. 중복 판별은 하지 않음 — 웹앱 전담)
+- `src/background/index.ts` — service worker (웹앱 요청 응답 `onMessageExternal`. 중복 판별은 하지 않음 — 웹앱 전담)
+- `src/background/saraminMobile.ts` — 사람인 모바일 보충 요청
 - `src/popup/` — popup UI (React)
 - `src/lib/statusMapping.ts` — 상태 원문 → Status
 - `src/lib/dateNormalize.ts` — 날짜 정규화
@@ -40,7 +43,7 @@ interface ScrapedApplication {
 ```
 
 ## 셀렉터 요약 (상세는 SELECTORS.md)
-- **사람인**: 컨테이너 `.row._apply_list`, 회사명 `data-company_nm`, 공고명 `data-rec_division`, 지원일 `.col_date`, 상태 `.txt_status`
+- **사람인**: 컨테이너 `.row._apply_list`, 회사명 `data-company_nm`, 공고명 `data-rec_division`(모집 부문이라 잡코리아의 공고 제목과 글자가 다르다. 사이트 간 중복은 웹앱이 핵심 단어로 비교한다, #220), 지원일 `.col_date`, 상태 `.txt_status`
 - **잡코리아**: 회사명 `data-memname`, 공고명 `data-gititle`, 지원일 `data-applydate`, 상태 `.apply-status .item.status`
 - **원티드**: 부분매칭 필수 — 회사명 `[class*="company_name"]`, 공고명 `[class*="position"]`, 지원일 `[class*="create_time"]`, 상태 `[class*="status"]`
 
@@ -54,7 +57,7 @@ interface ScrapedApplication {
 
 **중복 판별은 익스텐션 책임이 아니다.** 익스텐션은 사이트별 덮어쓰기로만 데이터를 관리한다(수집·누적·복사까지가 익스텐션 책임). 진짜 중복 지원 판별(platform+externalId 조합 등)은 웹앱의 addApplicationsFromExtension이 전담한다. 상세: docs/PLANNING.md, docs/INTEGRATION.md.
 
-manifest `permissions`에 `"storage"` 추가 예정 (chrome.storage.local 사용을 위해 필요, 현재는 `[]`). 전체 복사(`navigator.clipboard`)는 별도 권한이 필요 없다 — 확장 팝업의 사용자 클릭 맥락에서 표준 Clipboard API로 이미 권한 없이 동작 중이다. `"storage"`는 누적 저장 전용이며 복사 기능과는 무관하다.
+manifest `permissions`는 `["storage"]` 하나다(chrome.storage.local 누적 저장용). 사이트 접근은 `host_permissions`로 지원현황 페이지 도메인만 연다(근거: `docs/STORE_PERMISSIONS_JUSTIFICATION.md`). 전체 복사(`navigator.clipboard`)는 별도 권한이 필요 없다 — 확장 팝업의 사용자 클릭 맥락에서 표준 Clipboard API로 이미 권한 없이 동작 중이다. `"storage"`는 누적 저장 전용이며 복사 기능과는 무관하다.
 
 ## 코딩 규칙
 - named export, 함수형, TypeScript
@@ -71,5 +74,5 @@ manifest `permissions`에 `"storage"` 추가 예정 (chrome.storage.local 사용
 ## 브랜치 전략
 - main: 배포
 - dev: 개발 통합
-- feat/fix/chore/*: 작업 브랜치
+- feat/fix/design/chore/*: 작업 브랜치 (모노레포 공통 규칙은 루트 AGENTS.md)
 - dev에서 작업 → PR → 병합
