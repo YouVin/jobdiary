@@ -3,15 +3,51 @@
 //   TEST_ORIGIN(기본 http://localhost:3100), SHOT_DIR을 주면 빈 상태·결과를 1440·390px로 찍는다.
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { chromium } from '../node_modules/.release-tools/node_modules/playwright/index.mjs';
-import { companyInfoRequests, routeSupabase, scan as scanPage, signIn } from './fixtures/sampleSession.mjs';
+import { companyInfoRequests, routeSupabase, rows, scan as scanPage, signIn } from './fixtures/sampleSession.mjs';
 
 const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
 const shotDir = process.env.SHOT_DIR;
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const pageErrors = [];
-await routeSupabase(context);
+// 공고 페이지에서 가져오기(#238)를 보려고 모든 예시 지원에 잡코리아 공고 주소를 둔다.
+for (const row of rows) row.url = 'https://www.jobkorea.co.kr/Recruit/GI_Read/50303737';
+// 가짜 익스텐션: 공고 읽기 요청에만 답한다(다른 요청은 모르는 것처럼). window.__noExtension이면 설치 안 된 것처럼.
+const PAGE_POSTING = {
+  platform: 'jobkorea', postingId: '50303737', url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/50303737', title: '파이프라인 엔지니어', company: '엔코어스튜디오',
+  location: '서울 강남구 도산대로56길 5 (청담동) 지하1층,1층', workSchedule: '주5일(월~금)',
+  text: '[주요업무]\n- 생성형 AI 제작 파이프라인 개발\n[자격요건]\n- 새로운 기술을 직접 시도하고 만들어 가는 분\n- 다양한 팀과 협업해 본 경험이 있는 분', imageUrls: ['https://file2.jobkorea.co.kr/Net/Recruit/posting.png'],
+};
+await context.addInitScript((posting) => {
+  const runtime = { lastError: undefined, sendMessage(_id, message, callback) {
+    setTimeout(() => {
+      if (window.__noExtension || message?.type !== 'JOBDIARY_POSTING_READ') { runtime.lastError = { message: 'no receiver' }; callback(undefined); runtime.lastError = undefined; return; }
+      callback({ ok: true, posting });
+    }, 30);
+  } };
+  Object.defineProperty(window, 'chrome', { value: { ...(window.chrome || {}), runtime }, configurable: true });
+  Object.defineProperty(window, '__noExtension', { value: false, writable: true, configurable: true });
+}, PAGE_POSTING);
+await routeSupabase(context); // 나중에 등록한 라우트가 먼저 잡으므로 공통 fixture를 먼저 둔다
+// 서버 이미지 대신 받기: 작은 PNG를 돌려준다
+const postingImageRequests = [];
+// 올바른 흰색 PNG(가로 20 × 세로 40)를 직접 만든다. 손으로 적은 base64는 깨져 있어 이미지 읽기에서 실패했다.
+function makePng(width, height) {
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc = (bytes) => { let c = 0xffffffff; for (const byte of bytes) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (type, data) => { const length = Buffer.alloc(4); length.writeUInt32BE(data.length); const body = Buffer.concat([Buffer.from(type), data]); const sum = Buffer.alloc(4); sum.writeUInt32BE(crc(body)); return Buffer.concat([length, body, sum]); };
+  const header = Buffer.alloc(13); header.writeUInt32BE(width, 0); header.writeUInt32BE(height, 4); header[8] = 8; header[9] = 2;
+  const raw = Buffer.alloc((width * 3 + 1) * height, 0xff); for (let y = 0; y < height; y += 1) raw[y * (width * 3 + 1)] = 0;
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', header), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
+const TINY_PNG = makePng(20, 40);
+await context.route('https://*.supabase.co/functions/v1/posting-image', async (route) => {
+  if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' } });
+  postingImageRequests.push(route.request().postDataJSON().url);
+  return route.fulfill({ status: 200, contentType: 'image/png', body: TINY_PNG, headers: { 'Access-Control-Allow-Origin': '*' } });
+});
 const page = await context.newPage();
 page.on('pageerror', (error) => pageErrors.push(error.message));
 page.setDefaultTimeout(10000);
@@ -164,7 +200,28 @@ try {
   assert.equal(companyInfoRequests.length, before);
   console.log('PASS 다시 열면 저장된 결과 불러오기(만들기 요청 0건)');
 
-  // 8) 가로 넘침
+  // 8) 공고 페이지에서 가져오기 (#238): 익스텐션(가짜)이 공고를 읽어 주면 이미지를 서버로 대신 받아 나누고, 공고 페이지 입력으로 보낸다
+  await section.getByRole('button', { name: '다시 만들기', exact: true }).click();
+  const pageButton = section.getByRole('button', { name: '공고 페이지에서 가져오기', exact: true });
+  await section.getByText(/저장된 잡코리아 공고 페이지를 익스텐션이 읽어 와요/).waitFor();
+  // 익스텐션이 예전 버전이라 이 요청을 모르면(응답 없음) 업데이트·캡처 안내
+  await page.evaluate(() => { window.__noExtension = true; });
+  await pageButton.click();
+  await section.getByRole('alert').filter({ hasText: '익스텐션을 최신 버전으로 업데이트하면' }).waitFor();
+  await page.evaluate(() => { window.__noExtension = false; });
+  const beforePage = companyInfoRequests.length;
+  await pageButton.click();
+  await section.getByRole('status').filter({ hasText: '회사 정보를 만들었어요.' }).waitFor();
+  const pageRequest = companyInfoRequests.at(-1);
+  assert.equal(companyInfoRequests.length, beforePage + 1);
+  assert.deepEqual(Object.keys(pageRequest).sort(), ['applicationId', 'postingPage', 'regenerate']);
+  assert.deepEqual([pageRequest.postingPage.location, pageRequest.postingPage.workSchedule, pageRequest.postingPage.text.startsWith('[주요업무]')], ['서울 강남구 도산대로56길 5 (청담동) 지하1층,1층', '주5일(월~금)', true]);
+  assert.ok(pageRequest.postingPage.images.length >= 1 && pageRequest.postingPage.images.every((piece) => piece.mediaType === 'image/jpeg'), '잡코리아 이미지를 대신 받아 잘라 보냄');
+  assert.deepEqual(postingImageRequests, ['https://file2.jobkorea.co.kr/Net/Recruit/posting.png'], '서버 대신 받기는 허용된 이미지 주소 1개만');
+  await scan('회사 정보·공고 페이지에서 가져오기 결과');
+  console.log('PASS 공고 페이지에서 가져오기(예전 익스텐션 업데이트 안내·읽기·이미지 대신 받기·공고 페이지 입력 전송)');
+
+  // 9) 가로 넘침
   for (const width of [1440, 768, 390]) {
     await page.setViewportSize({ width, height: 900 });
     await page.waitForTimeout(300);
