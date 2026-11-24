@@ -36,6 +36,7 @@ export function parseCompanyInfo(result: unknown, createdAt: unknown): CompanyIn
     }
   }
   return {
+    transcript: typeof raw.transcript === 'string' ? raw.transcript : '',
     summary: typeof raw.companySummary === 'string' ? raw.companySummary : '',
     hasTalentStatement: raw.hasTalentStatement === true,
     strengths,
@@ -74,13 +75,16 @@ export async function companyInfoErrorMessage(error: unknown): Promise<string> {
   return GENERIC_ERROR;
 }
 
+// 공고는 글 또는 이미지 조각(#232) 중 하나만 보낸다. 이미지는 lib/postingImage.ts가 잘라 만든 JPEG base64다.
+export type CompanyInfoPosting = { postingText: string } | { postingImages: Array<{ mediaType: 'image/jpeg'; data: string }> };
+
 export async function requestCompanyInfo(
   applicationId: string,
-  postingText: string,
+  posting: CompanyInfoPosting,
   regenerate: boolean,
 ): Promise<{ data: CompanyInfo | null; cached: boolean; error: string | null }> {
   const { data, error } = await supabase.functions.invoke<{ companyInfo?: { result?: unknown; createdAt?: unknown }; cached?: boolean }>('company-info', {
-    body: { applicationId, postingText, regenerate },
+    body: { applicationId, ...posting, regenerate },
   });
   if (error) return { data: null, cached: false, error: await companyInfoErrorMessage(error) };
   const info = parseCompanyInfo(data?.companyInfo?.result, data?.companyInfo?.createdAt);
