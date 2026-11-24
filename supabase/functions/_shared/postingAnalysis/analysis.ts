@@ -205,11 +205,14 @@ type ImageBlock = { type: 'image'; source: { type: 'base64'; media_type: Posting
 // 이미지 공고의 사용자 메시지: 회사 정보 글 → 공고 이미지 조각들(위에서 아래 순서) → 안내 한 줄.
 export function buildImageContent(input: AnalysisInput, variant: AnalysisVariant): Array<TextBlock | ImageBlock> {
   const images = input.images ?? [];
-  const blocks: Array<TextBlock | ImageBlock> = [{ type: 'text', text: headerParts(input, variant).join('\n\n') }];
+  // 공고 페이지에서 읽은 글(#238)이 함께 오면 이미지 앞에 둔다(사람인처럼 글 + 이미지인 공고).
+  const pageText = input.postingText.trim() ? (variant === 'lean' ? trimPosting(input.postingText) : input.postingText.trim()) : '';
+  const header = [...headerParts(input, variant), ...(pageText ? [`[공고 본문 글]\n${pageText}`] : [])];
+  const blocks: Array<TextBlock | ImageBlock> = [{ type: 'text', text: header.join('\n\n') }];
   for (const image of images) {
     blocks.push({ type: 'image', source: { type: 'base64', media_type: image.mediaType, data: image.data } });
   }
-  blocks.push({ type: 'text', text: `[공고 본문]\n위 이미지 ${images.length}장이 공고 본문이다(위에서 아래 순서).` });
+  blocks.push({ type: 'text', text: `[공고 본문 이미지]\n위 이미지 ${images.length}장도 공고 본문이다(위에서 아래 순서). transcript에는 이미지의 글만 옮겨 적는다.` });
   return blocks;
 }
 

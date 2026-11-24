@@ -1,5 +1,6 @@
-import { HISTORY_CLEAR_TYPE, HISTORY_SYNC_TYPE, parseHistoryRequest } from '@jobdiary/shared';
+import { HISTORY_CLEAR_TYPE, HISTORY_SYNC_TYPE, parseHistoryRequest, POSTING_READ_TYPE, type PostingReadResponse } from '@jobdiary/shared';
 import { applyHistoryRequest } from '../lib/applicationHistory';
+import { fetchPostingText, readPosting } from '../lib/postingReader';
 console.log('[JobDiary] background 서비스워커 로드됨');
 import { EXTERNAL_COLLECT_MESSAGE_TYPE, type ExternalCollectResponse } from '../lib/messages';
 import { getAllApplications } from '../lib/storage';
@@ -25,6 +26,17 @@ chrome.runtime.onMessageExternal.addListener((message: unknown, sender, sendResp
     const request = parseHistoryRequest(message);
     if (!request) { sendResponse({ ok: false, error: 'invalid-history-message' }); return; }
     void applyHistoryRequest(sender.origin, request).then(sendResponse);
+    return true;
+  }
+  // 공고 페이지 읽기 (#238, 결정 기록 003): 웹앱이 지원의 공고 주소를 보내면 사용자 브라우저에서 그 공고를 읽어 돌려준다.
+  // 주소 검사(잡코리아·사람인 공고만)는 readPosting이 공유 계약으로 한다. 로그인 정보(쿠키)는 보내지 않는다.
+  if (message.type === POSTING_READ_TYPE) {
+    if (sender.frameId !== 0) return;
+    const url = 'url' in message && typeof message.url === 'string' ? message.url : '';
+    void readPosting(url, fetchPostingText)
+      .then((posting): PostingReadResponse => ({ ok: true, posting }))
+      .catch((error: unknown): PostingReadResponse => ({ ok: false, error: error instanceof Error ? error.message : 'read-failed' }))
+      .then(sendResponse);
     return true;
   }
   if (message.type !== EXTERNAL_COLLECT_MESSAGE_TYPE) return;

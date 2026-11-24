@@ -19,3 +19,4 @@
 |---|---|---|
 | [001](001-posting-analysis-model.md) | 공고 분석·회사 정보 정리에 쓸 AI 모델 고르기 | 결정 (Haiku 5.5) |
 | [002](002-company-info-server.md) | 회사 정보 서버를 Supabase Edge Function에 두기 | 결정 |
+| [003](003-posting-reader.md) | 회사 정보의 공고 내용을 익스텐션이 공고 페이지에서 읽어 오기 | 결정 |

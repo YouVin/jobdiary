@@ -431,3 +431,10 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/company-info/deno.json"
 entrypoint = "./functions/company-info/index.ts"
+
+# 공고 본문 이미지 대신 받기 (#238). 허용된 이미지 서버의 이미지 파일만 받는다(_shared/postingImage/proxy.ts).
+[functions.posting-image]
+enabled = true
+verify_jwt = true
+import_map = "./functions/posting-image/deno.json"
+entrypoint = "./functions/posting-image/index.ts"
