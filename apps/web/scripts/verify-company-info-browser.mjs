@@ -13,6 +13,9 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const pageErrors = [];
 // 공고 페이지에서 가져오기(#238)를 보려고 모든 예시 지원에 잡코리아 공고 주소를 둔다.
+// 회사 정보는 서류 통과부터 만들 수 있어(#242) 지원 완료 예시를 서류 통과로 올린다.
+const raisedRows = rows.filter((row) => row.status === 'applied');
+for (const row of raisedRows) row.status = 'screening';
 for (const row of rows) row.url = 'https://www.jobkorea.co.kr/Recruit/GI_Read/50303737';
 // 가짜 익스텐션: 공고 읽기 요청에만 답한다(다른 요청은 모르는 것처럼). window.__noExtension이면 설치 안 된 것처럼.
 const PAGE_POSTING = {
@@ -64,8 +67,8 @@ async function shoot(name, panel) {
   await page.setViewportSize({ width: 1440, height: 900 });
 }
 
-async function openPanel() {
-  const openButton = page.getByRole('region', { name: /결과 기다리는 중/ }).getByRole('button', { name: / 상세 보기$/ }).first();
+async function openPanel(index = 0) {
+  const openButton = page.getByRole('region', { name: /결과 기다리는 중/ }).getByRole('button', { name: / 상세 보기$/ }).nth(index);
   const companyName = (await openButton.getAttribute('aria-label')).replace(/ 상세 보기$/, '');
   await openButton.click();
   const panel = page.getByRole('dialog', { name: companyName });
@@ -164,6 +167,23 @@ try {
   await section.getByText('웹 서비스를 만드는 IT 회사예요.').waitFor();
   console.log('PASS 공고 주소 없음 안내·취소');
 
+  // 6-2) 서류 통과 전(지원 완료): 만든 결과는 보이되 다시 만들기는 없고, 결과가 없으면 서류 통과 후 안내만 (#242)
+  await panel.getByRole('button', { name: '닫기', exact: true }).click();
+  for (const row of raisedRows) row.status = 'applied';
+  await page.reload();
+  await page.getByRole('heading', { level: 1, name: '지원 보드' }).waitFor();
+  panel = await openPanel();
+  section = panel.getByRole('region', { name: '회사 정보' });
+  await section.getByText('웹 서비스를 만드는 IT 회사예요.').waitFor();
+  assert.equal(await section.getByRole('button', { name: '다시 만들기', exact: true }).count(), 0, '지원 완료에서는 다시 만들기 없음');
+  await panel.getByRole('button', { name: '닫기', exact: true }).click();
+  panel = await openPanel(1);
+  section = panel.getByRole('region', { name: '회사 정보' });
+  await section.getByText('서류 통과로 바꾸면 이 회사가 하는 일과 공고가 원하는 강점을 정리해 드려요.').waitFor();
+  assert.equal(await section.getByRole('group').count(), 0, '지원 완료에서는 만들기 칸 없음');
+  await scan('회사 정보·서류 통과 전');
+  console.log('PASS 서류 통과 전: 결과는 보이고 다시 만들기 없음, 결과 없으면 안내만');
+
   // 7) 가로 넘침과 패널 너비(#242: 640px 이상 480px, 1024px 이상 520px)
   const panelWidths = { 1440: 520, 768: 480 };
   for (const width of [1440, 768, 390]) {
@@ -174,7 +194,7 @@ try {
   }
 
   assert.deepEqual(pageErrors, []);
-  console.log('PASS 회사 정보 공고 페이지에서 가져오기만·주소 없음 안내·한도 초과·다시 열기, axe 5상태, 패널 너비 480·520px, 3개 너비 가로 넘침 없음, 브라우저 예외 0건');
+  console.log('PASS 회사 정보 공고 페이지에서 가져오기만·서류 통과부터·주소 없음 안내·한도 초과·다시 열기, axe 6상태, 패널 너비 480·520px, 3개 너비 가로 넘침 없음, 브라우저 예외 0건');
 } finally {
   await browser.close();
 }

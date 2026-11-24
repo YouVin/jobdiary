@@ -13,6 +13,9 @@ import { IMAGE_SLICE } from '@/utils/postingImageSlices';
 interface CompanyInfoSectionProps {
   applicationId: string;
   postingUrl?: string; // 지원에 저장된 공고 주소. 잡코리아·사람인·원티드 공고여야 회사 정보를 만들 수 있다(#238, #242)
+  // 만들 수 있는 단계인지(#242): ready 서류 통과 이후 · early 지원 완료(서류 통과하면 만들 수 있다고 안내) · closed 탈락·취소
+  // 만들 수 없는 단계여도 이미 만든 결과는 보여 준다(다시 만들기만 숨김).
+  stage: 'ready' | 'early' | 'closed';
 }
 
 const PLATFORM_NAME = { jobkorea: '잡코리아', saramin: '사람인', wanted: '원티드' } as const;
@@ -29,7 +32,7 @@ const PROGRESS_TEXT: Record<Exclude<Phase, 'idle'>, string> = {
 // Claude로 회사 소개·이 공고가 원하는 강점(공고 원문 근거)·근무 조건을 정리한다. 결과는 본인 것만 저장·조회된다.
 // #242: 캡처·글 붙여넣기는 없앴다. 공고 페이지에서 가져오기가 근무지까지 정확하고 손이 덜 가서(사용자 결정) 입력을 하나로 줄였다.
 // 부모가 지원마다 key를 바꿔 다시 그리므로 처음 상태는 항상 "불러오는 중"이다.
-export function CompanyInfoSection({ applicationId, postingUrl }: CompanyInfoSectionProps) {
+export function CompanyInfoSection({ applicationId, postingUrl, stage }: CompanyInfoSectionProps) {
   const pageReference = getPostingReference(postingUrl);
   const [info, setInfo] = useState<CompanyInfo | null>(null);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'failed'>('loading');
@@ -77,7 +80,10 @@ export function CompanyInfoSection({ applicationId, postingUrl }: CompanyInfoSec
     }
   };
 
-  const showForm = loadState === 'ready' && (info === null || isEditing);
+  const canCreate = stage === 'ready';
+  const showForm = canCreate && loadState === 'ready' && (info === null || isEditing);
+  // 탈락·취소한 지원에 결과가 없으면 구역 자체를 숨긴다
+  if (stage === 'closed' && loadState === 'ready' && !info) return null;
 
   return (
     <section aria-labelledby="panel-company-title" aria-busy={loadState === 'loading' || isBusy} className="flex flex-col gap-3">
@@ -91,12 +97,17 @@ export function CompanyInfoSection({ applicationId, postingUrl }: CompanyInfoSec
       {loadState === 'ready' && info && !isEditing && (
         <CompanyInfoResult
           info={info}
+          canRegenerate={canCreate}
           onRegenerate={() => {
             setIsEditing(true);
             setNotice(null);
             setError(null);
           }}
         />
+      )}
+
+      {stage === 'early' && loadState === 'ready' && !info && (
+        <p className="break-keep text-label text-text-secondary">서류 통과로 바꾸면 이 회사가 하는 일과 공고가 원하는 강점을 정리해 드려요.</p>
       )}
 
       {showForm && (
@@ -158,7 +169,7 @@ const LINK_CLASS = 'text-text-brand underline underline-offset-2';
 
 // 결과 (#235): 이 회사는 → 원하는 강점(넣으면 좋은 경험) → 근무 조건. 정보는 꼭 필요한 것만 둔다(사용자 피드백).
 // 판은 흰 바탕 + 얇은 테두리, 강점 줄은 회색으로 구분한다(#229: 회색 판 위 회색 부품은 경계가 사라졌다).
-function CompanyInfoResult({ info, onRegenerate }: { info: CompanyInfo; onRegenerate: () => void }) {
+function CompanyInfoResult({ info, canRegenerate, onRegenerate }: { info: CompanyInfo; canRegenerate: boolean; onRegenerate: () => void }) {
   const website = websiteHref(info.website);
   const mapHref = naverMapHref(info.location);
   const hasWorkplace = Boolean(info.location || info.workDays || info.workHours);
@@ -261,9 +272,11 @@ function CompanyInfoResult({ info, onRegenerate }: { info: CompanyInfo; onRegene
         <p className="text-caption font-normal text-text-secondary">
           {formatKoreanDateTime(info.createdAt)} 기준{info.fromImage ? ' · 이미지에서 읽은 내용' : ''} · AI가 정리한 내용이라 틀릴 수 있어요.
         </p>
-        <Button variant="secondary" size="sm" onClick={onRegenerate}>
-          다시 만들기
-        </Button>
+        {canRegenerate && (
+          <Button variant="secondary" size="sm" onClick={onRegenerate}>
+            다시 만들기
+          </Button>
+        )}
       </div>
     </div>
   );
