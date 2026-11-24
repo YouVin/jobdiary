@@ -17,4 +17,5 @@
 
 | 번호 | 제목 | 상태 |
 |---|---|---|
-| [001](001-posting-analysis-model.md) | 공고 분석·회사 정보 정리에 쓸 AI 모델 고르기 | 제안 |
+| [001](001-posting-analysis-model.md) | 공고 분석·회사 정보 정리에 쓸 AI 모델 고르기 | 결정 (Haiku 5.5) |
+| [002](002-company-info-server.md) | 회사 정보 서버를 Supabase Edge Function에 두기 | 결정 |

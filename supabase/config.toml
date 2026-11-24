@@ -423,3 +423,11 @@ entrypoint = "./functions/delete-account/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/delete-account/*.html" ]
+
+# 회사 정보 만들기 (#228). 로그인 토큰이 없으면 함수 코드에 닿지 않는다.
+# 공용 코드는 ../_shared/ (지시문·처리 순서)에서 상대 경로로 불러온다.
+[functions.company-info]
+enabled = true
+verify_jwt = true
+import_map = "./functions/company-info/deno.json"
+entrypoint = "./functions/company-info/index.ts"

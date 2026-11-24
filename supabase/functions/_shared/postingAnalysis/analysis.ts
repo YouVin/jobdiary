@@ -1,8 +1,9 @@
-import { STRENGTHS, STRENGTH_LABELS } from '@/lib/postingAnalysis/strengths';
+import { STRENGTHS, STRENGTH_LABELS } from './strengths.ts';
 
-// 공고 분석 요청 만들기·결과 검사·비용 계산 (#226, 결정 기록 001).
-// 측정 스크립트(scripts/eval-posting-analysis.mjs)와 나중의 API 라우트가 같은 함수를 써서,
-// 잰 것과 실제 서비스가 달라지지 않게 한다. SDK를 부르지 않는 순수 함수만 둔다.
+// 공고 분석 요청 만들기·결과 검사·비용 계산 (#226, 결정 기록 001·002).
+// Edge Function(company-info)과 측정 스크립트(apps/web/scripts/eval-posting-analysis.mjs)가 이 파일을 같이 써서,
+// 잰 것과 실제 서비스가 달라지지 않게 한다. SDK·Deno 전역을 쓰지 않는 순수 함수만 두어 Node 테스트로도 검증한다.
+// Deno가 읽으므로 상대 경로는 확장자(.ts)까지 적는다.
 
 export type AnalysisVariant = 'baseline' | 'lean';
 export type AnalysisModel = 'claude-haiku-5-5' | 'claude-sonnet-5-5' | 'claude-opus-5-5';

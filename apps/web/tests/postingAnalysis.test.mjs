@@ -5,8 +5,8 @@ import { createSourceLoader } from './loadSource.mjs';
 const load = createSourceLoader();
 const {
   trimPosting, verifyQuotes, estimateCostUsd, buildAnalysisRequest, ANALYSIS_SCHEMA, buildUserContent, HOMEPAGE_LIMIT_LEAN,
-} = load('@/lib/postingAnalysis/analysis');
-const { STRENGTH_LABELS } = load('@/lib/postingAnalysis/strengths');
+} = load('../../supabase/functions/_shared/postingAnalysis/analysis.ts');
+const { STRENGTH_LABELS } = load('../../supabase/functions/_shared/postingAnalysis/strengths.ts');
 
 const POSTING = [
   '[주요 업무]',
