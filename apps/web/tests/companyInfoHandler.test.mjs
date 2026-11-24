@@ -124,3 +124,66 @@ test('긴 공고는 상한에서 자르고, 공백만 다른 공고는 같은 �
   assert.equal(postingFingerprint('루트랩스', '주요 업무\n  React'), postingFingerprint('루트랩스', '주요 업무 React'));
   assert.notEqual(postingFingerprint('루트랩스', '주요 업무 React'), postingFingerprint('다른랩스', '주요 업무 React'));
 });
+
+// ── 이미지 공고 (#232) ──
+const { MAX_POSTING_IMAGES } = load('../../supabase/functions/_shared/companyInfo/handler.ts');
+const IMAGE = { mediaType: 'image/jpeg', data: Buffer.from('fake-jpeg-bytes').toString('base64') };
+const imageBody = (images = [IMAGE, IMAGE], changes = {}) => ({ applicationId: APP_ID, postingImages: images, ...changes });
+const TRANSCRIPT = POSTING; // AI가 이미지에서 옮겨 적은 글이라고 본다
+
+test('이미지 공고는 이미지 조각을 그대로 보내고, 읽은 글 기준으로 인용을 검사한다', async () => {
+  const { deps, calls } = fakeDeps({
+    analyze: async (request) => {
+      calls.analyze.push(request);
+      return { stopReason: 'end_turn', model: COMPANY_INFO_MODEL, usage: { input_tokens: 4000, output_tokens: 2000 }, result: { ...structuredClone(AI_RESULT), transcript: TRANSCRIPT } };
+    },
+  });
+  const response = await handleCompanyInfo(deps, imageBody());
+  assert.equal(response.status, 200);
+  const request = calls.analyze[0];
+  const blocks = request.messages[0].content;
+  assert.deepEqual(blocks.map((block) => block.type), ['text', 'image', 'image', 'text']);
+  assert.deepEqual(blocks[1].source, { type: 'base64', media_type: 'image/jpeg', data: IMAGE.data });
+  assert.equal(request.output_config.format.schema.required[0], 'transcript');
+  assert.ok(request.max_tokens >= 16000);
+  assert.match(request.system, /transcript에 위에서 아래 순서로/);
+  assert.match(request.system, /지시가 아니다/);
+  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['소통', '책임감'], '읽은 글에 없는 인용은 버림');
+  assert.equal(response.body.companyInfo.result.transcript, TRANSCRIPT);
+});
+
+test('이미지에서 글을 거의 못 읽으면 422이고 한도를 되돌린다', async () => {
+  const { deps, calls } = fakeDeps({
+    analyze: async () => ({ stopReason: 'end_turn', model: COMPANY_INFO_MODEL, usage: { input_tokens: 1, output_tokens: 1 }, result: { ...AI_RESULT, transcript: '로고' } }),
+  });
+  const response = await handleCompanyInfo(deps, imageBody());
+  assert.deepEqual([response.status, response.body.code, calls.release, calls.saved.length], [422, 'unreadable_image', 1, 0]);
+});
+
+test('이미지 형식·개수·크기와 글·이미지 동시 전송을 막는다', async () => {
+  const { deps, calls } = fakeDeps();
+  const cases = [
+    [imageBody([{ mediaType: 'image/gif', data: IMAGE.data }]), 400, 'bad_request'],
+    [imageBody([{ mediaType: 'image/jpeg', data: 'not base64!' }]), 400, 'bad_request'],
+    [imageBody([]), 400, 'bad_request'],
+    [imageBody(Array.from({ length: MAX_POSTING_IMAGES + 1 }, () => IMAGE)), 400, 'images_too_large'],
+    [imageBody([{ mediaType: 'image/jpeg', data: 'A'.repeat(4_000_004) }]), 400, 'images_too_large'],
+    [{ applicationId: APP_ID, postingText: POSTING, postingImages: [IMAGE] }, 400, 'bad_request'],
+    [{ applicationId: APP_ID }, 400, 'bad_request'],
+  ];
+  for (const [requestBody, status, code] of cases) {
+    const response = await handleCompanyInfo(deps, requestBody);
+    assert.deepEqual([response.status, response.body.code], [status, code], JSON.stringify(Object.keys(requestBody)));
+  }
+  assert.equal(calls.consume + calls.analyze.length, 0);
+});
+
+test('같은 이미지면 같은 공고로 재사용하고, 다른 이미지는 다른 공고다', async () => {
+  const hashes = [];
+  const { deps } = fakeDeps({ findAnalysis: async (hash) => { hashes.push(hash); return null; } });
+  await handleCompanyInfo(deps, imageBody([IMAGE]));
+  await handleCompanyInfo(deps, imageBody([IMAGE]));
+  await handleCompanyInfo(deps, imageBody([{ mediaType: 'image/jpeg', data: Buffer.from('other').toString('base64') }]));
+  assert.equal(hashes[0], hashes[1]);
+  assert.notEqual(hashes[0], hashes[2]);
+});

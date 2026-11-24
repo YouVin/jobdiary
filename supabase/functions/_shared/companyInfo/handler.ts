@@ -4,19 +4,29 @@ import {
   verifyQuotes,
   type AnalysisModel,
   type AnalysisResult,
+  type PostingImage,
+  type PostingImageMediaType,
   type UsageLike,
 } from '../postingAnalysis/analysis.ts';
 
 // 회사 정보 만들기 처리 순서 (#228, 결정 기록 002). DB·AI 호출은 deps로 받아, Deno(Edge Function)와
 // Node 테스트가 같은 코드를 쓴다. 순서가 곧 보안·비용 규칙이다:
 // 로그인 → 입력 검사 → 본인 지원 확인 → 같은 공고 결과 재사용(한도 안 씀) → 하루 한도 → AI → 인용 검사 → 저장.
+// 공고는 글(postingText) 또는 이미지 조각(postingImages, #232) 중 하나로 받는다.
 
 export const COMPANY_INFO_MODEL: AnalysisModel = 'claude-haiku-5-5'; // 결정 기록 001: 1차 실측 근거로 Haiku 5.5로 시작
 export const COMPANY_INFO_VARIANT = 'lean' as const; // 비용 절감 방식 (1차 실측: 1건 $0.0007, 4.6초)
-export const PROMPT_VERSION = '2026-11-24.1'; // 지시문·결과 형식을 바꾸면 올린다. 같은 공고라도 버전이 다르면 새로 만든다
+export const PROMPT_VERSION = '2026-11-25.1'; // 지시문·결과 형식을 바꾸면 올린다. 같은 공고라도 버전이 다르면 새로 만든다 (#232 이미지 규칙 추가)
 export const DAILY_LIMIT = 5; // 사용자당 하루(한국 날짜) 새로 만드는 횟수
 export const MIN_POSTING_LENGTH = 200;
 export const MAX_POSTING_LENGTH = 15_000;
+// 이미지 조각: 브라우저가 가로 1,000px·세로 1,400px 이하로 잘라 JPEG로 보낸다. 서버는 개수·크기만 다시 막는다.
+export const MAX_POSTING_IMAGES = 12;
+export const MAX_IMAGE_BASE64_LENGTH = 4_000_000; // 조각 1개 약 3MB (Claude 상한 10MB보다 훨씬 작게)
+export const MAX_TOTAL_IMAGE_BASE64_LENGTH = 16_000_000; // 요청 전체 약 12MB
+export const MIN_TRANSCRIPT_LENGTH = 50; // 이보다 짧게 읽혔으면 공고 이미지가 아닌 것으로 본다
+const IMAGE_MEDIA_TYPES: PostingImageMediaType[] = ['image/jpeg', 'image/png', 'image/webp'];
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
 
 export interface ApplicationRow {
   id: string;
@@ -56,19 +66,51 @@ export interface HandlerResponse {
   body: Record<string, unknown>;
 }
 
+type PostingSource = { kind: 'text'; postingText: string } | { kind: 'image'; images: PostingImage[] };
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function fail(status: number, error: string, code: string): HandlerResponse {
   return { status, body: { error, code } };
 }
 
-function readBody(body: unknown): { applicationId: string; postingText: string; regenerate: boolean } | null {
+// 이미지 조각 검사. 형식이 틀리면 null(400), 개수·크기가 넘치면 'too_large'.
+function readImages(value: unknown): PostingImage[] | 'too_large' | null {
+  if (!Array.isArray(value) || value.length === 0) return null;
+  if (value.length > MAX_POSTING_IMAGES) return 'too_large';
+  const images: PostingImage[] = [];
+  let total = 0;
+  for (const item of value) {
+    if (!item || typeof item !== 'object') return null;
+    const { mediaType, data } = item as Record<string, unknown>;
+    if (typeof mediaType !== 'string' || !IMAGE_MEDIA_TYPES.includes(mediaType as PostingImageMediaType)) return null;
+    if (typeof data !== 'string' || data.length === 0) return null;
+    if (data.length > MAX_IMAGE_BASE64_LENGTH) return 'too_large';
+    if (!BASE64.test(data)) return null;
+    total += data.length;
+    images.push({ mediaType: mediaType as PostingImageMediaType, data });
+  }
+  return total > MAX_TOTAL_IMAGE_BASE64_LENGTH ? 'too_large' : images;
+}
+
+function readBody(body: unknown): { applicationId: string; source: PostingSource | 'too_large'; regenerate: boolean } | null {
   if (!body || typeof body !== 'object') return null;
-  const { applicationId, postingText, regenerate } = body as Record<string, unknown>;
+  const { applicationId, postingText, postingImages, regenerate } = body as Record<string, unknown>;
   if (typeof applicationId !== 'string' || !UUID.test(applicationId)) return null;
-  if (typeof postingText !== 'string') return null;
   if (regenerate !== undefined && typeof regenerate !== 'boolean') return null;
-  return { applicationId, postingText, regenerate: regenerate === true };
+  const hasText = postingText !== undefined;
+  const hasImages = postingImages !== undefined;
+  if (hasText === hasImages) return null; // 글과 이미지 중 정확히 하나
+  let source: PostingSource | 'too_large';
+  if (hasText) {
+    if (typeof postingText !== 'string') return null;
+    source = { kind: 'text', postingText };
+  } else {
+    const images = readImages(postingImages);
+    if (!images) return null;
+    source = images === 'too_large' ? 'too_large' : { kind: 'image', images };
+  }
+  return { applicationId, source, regenerate: regenerate === true };
 }
 
 // 같은 공고 판단용 지문. 공백 차이는 같은 공고로 본다. 모델·방식·지시문 버전이 바뀌면 다른 결과로 본다.
@@ -77,7 +119,13 @@ export function postingFingerprint(companyName: string, postingText: string): st
   return [PROMPT_VERSION, COMPANY_INFO_MODEL, COMPANY_INFO_VARIANT, companyName.normalize('NFKC').trim(), normalized].join('\n');
 }
 
-// 공고 원문에 없는 인용이 붙은 강점은 보여 주지 않는다(지어낸 근거 차단).
+// 이미지 공고의 지문: 조각 바이트가 같아야 같은 공고로 본다(캡처를 다시 하면 새로 만든다).
+export function imageFingerprint(companyName: string, images: PostingImage[]): string {
+  return [PROMPT_VERSION, COMPANY_INFO_MODEL, COMPANY_INFO_VARIANT, 'image', companyName.normalize('NFKC').trim(),
+    ...images.map((image) => `${image.mediaType}:${image.data}`)].join('\n');
+}
+
+// 공고 원문(이미지면 AI가 옮겨 적은 글)에 없는 인용이 붙은 강점은 보여 주지 않는다(지어낸 근거 차단).
 export function keepVerifiedStrengths(result: AnalysisResult, postingText: string): AnalysisResult {
   const { missing } = verifyQuotes(result, postingText);
   if (missing.length === 0) return result;
@@ -96,18 +144,28 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
   // 2) 입력 검사
   const body = readBody(rawBody);
   if (!body) return fail(400, '요청 형식이 올바르지 않아요.', 'bad_request');
-  const trimmed = body.postingText.trim();
-  if (trimmed.length < MIN_POSTING_LENGTH) {
-    return fail(400, '공고 내용이 너무 짧아요. 주요 업무와 자격 요건이 들어가게 붙여 넣어 주세요.', 'posting_too_short');
+  if (body.source === 'too_large') {
+    return fail(400, `공고 이미지가 너무 커요. 공고 본문 부분만 캡처해 주세요. (최대 ${MAX_POSTING_IMAGES}조각)`, 'images_too_large');
   }
-  const postingText = trimmed.slice(0, MAX_POSTING_LENGTH);
+  const source = body.source;
+  let postingText = '';
+  if (source.kind === 'text') {
+    const trimmed = source.postingText.trim();
+    if (trimmed.length < MIN_POSTING_LENGTH) {
+      return fail(400, '공고 내용이 너무 짧아요. 주요 업무와 자격 요건이 들어가게 붙여 넣어 주세요.', 'posting_too_short');
+    }
+    postingText = trimmed.slice(0, MAX_POSTING_LENGTH);
+  }
 
   // 3) 본인 지원인지: 요청자 권한으로 읽어 RLS가 걸러 준다.
   const application = await deps.getApplication(body.applicationId);
   if (!application) return fail(404, '지원을 찾을 수 없어요.', 'not_found');
 
   // 4) 같은 공고 결과가 있으면 그대로 쓴다. 한도도 비용도 들지 않는다.
-  const postingHash = await deps.sha256(postingFingerprint(application.company, postingText));
+  const fingerprint = source.kind === 'text'
+    ? postingFingerprint(application.company, postingText)
+    : imageFingerprint(application.company, source.images);
+  const postingHash = await deps.sha256(fingerprint);
   if (!body.regenerate) {
     const existing = await deps.findAnalysis(postingHash);
     if (existing) {
@@ -123,7 +181,11 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
   }
 
   // 6) AI 호출. 실패하면 한도를 되돌린다(사용자 잘못이 아닌 실패로 하루 횟수를 잃지 않게).
-  const request = buildAnalysisRequest(COMPANY_INFO_MODEL, COMPANY_INFO_VARIANT, { companyName: application.company, postingText });
+  const request = buildAnalysisRequest(COMPANY_INFO_MODEL, COMPANY_INFO_VARIANT, {
+    companyName: application.company,
+    postingText,
+    images: source.kind === 'image' ? source.images : undefined,
+  });
   let outcome: AnalyzeOutcome;
   try {
     outcome = await deps.analyze(request);
@@ -142,8 +204,18 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
     return fail(502, 'AI 응답이 중간에 끊겼어요. 잠시 후 다시 해 주세요.', 'ai_truncated');
   }
 
-  // 7) 인용 검사 후 저장
-  const result = keepVerifiedStrengths(outcome.result, postingText);
+  // 7) 인용 검사. 이미지 공고는 AI가 옮겨 적은 글이 기준이다. 글을 거의 못 읽었으면 공고 이미지가 아닌 것으로 본다.
+  let quoteSource = postingText;
+  if (source.kind === 'image') {
+    quoteSource = outcome.result.transcript?.trim() ?? '';
+    if (quoteSource.length < MIN_TRANSCRIPT_LENGTH) {
+      await deps.releaseQuota(userId);
+      return fail(422, '이미지에서 공고 글을 읽지 못했어요. 공고 본문이 잘 보이게 캡처해 주세요.', 'unreadable_image');
+    }
+  }
+  const result = keepVerifiedStrengths(outcome.result, quoteSource);
+
+  // 8) 저장. 이미지는 저장하지 않고 결과(읽은 글 포함)만 남긴다.
   const saved = await deps.saveAnalysis({
     postingHash,
     model: outcome.model,
