@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { CompanyInfoSection } from '@/components/detail/CompanyInfoSection';
 import { DiaryComposer } from '@/components/diary/DiaryComposer';
 import { JourneyList } from '@/components/diary/JourneyList';
 import { EditApplicationForm } from '@/components/modal/EditApplicationForm';
@@ -134,6 +135,8 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
                 )}
               </div>
             </section>
+
+            <CompanyInfoSection key={`company-${application.id}`} applicationId={application.id} />
 
             <DiaryComposer key={application.id} application={application} onSavingChange={setIsBusy} />
             <JourneyList application={application} />
