@@ -104,7 +104,8 @@ ${STRENGTH_GUIDE}
 - quote는 공고 본문에서 그대로 복사한 연속된 부분이다. 고치거나 요약하거나 줄임표를 넣지 않는다. 공고에 없는 내용으로 강점을 만들지 않는다.
 - wants는 회사가 이 강점에서 실제로 원하는 모습을 쉬운 말로 한 문장으로 쓴다. quote를 바꿔 말하지 말고, 이 직무에서 그 강점이 왜 필요한지 드러나게 쓴다.
 - experiences에는 이 강점을 보여 주려면 자기소개서·면접에 어떤 경험을 넣으면 좋은지 구체적인 예를 1~2개 쓴다. "○○한 경험"처럼 지원자가 바로 떠올릴 수 있는 장면으로 쓴다.
-- 공고에 인재상·자격·우대 문장이 없어 근거를 찾을 수 없으면 hasTalentStatement를 false로 두고 strengths는 빈 배열로 둔다.
+- 인재상 칸이 따로 없어도 주요 업무·자격 요건·우대 사항에 드러난 강점을 찾는다(예: "새 기술을 직접 시도" → 자기주도성, "여러 팀과 협업" → 협동성). 공고에 업무나 자격 내용이 있으면 strengths는 최소 2개 쓴다.
+- 공고에 업무·자격·우대·인재상 내용이 전혀 없을 때만 hasTalentStatement를 false로 두고 strengths는 빈 배열로 둔다.
 - workplace.location은 공고에 적힌 근무지 주소를 그대로 쓴다(지도에서 검색할 수 있게). workDays는 근무 요일·일수(예: 주 5일, 월~금), workHours는 근무 시간(예: 10:00~19:00, 유연 근무). 공고에 없으면 빈 문자열이다.
 - 회사에 대해서는 공고와 주어진 회사 자료·홈페이지 본문에 있는 내용만 쓴다. 없으면 쓰지 않는다.
 - 문장은 한국어 해요체로 짧게 쓴다.`;
@@ -234,8 +235,10 @@ export function buildAnalysisRequest(model: AnalysisModel, variant: AnalysisVari
 }
 
 // ── 결과 검사 ──
+// 글자·숫자만 남겨 비교한다. 가운뎃점·글머리표·괄호·줄바꿈 같은 차이로 진짜 인용을 버리지 않게 한다(#237).
+// 공고에 없는 문장은 글자가 달라 여전히 걸러진다.
 function normalizeForQuote(value: string): string {
-  return value.normalize('NFKC').replace(/^["'“”‘’「」『』\s]+|["'“”‘’「」『』\s]+$/g, '').replace(/\s+/g, ' ').trim();
+  return value.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 }
 
 // 인용이 공고 원문에 그대로 있는지. 공백·전각 차이만 무시한다.

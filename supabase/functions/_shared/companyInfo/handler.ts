@@ -16,7 +16,7 @@ import {
 
 export const COMPANY_INFO_MODEL: AnalysisModel = 'claude-haiku-5-5'; // 결정 기록 001: 1차 실측 근거로 Haiku 5.5로 시작
 export const COMPANY_INFO_VARIANT = 'lean' as const; // 비용 절감 방식 (1차 실측: 1건 $0.0007, 4.6초)
-export const PROMPT_VERSION = '2026-11-25.2'; // 지시문·결과 형식을 바꾸면 올린다. 같은 공고라도 버전이 다르면 새로 만든다 (#235 회사 소개·추천 경험·근무 조건)
+export const PROMPT_VERSION = '2026-11-25.3'; // 지시문·결과 형식을 바꾸면 올린다. 같은 공고라도 버전이 다르면 새로 만든다 (#237 업무·자격에서도 강점 찾기)
 export const DAILY_LIMIT = 5; // 사용자당 하루(한국 날짜) 새로 만드는 횟수
 export const MIN_POSTING_LENGTH = 200;
 export const MAX_POSTING_LENGTH = 15_000;
@@ -224,13 +224,25 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
   }
   const result = keepVerifiedWebsite(keepVerifiedStrengths(outcome.result, quoteSource), quoteSource);
 
+  // 진단(#237): 강점이 비었을 때 "AI가 못 찾았나, 인용 검사에서 버렸나, 글을 덜 읽었나"를 숫자로 가린다. 내용은 남기지 않는다.
+  const diagnostics = {
+    source: source.kind,
+    imageCount: source.kind === 'image' ? source.images.length : 0,
+    readChars: quoteSource.length,
+    strengthsReturned: outcome.result.strengths.length,
+    strengthsKept: result.strengths.length,
+  };
+  if (result.strengths.length < outcome.result.strengths.length) {
+    deps.logError('[company-info] 인용 검사로 강점을 버림', diagnostics);
+  }
+
   // 8) 저장. 이미지는 저장하지 않고 결과(읽은 글 포함)만 남긴다.
   const saved = await deps.saveAnalysis({
     postingHash,
     model: outcome.model,
     promptVersion: PROMPT_VERSION,
     result,
-    usage: outcome.usage,
+    usage: Object.assign({}, outcome.usage, { diagnostics }),
     costUsd: estimateCostUsd(COMPANY_INFO_MODEL, outcome.usage),
   });
   await deps.linkApplication({ applicationId: application.id, userId, analysis: saved });

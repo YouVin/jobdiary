@@ -198,3 +198,32 @@ test('대표 사이트는 공고에 실제로 적힌 주소만 남긴다', async
   assert.equal(keepVerifiedWebsite(result('www.made-up.example'), posting).company.website, '', '지어낸 주소는 지운다');
   assert.equal(keepVerifiedWebsite(result(''), posting).company.website, '');
 });
+
+// ── #237 강점이 비는 문제 ──
+test('인용 검사는 가운뎃점·글머리표·줄바꿈 차이를 무시하고, 버린 강점 수를 진단에 남긴다', async () => {
+  const transcript = '자격 요건\n· 새로운 기술을 직접 시도하고\n  만들어 가는 분\n- 다양한 팀과 협업해 본 경험';
+  const { deps, calls } = fakeDeps({
+    analyze: async () => ({
+      stopReason: 'end_turn', model: COMPANY_INFO_MODEL, usage: { input_tokens: 10, output_tokens: 10 },
+      result: {
+        transcript, company: { about: '', products: [], website: '' }, hasTalentStatement: true, workplace: { location: '', workDays: '', workHours: '' },
+        strengths: [
+          { strength: '자기주도성', quote: '새로운 기술을 직접 시도하고 만들어 가는 분', wants: '', experiences: [] },
+          { strength: '협동성', quote: '다양한 팀과 협업해 본 경험', wants: '', experiences: [] },
+          { strength: '도전 정신', quote: '세계 최고를 꿈꾸는 분', wants: '', experiences: [] },
+        ],
+      },
+    }),
+  });
+  const response = await handleCompanyInfo(deps, imageBody([IMAGE]));
+  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['자기주도성', '협동성']);
+  assert.deepEqual(calls.saved[0].usage.diagnostics, { source: 'image', imageCount: 1, readChars: transcript.length, strengthsReturned: 3, strengthsKept: 2 });
+  assert.equal(calls.errors.length, 1, '버린 강점이 있으면 로그(숫자만)');
+});
+
+test('지시문은 인재상 칸이 없어도 업무·자격에서 강점을 찾게 한다', () => {
+  const { buildSystemPrompt } = load('../../supabase/functions/_shared/postingAnalysis/analysis.ts');
+  const prompt = buildSystemPrompt('lean', 'image');
+  assert.match(prompt, /인재상 칸이 따로 없어도 주요 업무·자격 요건·우대 사항/);
+  assert.match(prompt, /최소 2개/);
+});

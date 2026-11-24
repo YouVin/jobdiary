@@ -25,6 +25,7 @@ function toHex(buffer: ArrayBuffer): string {
 function errorMessage(error: unknown): string {
   if (error instanceof Anthropic.APIError) return `Anthropic ${error.status ?? "-"}: ${error.name}`;
   if (error instanceof Error) return error.message;
+  if (error && typeof error === "object") return JSON.stringify(error); // 진단 숫자(#237)
   return String(error);
 }
 
