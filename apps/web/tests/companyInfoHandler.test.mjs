@@ -32,7 +32,7 @@ function fakeDeps(overrides = {}) {
   const calls = { consume: 0, release: 0, analyze: [], saved: [], linked: [], errors: [] };
   const deps = {
     getUserId: async () => 'user-1',
-    getApplication: async (id) => (id === APP_ID ? { id: APP_ID, company: '(주)루트랩스', position: '프론트엔드' } : null),
+    getApplication: async (id) => (id === APP_ID ? { id: APP_ID, company: '(주)루트랩스', position: '프론트엔드', status: 'screening' } : null),
     findAnalysis: async () => null,
     consumeQuota: async (_userId, limit) => { calls.consume += 1; assert.equal(limit, DAILY_LIMIT); return true; },
     releaseQuota: async () => { calls.release += 1; },
@@ -267,4 +267,12 @@ test('공고 페이지 입력: 글도 이미지도 없으면 400, 글·이미지
   const badFacts = await handleCompanyInfo(deps, { applicationId: APP_ID, postingPage: { ...PAGE, location: 3 } });
   assert.equal(badFacts.status, 400);
   assert.equal(calls.consume + calls.analyze.length, 0);
+});
+
+test('서류 통과 전(지원 완료·탈락·취소) 지원은 회사 정보를 만들지 않는다 (#242)', async () => {
+  for (const status of ['applied', 'rejected', 'canceled']) {
+    const { deps, calls } = fakeDeps({ getApplication: async () => ({ id: APP_ID, company: '(주)루트랩스', position: '프론트엔드', status }) });
+    const response = await handleCompanyInfo(deps, body());
+    assert.deepEqual([response.status, response.body.code, calls.consume, calls.analyze.length], [403, 'stage_not_ready', 0, 0], status);
+  }
 });

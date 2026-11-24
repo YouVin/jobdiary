@@ -65,7 +65,7 @@ Deno.serve(async (req: Request) => {
       return error || !data.user ? null : data.user.id;
     },
     async getApplication(applicationId) {
-      const { data, error } = await callerClient.from("applications").select("id, company, position").eq("id", applicationId).maybeSingle();
+      const { data, error } = await callerClient.from("applications").select("id, company, position, status").eq("id", applicationId).maybeSingle();
       if (error) throw new Error(`지원 조회 실패: ${error.message}`);
       return data;
     },

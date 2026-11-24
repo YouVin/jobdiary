@@ -77,7 +77,7 @@ async function routeCompanyInfo(route, url, send) {
   }
   const body = route.request().postDataJSON();
   companyInfoRequests.push(body);
-  const text = body.postingText ?? '';
+  const text = body.postingText ?? body.postingPage?.text ?? ''; // 공고 페이지 입력(#238)도 같은 표시로 흉내 낸다
   if (text.includes('[한도초과]')) return send({ error: '회사 정보는 하루 5번까지 새로 만들 수 있어요. 내일 다시 해 주세요.', code: 'daily_limit' }, 429);
   if (text.includes('[실패]')) return send({ error: 'AI 응답을 받지 못했어요. 잠시 후 다시 해 주세요.', code: 'ai_unavailable' }, 502);
   // 이미지 공고(#232)는 AI가 옮겨 적은 글(transcript)도 함께 돌려준다.

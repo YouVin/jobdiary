@@ -20,7 +20,7 @@ export function isExtensionReachable(): boolean {
 
 export async function readPostingFromExtension(url: string): Promise<PostingContent> {
   if (!isExtensionReachable()) {
-    throw new PostingPageError('no_extension', '취준일기 익스텐션을 설치하면 공고 페이지에서 바로 가져올 수 있어요. 지금은 공고 화면을 캡처해 넣어 주세요.');
+    throw new PostingPageError('no_extension', '공고 페이지를 읽으려면 취준일기 익스텐션이 필요해요. 크롬 웹 스토어에서 설치한 뒤 다시 해 주세요.');
   }
   const response = await new Promise<unknown>((resolve, reject) => {
     const timer = setTimeout(() => reject(new PostingPageError('read_failed', '공고 페이지를 읽는 데 시간이 너무 걸려요. 잠시 후 다시 해 주세요.')), EXTENSION_TIMEOUT_MS);
@@ -28,7 +28,7 @@ export async function readPostingFromExtension(url: string): Promise<PostingCont
       clearTimeout(timer);
       if (chrome.runtime.lastError) {
         // 이전 버전 익스텐션은 이 요청을 모른다(응답 없음) → 업데이트 안내
-        reject(new PostingPageError('no_extension', '익스텐션을 최신 버전으로 업데이트하면 공고 페이지에서 바로 가져올 수 있어요. 지금은 공고 화면을 캡처해 넣어 주세요.'));
+        reject(new PostingPageError('no_extension', '익스텐션을 최신 버전으로 업데이트하면 공고 페이지에서 바로 가져올 수 있어요. 업데이트한 뒤 이 페이지를 새로고침해 주세요.'));
         return;
       }
       resolve(result);
@@ -36,7 +36,7 @@ export async function readPostingFromExtension(url: string): Promise<PostingCont
   });
   const ok = response && typeof response === 'object' && (response as { ok?: unknown }).ok === true;
   const posting = ok ? parsePostingContent((response as { posting?: unknown }).posting) : null;
-  if (!posting) throw new PostingPageError('read_failed', '공고 페이지를 읽지 못했어요. 공고가 마감됐거나 주소가 바뀌었을 수 있어요. 공고 화면을 캡처해 넣어 주세요.');
+  if (!posting) throw new PostingPageError('read_failed', '공고 페이지를 읽지 못했어요. 공고가 마감됐거나 주소가 바뀌었을 수 있어요. 공고 주소를 확인해 주세요.');
   return posting;
 }
 
@@ -75,7 +75,7 @@ export async function preparePostingPage(posting: PostingContent, maxSlices: num
     try {
       images.push(...(await slicePostingImage(await loadPostingImage(url))));
     } catch {
-      if (posting.text.length < 100) throw new PostingPageError('image_failed', '공고 이미지를 받지 못했어요. 공고 화면을 캡처해 넣어 주세요.');
+      if (posting.text.length < 100) throw new PostingPageError('image_failed', '공고 이미지를 받지 못했어요. 잠시 후 다시 해 주세요.');
     }
   }
   return {

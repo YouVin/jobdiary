@@ -32,7 +32,11 @@ export interface ApplicationRow {
   id: string;
   company: string;
   position: string;
+  status: string;
 }
+
+// 회사 정보는 서류 통과한 지원부터 만든다(#242 사용자 결정: 그 전에는 알 필요가 적고, AI 비용도 아낀다).
+export const COMPANY_INFO_STAGES = ['screening', 'interview', 'interviewed', 'offer'];
 
 export interface StoredAnalysis {
   id: string;
@@ -233,13 +237,14 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
   if (source.kind === 'page') {
     postingText = source.postingText;
     if (postingText.length < MIN_PAGE_TEXT_LENGTH && source.images.length === 0) {
-      return fail(400, '공고 페이지에서 공고 내용을 찾지 못했어요. 공고 화면을 캡처해 넣어 주세요.', 'page_empty');
+      return fail(400, '공고 페이지에서 공고 내용을 찾지 못했어요. 공고가 마감됐는지 확인해 주세요.', 'page_empty');
     }
   }
 
   // 3) 본인 지원인지: 요청자 권한으로 읽어 RLS가 걸러 준다.
   const application = await deps.getApplication(body.applicationId);
   if (!application) return fail(404, '지원을 찾을 수 없어요.', 'not_found');
+  if (!COMPANY_INFO_STAGES.includes(application.status)) return fail(403, '회사 정보는 서류 통과한 지원부터 만들 수 있어요.', 'stage_not_ready');
 
   // 4) 같은 공고 결과가 있으면 그대로 쓴다. 한도도 비용도 들지 않는다.
   const fingerprint = source.kind === 'text'
@@ -296,7 +301,7 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
     // 글이 거의 없고 이미지도 못 읽었으면 공고가 아닌 것으로 본다(공고 페이지 글이 충분하면 이미지를 못 읽어도 진행)
     if (transcript.length < MIN_TRANSCRIPT_LENGTH && postingText.length < MIN_PAGE_TEXT_LENGTH) {
       await deps.releaseQuota(userId);
-      return fail(422, '이미지에서 공고 글을 읽지 못했어요. 공고 본문이 잘 보이게 캡처해 주세요.', 'unreadable_image');
+      return fail(422, '공고 이미지에서 글을 읽지 못했어요. 잠시 후 다시 해 주세요.', 'unreadable_image');
     }
   }
   const verified = keepVerifiedWebsite(keepVerifiedStrengths(outcome.result, quoteSource), quoteSource);
