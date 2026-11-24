@@ -4,59 +4,75 @@
 @source "../**/*.{ts,tsx}";
 @config "../../tailwind.config.ts";
 
+/* #239: 웹앱과 같은 디자인 시스템(회색 바탕·흰 카드·파랑 하나, 오늘은 마리골드). 배치는 이전 흑백 일기장 팝업과 같다.
+   클래스 이름(diary-*)은 기능·테스트가 기대는 구조라 그대로 두고 모양만 바꿨다.
+   글꼴: Pretendard를 넣으면 익스텐션이 약 2MB 커져, 설치돼 있으면 쓰고 없으면 시스템 한글 글꼴을 쓴다. */
 body {
-  @apply m-0 bg-diary-paper text-diary-ink;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  @apply m-0 bg-page text-text-primary;
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible {
-  @apply outline-2 outline-offset-2 outline-diary-ink;
+  @apply outline-3 outline-offset-2 outline-focus-ring;
 }
 
-.diary-popup { @apply max-h-150 w-90 overflow-y-auto bg-diary-paper text-diary-ink; }
-.diary-brand { @apply flex h-11 items-center gap-2 border-b border-diary-line px-6; }
-.diary-content { @apply px-6 pb-4; }
-.diary-date { @apply flex items-center justify-between gap-3 border-b border-diary-ink py-3; }
-.diary-year { @apply font-diary text-xs tracking-widest text-diary-secondary; }
-.diary-month { @apply mb-2 font-diary text-diary-month font-normal tracking-tight; }
-.diary-today { @apply block text-xs text-diary-secondary; }
-.diary-calendar { @apply w-32 table-fixed border-collapse text-center text-diary-calendar text-diary-ink; font-variant-numeric: tabular-nums; }
-.diary-calendar th { @apply h-4 border-b border-diary-line p-0 font-normal text-diary-secondary; }
+.diary-popup { @apply max-h-150 w-90 overflow-y-auto bg-page text-text-primary; }
+.diary-brand { @apply flex h-11 items-center gap-2 border-b border-line-divider bg-surface px-5; }
+.diary-brand h1 { @apply text-body font-bold text-text-logo; }
+.diary-content { @apply flex flex-col gap-2 px-3 pt-3 pb-2; }
+
+/* 오늘: 흰 카드. 왼쪽은 날짜 글, 오른쪽은 작은 달력(오늘은 마리골드 동그라미) */
+.diary-date { @apply flex items-center justify-between gap-3 rounded-xl bg-surface px-4 py-3; }
+.diary-year { @apply text-caption font-normal text-text-secondary; }
+.diary-month { @apply mb-1 text-title-2 text-text-primary; }
+.diary-today { @apply block text-label text-text-secondary; }
+.diary-calendar { @apply w-32 table-fixed border-collapse text-center text-text-primary; font-size: 9px; line-height: 12px; font-variant-numeric: tabular-nums; }
+.diary-calendar th { @apply h-3 p-0 font-normal text-text-disabled; }
 .diary-calendar td { @apply h-3 p-0; }
-.diary-calendar td span { @apply inline-flex h-3 w-3 items-center justify-center rounded-sm; }
-.diary-calendar [aria-current='date'] { @apply bg-diary-ink font-semibold text-diary-paper; }
-.diary-collect { @apply pt-4; }
-.diary-current-page { @apply mb-2 flex min-h-4 items-center justify-between gap-2 text-xs text-diary-secondary; }
-.diary-platform { @apply text-xs font-medium text-diary-ink; }
-.diary-button { @apply relative cursor-pointer rounded-md px-3 py-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60; }
-.diary-button-primary { @apply min-h-10 w-full border border-diary-ink bg-diary-ink text-sm text-diary-paper enabled:hover:bg-diary-hover enabled:active:bg-diary-hover; }
-.diary-button-secondary { @apply min-h-10 w-full border border-diary-line bg-diary-paper text-sm text-diary-ink enabled:hover:bg-diary-tint enabled:active:bg-diary-tint; }
-.diary-button-primary:has(.diary-action-icon), .diary-button-secondary:has(.diary-action-icon) { @apply px-8; }
-.diary-button-compact { @apply min-h-9 w-full border border-diary-line bg-diary-paper px-2 py-1 text-xs text-diary-ink enabled:hover:bg-diary-tint enabled:active:bg-diary-tint; }
-.diary-action-icon { @apply absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2; }
-.diary-collect-status:not(:empty) { @apply mt-2 flex flex-col gap-1; }
-.diary-records { @apply mt-4; }
-.diary-records-heading { @apply mb-1 flex items-center justify-between gap-2; }
-.diary-records-heading h2 { @apply text-xs font-semibold; }
-.diary-total { @apply flex items-baseline gap-1 text-xs text-diary-secondary; }
-.diary-total strong { @apply text-xl font-medium leading-7 text-diary-ink; }
-.diary-site-counts li { @apply flex h-7 items-center justify-between border-b border-diary-line text-xs text-diary-secondary; }
-.diary-count { @apply font-medium text-diary-ink; font-variant-numeric: tabular-nums; }
-.diary-count small { @apply ml-1 text-xs font-normal text-diary-secondary; }
-.diary-tools { @apply mt-2 grid grid-cols-2 gap-2; }
+.diary-calendar td span { @apply inline-flex h-3 w-3 items-center justify-center rounded-full; }
+.diary-calendar [aria-current='date'] { @apply bg-today font-semibold text-text-on-color; }
+
+/* 수집: 흰 카드 + 주요 버튼(파랑) */
+.diary-collect { @apply flex flex-col gap-2 rounded-xl bg-surface px-4 py-3; }
+.diary-current-page { @apply flex min-h-5 items-center justify-between gap-2 text-label text-text-secondary; }
+.diary-platform { @apply text-label font-semibold text-text-primary; }
+.diary-button { @apply relative inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-semibold transition-colors duration-fast ease-soft disabled:cursor-not-allowed; }
+.diary-button-primary { @apply min-h-10 w-full bg-action-primary px-4 text-body text-text-on-color enabled:hover:bg-action-hover enabled:active:bg-action-pressed disabled:bg-action-disabled; }
+.diary-button-secondary { @apply min-h-10 w-full bg-surface px-4 text-body text-text-primary ring-1 ring-line-divider ring-inset enabled:hover:bg-subtle enabled:active:bg-muted disabled:text-text-disabled; }
+.diary-button-primary:has(.diary-action-icon), .diary-button-secondary:has(.diary-action-icon) { @apply px-10; }
+.diary-button-compact { @apply min-h-9 w-full bg-subtle px-2 text-label text-text-primary enabled:hover:bg-muted enabled:active:bg-muted disabled:text-text-disabled; }
+.diary-action-icon { @apply absolute top-1/2 right-4 h-4 w-4 -translate-y-1/2; }
+.diary-collect-status:empty { @apply hidden; }
+.diary-collect-status:not(:empty) { @apply flex flex-col gap-1; }
+
+/* 수집한 지원 내역: 흰 카드 · 사이트별 한 줄(아이콘·이름·건수) */
+.diary-records { @apply flex flex-col gap-1 rounded-xl bg-surface px-4 py-3; }
+.diary-records-heading { @apply flex items-center justify-between gap-2; }
+.diary-records-heading h2 { @apply text-label font-semibold text-text-secondary; }
+.diary-total { @apply flex items-baseline gap-1 text-label text-text-secondary; }
+.diary-total strong { @apply text-title-2 text-text-primary; font-variant-numeric: tabular-nums; }
+.diary-site-counts li { @apply flex h-9 items-center justify-between border-b border-line-divider text-body text-text-primary last:border-b-0; }
+.diary-site-name { @apply flex items-center gap-2; }
+.diary-site-icon { @apply h-5 w-5 rounded-xs; }
+.diary-count { @apply font-semibold text-text-primary; font-variant-numeric: tabular-nums; }
+.diary-count small { @apply ml-1 text-label font-normal text-text-secondary; }
+.diary-tools { @apply mt-1 grid grid-cols-2 gap-2; }
 .diary-tools > :only-child { @apply col-span-2; }
-.diary-history { @apply my-3; }
-.diary-history details { @apply overflow-visible rounded-md border border-diary-line; }
-.diary-history-summary { @apply flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-md px-3 py-2 text-xs text-diary-ink hover:bg-diary-tint; }
-.diary-history-summary-end { @apply flex items-center gap-2 text-diary-secondary; }
-.diary-history-chevron { @apply h-4 w-4; }
-.diary-history details[open] .diary-history-summary { @apply rounded-b-none border-b border-diary-line bg-diary-tint; }
+
+/* 지원 이력 설정: 흰 카드로 접고 펼친다 */
+.diary-history details { @apply overflow-visible rounded-xl bg-surface; }
+.diary-history-summary { @apply flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-4 py-2 text-body text-text-primary hover:bg-subtle; }
+.diary-history-summary-end { @apply flex items-center gap-2 text-label text-text-secondary; }
+.diary-history-chevron { @apply h-4 w-4 opacity-60; }
+.diary-history details[open] .diary-history-summary { @apply rounded-b-none border-b border-line-divider; }
 .diary-history details[open] .diary-history-chevron { @apply rotate-180; }
 .diary-history-summary::-webkit-details-marker { display: none; }
-.diary-history-details { @apply flex flex-col gap-1 px-3 py-2 text-xs text-diary-secondary; }
+.diary-history-details { @apply flex flex-col gap-2 px-4 py-3 text-label text-text-secondary; }
 .diary-history-meta { @apply flex flex-wrap items-center gap-x-2 gap-y-1; }
-/* 설정이나 수집 안내가 보이면 날짜를 한 줄로 접어 600px 안의 작업 공간을 확보한다. */
+
+/* 설정이나 수집 안내가 보이면 달력을 접어 600px 안의 작업 공간을 확보한다. */
 .diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-calendar { @apply hidden; }
-.diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-date { @apply py-2; }
+.diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-date { @apply py-3; }
 .diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-date > div { @apply flex flex-wrap items-baseline gap-x-2; }
-.diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-month { @apply mb-0 text-xl leading-8; }
+.diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-month { @apply mb-0 text-title-3; }
