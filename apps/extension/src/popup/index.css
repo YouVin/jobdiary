@@ -76,3 +76,5 @@ button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visibl
 .diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-date { @apply py-3; }
 .diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-date > div { @apply flex flex-wrap items-baseline gap-x-2; }
 .diary-popup:has(.diary-history details[open], .diary-collect-status:not(:empty)) .diary-month { @apply mb-0 text-title-3; }
+/* 설정을 펼치면 사이트별 줄(약 108px)도 접는다. 달력만 접으면 672px로 600px를 넘었다(#246에서 발견, #239 회귀). 합계·복사·초기화는 남긴다. */
+.diary-popup:has(.diary-history details[open]) .diary-site-counts { @apply hidden; }

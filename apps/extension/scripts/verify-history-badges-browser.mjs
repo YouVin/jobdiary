@@ -42,7 +42,7 @@ async function inspectBadge(page, index) {
     const { object } = await session.send('DOM.resolveNode', { backendNodeId: label.backendNodeId });
     const { result } = await session.send('Runtime.callFunctionOn', {
       objectId: object.objectId, returnByValue: true,
-      functionDeclaration: 'function() { const css = getComputedStyle(this); const rect = this.getBoundingClientRect(); const symbol = this.querySelector(".symbol"); return { text: this.textContent, background: css.backgroundColor, color: css.color, fontSize: css.fontSize, borderStyle: css.borderStyle, width: rect.width, height: rect.height, left: rect.left, right: rect.right, symbolHidden: symbol?.getAttribute("aria-hidden") }; }',
+      functionDeclaration: 'function() { const css = getComputedStyle(this); const rect = this.getBoundingClientRect(); const symbol = this.querySelector(".symbol"); return { text: this.textContent, background: css.backgroundColor, color: css.color, fontSize: css.fontSize, borderStyle: css.borderStyle, borderRadius: css.borderTopLeftRadius, width: rect.width, height: rect.height, left: rect.left, right: rect.right, symbolHidden: symbol?.getAttribute("aria-hidden") }; }',
     });
     return result.value;
   } finally { await session.detach(); }
@@ -95,15 +95,15 @@ try {
     assert.equal(requests.length, networkCount, '배지 표시로 사이트 HTTP 요청이 추가되지 않음');
     await page.screenshot({ path: path.join(output, 'jobkorea-list.png') });
   });
-  await check('흑백 배지 대비·기호·24px 높이·좁은 목록과 강제 색상을 확인한다', async () => {
+  await check('디자인 시스템 배지(#246) 색·대비·기호·24px 높이·8px 모서리·좁은 목록과 강제 색상을 확인한다', async () => {
     const applied = await inspectBadge(page, 0);
     const canceled = await inspectBadge(page, 1);
-    assert.equal(applied.background, 'rgb(24, 24, 27)');
+    assert.equal(applied.background, 'rgb(52, 97, 209)'); // action-primary #3461D1
     assert.equal(applied.color, 'rgb(255, 255, 255)');
-    assert.equal(canceled.background, 'rgb(255, 255, 255)');
-    assert.equal(canceled.color, 'rgb(82, 82, 91)');
+    assert.equal(canceled.background, 'rgb(245, 247, 250)'); // subtle #F5F7FA
+    assert.equal(canceled.color, 'rgb(90, 100, 120)'); // text-secondary #5A6478
     for (const label of [applied, canceled]) {
-      assert.equal(label.fontSize, '12px'); assert.equal(label.height, 24);
+      assert.equal(label.fontSize, '12px'); assert.equal(label.height, 24); assert.equal(label.borderRadius, '8px');
       assert.equal(label.symbolHidden, 'true');
     }
     const contrast = (one, two) => {
@@ -114,17 +114,18 @@ try {
       return (values[0] + 0.05) / (values[1] + 0.05);
     };
     report.metrics.badgeAppearance = { applied, canceled, appliedContrast: contrast(applied.color, applied.background), canceledContrast: contrast(canceled.color, canceled.background) };
-    assert(report.metrics.badgeAppearance.appliedContrast > 7);
-    assert(report.metrics.badgeAppearance.canceledContrast > 7);
+    // 작은 글자 기준 WCAG 4.5:1 (#135 흑백 때는 7:1을 넘었고, 디자인 시스템 색도 4.5:1 이상)
+    assert(report.metrics.badgeAppearance.appliedContrast >= 4.5);
+    assert(report.metrics.badgeAppearance.canceledContrast >= 4.5);
     await page.locator('a').first().focus();
     assert(await page.locator('a').first().evaluate(anchor => document.activeElement === anchor));
-    await page.screenshot({ path: path.join(output, 'badges-monochrome-desktop.png') });
+    await page.screenshot({ path: path.join(output, 'badges-design-system-desktop.png') });
     await page.setViewportSize({ width: 390, height: 800 });
     const narrow = await inspectBadge(page, 0);
     const button = await page.locator('button').first().boundingBox();
     assert(narrow.left >= 0 && narrow.right <= button.x);
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-    await page.screenshot({ path: path.join(output, 'badges-monochrome-narrow.png') });
+    await page.screenshot({ path: path.join(output, 'badges-design-system-narrow.png') });
     await page.emulateMedia({ forcedColors: 'active' });
     assert.equal((await inspectBadge(page, 1)).borderStyle, 'dashed');
     await page.emulateMedia({ forcedColors: 'none' });
@@ -144,7 +145,7 @@ try {
     await page.locator('#dynamic-row').evaluate(row => row.remove());
     await waitCount(page, 2);
   });
-  await check('360px 흑백 일기장 팝업의 달력·수집 15건·연결 정보·스위치를 확인한다', async () => {
+  await check('360px 팝업의 달력·수집 15건·연결 정보·스위치를 확인한다', async () => {
     await worker.evaluate(async () => {
       const app = { company: '검증 회사', position: '개발자', status: 'applied', appliedAt: '2026-11-01T00:00:00Z' };
       await chrome.storage.local.set({ 'jobdiary:collected': {
@@ -167,7 +168,8 @@ try {
       });
       report.metrics.popup ??= {}; report.metrics.popup[name] = size;
       if (size.scrollHeight > size.clientHeight + 1) await popup.screenshot({ path: path.join(output, 'popup-diary-overflow.png') });
-      assert(size.height <= (size.open ? 600 : 560), name + ': 기본 560px·설정 펼침 600px 이하여야 함');
+      // 크롬 팝업 최대 높이 600px. #127 흑백 팝업은 기본 560px 여유를 뒀고, #239 디자인 시스템 팝업은 기본 597px(예시 15건)라 600px 기준으로 맞췄다(#246).
+      assert(size.height <= 600, name + ': 600px 이하여야 함');
       assert(size.scrollHeight <= size.clientHeight + 1, name + ': 내부 스크롤 없음');
       assert(size.documentHeight <= size.viewportHeight, name + ': 페이지 스크롤 없음');
     };
@@ -176,8 +178,9 @@ try {
     const today = popup.locator('.diary-calendar [aria-current="date"]');
     assert.equal(await today.count(), 1);
     assert.equal(await today.textContent(), String(new Date().getDate()));
-    assert.equal(await popup.locator('.diary-button-primary').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(24, 24, 27)');
-    assert.equal(await popup.locator('.diary-popup').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(255, 255, 255)');
+    // 버튼 색은 비활성→활성 전환(transition) 도중에 읽힐 수 있어 최종 색까지 기다린다(REDESIGN_TROUBLESHOOTING #33과 같은 문제)
+    await popup.locator('.diary-button-primary').evaluate(node => new Promise((resolve, reject) => { const started = Date.now(); const tick = () => { if (getComputedStyle(node).backgroundColor === 'rgb(52, 97, 209)') resolve(); else if (Date.now() - started > 3000) reject(new Error('주요 버튼 색: ' + getComputedStyle(node).backgroundColor)); else requestAnimationFrame(tick); }; tick(); })); // #239 action-primary
+    assert.equal(await popup.locator('.diary-popup').evaluate(node => getComputedStyle(node).backgroundColor), 'rgb(245, 247, 250)'); // #239 page
     assert.equal(await popup.locator('img').evaluateAll(nodes => nodes.every(node => node.complete && node.naturalWidth > 0)), true);
     await popup.keyboard.press('Tab');
     assert.equal(await popup.evaluate(() => document.activeElement.textContent.trim()), '지원내역 수집하기');
