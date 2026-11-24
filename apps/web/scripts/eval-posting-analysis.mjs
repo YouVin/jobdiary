@@ -189,13 +189,15 @@ function reviewMarkdown(rows) {
   const lines = ['# 강점 연결 검토', '', '"맞다" 칸에 O 또는 X를 적는다. 결정 기록 001 5절 기준: O 비율 80% 이상.', ''];
   for (const row of rows) {
     if (!row.result) continue;
-    lines.push(`## ${row.company} · ${row.model} · ${row.variant} #${row.attempt}`, '', `회사 한 줄: ${row.result.companySummary}`, '');
-    lines.push('| 강점 | 공고 인용 | 원문에 있음 | 이유 | 맞다 |', '|---|---|---|---|---|');
+    const { company, workplace } = row.result;
+    lines.push(`## ${row.company} · ${row.model} · ${row.variant} #${row.attempt}`, '', `이 회사는: ${company.about}`, `대표 서비스: ${company.products.join(', ') || '-'} · 사이트: ${company.website || '-'}`, '');
+    lines.push('| 강점 | 회사가 원하는 것 | 넣으면 좋은 경험 | 공고 인용 | 원문에 있음 | 맞다 |', '|---|---|---|---|---|---|');
+    const cell = (value) => value.replace(/\|/g, '/');
     for (const item of row.result.strengths) {
       const inPosting = row.quotes.missing.includes(item.quote) ? 'X' : 'O';
-      lines.push(`| ${item.strength} | ${item.quote.replace(/\|/g, '/')} | ${inPosting} | ${item.reason.replace(/\|/g, '/')} |  |`);
+      lines.push(`| ${item.strength} | ${cell(item.wants)} | ${cell(item.experiences.join(' / '))} | ${cell(item.quote)} | ${inPosting} |  |`);
     }
-    lines.push('', `기술 필수: ${row.result.skills.required.join(', ') || '-'} / 우대: ${row.result.skills.preferred.join(', ') || '-'}`, '');
+    lines.push('', `근무지: ${workplace.location || '-'} · 근무일: ${workplace.workDays || '-'} · 근무 시간: ${workplace.workHours || '-'}`, '');
   }
   return lines.join('\n');
 }

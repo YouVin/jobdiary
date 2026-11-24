@@ -18,14 +18,14 @@ const POSTING = [
 ].join('\n') + '\n' + '- 팀 문화와 개발 문화를 함께 만들어 가요\n'.repeat(3);
 
 const AI_RESULT = {
-  companySummary: '웹 서비스를 만드는 회사예요.',
+  company: { about: '웹 서비스를 만드는 회사예요.', products: [], website: 'www.rootlabs.example' },
+  workplace: { location: '', workDays: '', workHours: '' },
   hasTalentStatement: true,
   strengths: [
-    { strength: '소통', quote: '다양한 직군의 동료와 원활하게 소통하는 분', reason: '이유', prepQuestion: '질문' },
-    { strength: '책임감', quote: '기획부터 배포까지 책임지고 완수해 본 경험', reason: '이유', prepQuestion: '질문' },
-    { strength: '도전 정신', quote: '공고에 없는 지어낸 문장', reason: '이유', prepQuestion: '질문' },
+    { strength: '소통', quote: '다양한 직군의 동료와 원활하게 소통하는 분', wants: '원하는 모습', experiences: ['경험'] },
+    { strength: '책임감', quote: '기획부터 배포까지 책임지고 완수해 본 경험', wants: '원하는 모습', experiences: ['경험'] },
+    { strength: '도전 정신', quote: '공고에 없는 지어낸 문장', wants: '원하는 모습', experiences: ['경험'] },
   ],
-  skills: { required: ['TypeScript'], preferred: ['Next.js'] },
 };
 
 function fakeDeps(overrides = {}) {
@@ -186,4 +186,15 @@ test('같은 이미지면 같은 공고로 재사용하고, 다른 이미지는 
   await handleCompanyInfo(deps, imageBody([{ mediaType: 'image/jpeg', data: Buffer.from('other').toString('base64') }]));
   assert.equal(hashes[0], hashes[1]);
   assert.notEqual(hashes[0], hashes[2]);
+});
+
+// ── #235 회사 소개·근무 조건 ──
+test('대표 사이트는 공고에 실제로 적힌 주소만 남긴다', async () => {
+  const { keepVerifiedWebsite } = load('../../supabase/functions/_shared/companyInfo/handler.ts');
+  const result = (website) => ({ ...AI_RESULT, company: { about: '', products: [], website } });
+  const posting = '회사 홈페이지: https://www.rootlabs.example/ 에서 서비스를 볼 수 있어요.';
+  assert.equal(keepVerifiedWebsite(result('www.rootlabs.example'), posting).company.website, 'www.rootlabs.example');
+  assert.equal(keepVerifiedWebsite(result('https://www.rootlabs.example/'), posting).company.website, 'https://www.rootlabs.example/');
+  assert.equal(keepVerifiedWebsite(result('www.made-up.example'), posting).company.website, '', '지어낸 주소는 지운다');
+  assert.equal(keepVerifiedWebsite(result(''), posting).company.website, '');
 });

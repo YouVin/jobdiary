@@ -40,10 +40,10 @@ test('공고 다듬기는 복리후생·전형 절차 칸만 빼고, 본문 줄�
 
 test('인용 검사는 공백·전각·따옴표 차이만 무시하고, 원문에 없는 인용은 잡아낸다', () => {
   const result = {
-    companySummary: '', hasTalentStatement: true, skills: { required: [], preferred: [] },
+    company: { about: '', products: [], website: '' }, hasTalentStatement: true, workplace: { location: '', workDays: '', workHours: '' },
     strengths: [
-      { strength: '소통', quote: '“다양한 직군의 팀원들과  원활하게 소통하는 분”', reason: '', prepQuestion: '' },
-      { strength: '주도성', quote: '스스로 문제를 찾아 해결하는 분', reason: '', prepQuestion: '' },
+      { strength: '소통', quote: '“다양한 직군의 팀원들과  원활하게 소통하는 분”', wants: '', experiences: [] },
+      { strength: '주도성', quote: '스스로 문제를 찾아 해결하는 분', wants: '', experiences: [] },
     ],
   };
   const check = verifyQuotes(result, POSTING);
@@ -70,4 +70,12 @@ test('lean은 생각 깊이를 낮추고 입력을 다듬으며, 강점 이름�
   assert.ok(!buildUserContent(input, 'lean').includes('가'.repeat(HOMEPAGE_LIMIT_LEAN + 1)));
   assert.deepEqual(ANALYSIS_SCHEMA.properties.strengths.items.properties.strength.enum, STRENGTH_LABELS);
   assert.equal(STRENGTH_LABELS.length, 12);
+});
+
+test('근무지·근무 조건 칸은 화면에 보여 주므로 공고 다듬기에서 빼지 않는다 (#235)', () => {
+  const posting = ['■ 복리후생', '- 식대 지원', '', '■ 근무 조건', '- 주 5일(월~금), 10:00~19:00', '', '■ 근무지', '- 서울 서초구 동산로 13'].join('\n');
+  const trimmed = trimPosting(posting);
+  assert.ok(!trimmed.includes('식대'));
+  assert.ok(trimmed.includes('주 5일(월~금), 10:00~19:00'));
+  assert.ok(trimmed.includes('서울 서초구 동산로 13'));
 });
