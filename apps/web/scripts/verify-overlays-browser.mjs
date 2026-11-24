@@ -86,7 +86,7 @@ try {
   await shoot('panel');
 
   // 기록 남기기 → 패널 안 알림(창이 열린 동안의 결과는 창 안에서 알린다), 지나온 기록에 보임
-  await panel.getByRole('textbox').fill('포트폴리오 링크를 다시 확인하기');
+  await panel.getByRole('form', { name: '기록 남기기' }).getByRole('textbox').fill('포트폴리오 링크를 다시 확인하기');
   await panel.getByRole('button', { name: '기록 남기기', exact: true }).click();
   await panel.getByRole('status').filter({ hasText: '기록을 남겼어요.' }).waitFor();
   await panel.getByText('포트폴리오 링크를 다시 확인하기', { exact: true }).waitFor();
