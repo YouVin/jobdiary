@@ -106,18 +106,28 @@ try {
     assert.match(piece.data, /^[A-Za-z0-9+/]+={0,2}$/);
   }
   assert.equal(sent.regenerate, false);
+  // #235 형식: 이 회사는(소개·대표 서비스·대표 사이트) → 강점(원하는 것·넣으면 좋은 경험·근거 접힘) → 근무 조건(네이버 지도)
+  await section.getByRole('heading', { name: '이 회사는' }).waitFor();
   await section.getByText('웹 서비스를 만드는 IT 회사예요.').waitFor();
-  assert.deepEqual(await section.locator('ul details summary > span:first-child').allTextContents(), ['소통', '책임감']);
-  await section.locator('ul summary').first().focus();
+  await section.getByText('루트노트', { exact: true }).waitFor();
+  assert.equal(await section.getByRole('link', { name: /대표 사이트/ }).getAttribute('href'), 'https://www.rootlabs.example/');
+  assert.deepEqual(await section.locator('ul > li > p:first-child').allTextContents(), ['소통 능력', '책임감']);
+  await section.getByText('이런 경험을 넣으면 좋아요').first().waitFor();
+  await section.getByText('다른 직군과 의견이 달랐을 때 조율해 결과를 낸 경험').waitFor();
+  assert.equal(await section.getByText('다양한 직군의 동료와 원활하게 소통하는 분').isVisible(), false, '근거는 접혀 있다');
+  await section.locator('summary').first().focus();
   await page.keyboard.press('Enter');
-  await section.getByText('다른 직군과 의견이 달랐던 경험을 말해 주세요.').waitFor();
-  for (const skill of ['React', 'TypeScript', 'Next.js', '테스트 코드']) await section.getByText(skill, { exact: true }).waitFor();
-  await section.getByText(/기준 · 이미지에서 읽은 내용 기준 · AI가 정리한 내용이라 틀릴 수 있어요\./).waitFor();
-  await section.getByText('이미지에서 읽은 글 보기').click();
-  await section.getByRole('region', { name: '이미지에서 읽은 글' }).getByText(/맡은 기능을 기획부터 배포까지/).waitFor();
-  await scan('회사 정보·이미지 결과(근거·읽은 글 펼침)');
+  await section.getByText('다양한 직군의 동료와 원활하게 소통하는 분').waitFor();
+  const map = section.getByRole('link', { name: /서울 서초구 동산로 13/ });
+  assert.equal(await map.getAttribute('href'), `https://map.naver.com/p/search/${encodeURIComponent('서울 서초구 동산로 13')}`);
+  await section.getByText('주 5일(월~금)').waitFor();
+  await section.getByText('10:00~19:00').waitFor();
+  await section.getByText(/기준 · 이미지에서 읽은 내용 · AI가 정리한 내용이라 틀릴 수 있어요\./).waitFor();
+  assert.equal(await section.getByText('이미지에서 읽은 글 보기').count(), 0, '읽은 글 전체는 보여 주지 않는다');
+  for (const removed of ['React', '준비할 질문']) assert.equal(await section.getByText(removed, { exact: true }).count(), 0, `${removed} 없음`);
+  await scan('회사 정보·결과(근거 펼침)');
   await shoot('result', panel);
-  console.log('PASS 이미지로 만들기 → 3조각 전송·결과(강점 키보드 펼침·기술·읽은 글 보기·기준 표시·알림)');
+  console.log('PASS 이미지로 만들기 → 3조각 전송·결과(회사 소개·대표 사이트·강점별 추천 경험·근거 펼침·근무지 지도 링크·근무일·시간, 읽은 글·기술 없음)');
 
   // 5) 다시 만들기: 이미지 칸에 글을 붙여 넣으면 글 붙여넣기로 바뀐다
   await section.getByRole('button', { name: '다시 만들기', exact: true }).click();
@@ -162,7 +172,7 @@ try {
   }
 
   assert.deepEqual(pageErrors, []);
-  console.log('PASS 회사 정보 이미지 넣기(파일·붙여넣기·빼기·조각 전송·읽은 글)·글 붙여넣기 전환·한도 초과·다시 열기, axe 4상태, 3개 너비, 브라우저 예외 0건');
+  console.log('PASS 회사 정보 이미지 넣기(파일·붙여넣기·빼기·조각 전송)·글 붙여넣기 전환·한도 초과·다시 열기, axe 4상태, 3개 너비, 브라우저 예외 0건');
 } finally {
   await browser.close();
 }

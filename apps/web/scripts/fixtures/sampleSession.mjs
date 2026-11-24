@@ -52,13 +52,14 @@ for (const [copyIndex, sourceIndex, platform] of [[48, 0, 'saramin'], [49, 1, 'j
 export const companyInfoStore = new Map();
 export const companyInfoRequests = [];
 export const SAMPLE_COMPANY_INFO = {
-  companySummary: '웹 서비스를 만드는 IT 회사예요.',
+  // #235 형식: 회사 소개 → 강점별 추천 경험 → 근무 조건
+  company: { about: '웹 서비스를 만드는 IT 회사예요.', products: ['루트노트'], website: 'www.rootlabs.example' },
   hasTalentStatement: true,
   strengths: [
-    { strength: '소통', quote: '다양한 직군의 동료와 원활하게 소통하는 분', reason: '여러 직군과 함께 일하는 환경을 강조해요.', prepQuestion: '다른 직군과 의견이 달랐던 경험을 말해 주세요.' },
-    { strength: '책임감', quote: '맡은 기능을 기획부터 배포까지 책임지고 완수해 본 경험', reason: '기능을 끝까지 맡는 역할이에요.', prepQuestion: '처음부터 끝까지 맡아 출시한 기능이 있나요?' },
+    { strength: '소통 능력', quote: '다양한 직군의 동료와 원활하게 소통하는 분', wants: '디자이너·기획자와 의견을 맞춰 가며 일할 사람을 원해요.', experiences: ['다른 직군과 의견이 달랐을 때 조율해 결과를 낸 경험'] },
+    { strength: '책임감', quote: '맡은 기능을 기획부터 배포까지 책임지고 완수해 본 경험', wants: '기능 하나를 처음부터 끝까지 맡을 사람을 원해요.', experiences: ['혼자 맡아 출시까지 끝낸 기능', '출시 뒤 문제를 직접 고친 경험'] },
   ],
-  skills: { required: ['React', 'TypeScript'], preferred: ['Next.js', '테스트 코드'] },
+  workplace: { location: '서울 서초구 동산로 13', workDays: '주 5일(월~금)', workHours: '10:00~19:00' },
 };
 export const SAMPLE_TRANSCRIPT = `[주요 업무]
 - React로 사용자 화면을 만들어요
