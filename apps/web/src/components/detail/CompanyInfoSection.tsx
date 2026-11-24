@@ -28,7 +28,11 @@ interface PickedImage {
   id: number;
   file: File;
   previewUrl: string; // 미리보기용 blob 주소. 빼거나 구역이 사라질 때 해제한다
+  width?: number; // 미리보기가 그려진 뒤 알게 되는 원본 가로(px). 작으면 글씨를 못 읽을 수 있어 알린다(#237)
 }
+
+// 이보다 좁은 캡처는 본문 글씨가 너무 작아 AI가 자격 요건 같은 긴 문장을 못 읽는다(#237: 페이지 전체를 한 장으로 줄인 캡처)
+const MIN_READABLE_WIDTH = 700;
 
 type Phase = 'idle' | 'preparing' | 'creating';
 
@@ -247,7 +251,15 @@ export function CompanyInfoSection({ applicationId }: CompanyInfoSectionProps) {
                     <li key={image.id} className="relative">
                       {/* 붙여 넣은 파일의 blob 미리보기라 next/image(원격 이미지 최적화)를 쓸 수 없다 */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={image.previewUrl} alt={`공고 이미지 ${index + 1}`} className="h-20 w-16 rounded-sm object-cover object-top ring-1 ring-line-divider" />
+                      <img
+                        src={image.previewUrl}
+                        alt={`공고 이미지 ${index + 1}`}
+                        className="h-20 w-16 rounded-sm object-cover object-top ring-1 ring-line-divider"
+                        onLoad={(event) => {
+                          const width = event.currentTarget.naturalWidth;
+                          setImages((current) => current.map((item) => (item.id === image.id ? { ...item, width } : item)));
+                        }}
+                      />
                       <IconButton
                         size="sm"
                         icon="close"
@@ -261,8 +273,13 @@ export function CompanyInfoSection({ applicationId }: CompanyInfoSectionProps) {
                 </ul>
               )}
               <p id={imageHintId} className="text-label text-text-secondary">
-                공고 이미지만 AI(Anthropic)로 보내 정리해요 · 이미지는 저장하지 않아요 · 새로 만들기는 하루 {COMPANY_INFO_DAILY_LIMIT}번
+                근무지역이 적힌 위쪽 요약 칸도 함께 캡처하면 더 정확해요 · 공고 이미지만 AI(Anthropic)로 보내 정리해요 · 이미지는 저장하지 않아요 · 새로 만들기는 하루 {COMPANY_INFO_DAILY_LIMIT}번
               </p>
+              {images.some((image) => image.width !== undefined && image.width < MIN_READABLE_WIDTH) && (
+                <p className="text-label text-today-text">
+                  글씨가 작아 잘 안 읽힐 수 있는 이미지가 있어요. 페이지를 확대한 뒤 본문을 나눠 캡처하면 더 정확해요.
+                </p>
+              )}
               <p id={imageErrorId} role="alert" className={error ? 'text-label text-danger-text' : 'sr-only'}>
                 {error}
               </p>
