@@ -9,6 +9,7 @@ export interface CompanyStrength {
 }
 
 export interface CompanyInfo {
+  transcript: string; // 이미지 공고면 AI가 이미지에서 옮겨 적은 글, 글 공고면 빈 문자열 (#232)
   summary: string; // 회사가 하는 일 한 문장
   hasTalentStatement: boolean;
   strengths: CompanyStrength[];

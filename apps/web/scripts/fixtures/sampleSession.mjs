@@ -60,6 +60,11 @@ export const SAMPLE_COMPANY_INFO = {
   ],
   skills: { required: ['React', 'TypeScript'], preferred: ['Next.js', '테스트 코드'] },
 };
+export const SAMPLE_TRANSCRIPT = `[주요 업무]
+- React로 사용자 화면을 만들어요
+[자격 요건]
+- 다양한 직군의 동료와 원활하게 소통하는 분
+- 맡은 기능을 기획부터 배포까지 책임지고 완수해 본 경험`;
 
 async function routeCompanyInfo(route, url, send) {
   const method = route.request().method();
@@ -71,11 +76,14 @@ async function routeCompanyInfo(route, url, send) {
   }
   const body = route.request().postDataJSON();
   companyInfoRequests.push(body);
-  if (body.postingText.includes('[한도초과]')) return send({ error: '회사 정보는 하루 5번까지 새로 만들 수 있어요. 내일 다시 해 주세요.', code: 'daily_limit' }, 429);
-  if (body.postingText.includes('[실패]')) return send({ error: 'AI 응답을 받지 못했어요. 잠시 후 다시 해 주세요.', code: 'ai_unavailable' }, 502);
+  const text = body.postingText ?? '';
+  if (text.includes('[한도초과]')) return send({ error: '회사 정보는 하루 5번까지 새로 만들 수 있어요. 내일 다시 해 주세요.', code: 'daily_limit' }, 429);
+  if (text.includes('[실패]')) return send({ error: 'AI 응답을 받지 못했어요. 잠시 후 다시 해 주세요.', code: 'ai_unavailable' }, 502);
+  // 이미지 공고(#232)는 AI가 옮겨 적은 글(transcript)도 함께 돌려준다.
+  const result = body.postingImages ? { transcript: SAMPLE_TRANSCRIPT, ...SAMPLE_COMPANY_INFO } : SAMPLE_COMPANY_INFO;
   const createdAt = new Date().toISOString();
-  companyInfoStore.set(body.applicationId, { result: SAMPLE_COMPANY_INFO, created_at: createdAt });
-  return send({ companyInfo: { result: SAMPLE_COMPANY_INFO, model: 'claude-haiku-5-5', createdAt }, cached: false });
+  companyInfoStore.set(body.applicationId, { result, created_at: createdAt });
+  return send({ companyInfo: { result, model: 'claude-haiku-5-5', createdAt }, cached: false });
 }
 
 export async function routeSupabase(context) {
