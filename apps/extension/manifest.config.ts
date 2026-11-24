@@ -15,15 +15,17 @@ export default defineManifest((env) => ({
     key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwjbQ+wlOc1avVpmoj7lW7RuDOSrYnmkETZu6drwlRj0N9bT3ewkJANADaA9stXG+p0zHyvh5wCh3WrCjysPCz37tGkq8NKuG1/Di3VBvTsXJLBlZSSARIAexoDBUafokkFqwIRGvxGHP4gNM4uuWmaCIWz8sGXOUd48sIP61vQXtMblp46SlRt1qlvKt5Iomc1XZixHrkYZVci9kuF91lnKZ2kfPdPHcy3E4+RlMYbpbcaxMx5fXvezmNvnZ5iKkT3NbgyShv8YpyOYrbg58xkFz5SXFCxFMOoZ3Hx4bs8qFpMcPrvp1fdwwgpix9klQO1g2E2aS8ELnRriigFchSQIDAQAB',
   }),
   // 스토어 심사에는 128px 아이콘이 필수라 16/48/128 세 사이즈를 모두 채워둔다.
-  // 원본 벡터는 public/logo.svg (JOB 워드마크 + 노트북/북마크 아이콘).
+  // 원본 벡터는 public/logo.svg = 웹앱 로고 마크(apps/web/public/brand/logo-mark.svg, #239). 32px는 Windows 작업 표시줄·고해상도 툴바용.
   icons: {
     16: 'public/logo-16.png',
+    32: 'public/logo-32.png',
     48: 'public/logo-48.png',
     128: 'public/logo-128.png',
   },
   action: {
     default_icon: {
       16: 'public/logo-16.png',
+      32: 'public/logo-32.png',
       48: 'public/logo-48.png',
       128: 'public/logo-128.png',
     },

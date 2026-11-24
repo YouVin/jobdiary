@@ -35,8 +35,8 @@ export function HistoryDisplayPanel({ state, saving, error, onToggle, onRefresh,
         </summary>
         <div className="diary-history-details">
           <div className="flex items-center justify-between gap-2">
-            <label htmlFor="history-display-enabled" className="cursor-pointer text-diary-ink"><span className="sr-only">지원 이력 </span>자동 표시</label>
-            <input id="history-display-enabled" type="checkbox" className="h-4 w-4 cursor-pointer accent-diary-ink disabled:cursor-wait"
+            <label htmlFor="history-display-enabled" className="cursor-pointer text-text-primary"><span className="sr-only">지원 이력 </span>자동 표시</label>
+            <input id="history-display-enabled" type="checkbox" className="h-4 w-4 cursor-pointer accent-action-primary disabled:cursor-wait"
               checked={ready && state.enabled} disabled={!ready || saving}
               onChange={event => onToggle(event.target.checked)} aria-describedby="history-display-description" />
           </div>
@@ -49,7 +49,7 @@ export function HistoryDisplayPanel({ state, saving, error, onToggle, onRefresh,
           {state.status === 'error' && <Button variant="compact" onClick={onRefresh}>다시 확인</Button>}
         </div>
       </details>
-      {error && <p role="alert" className="mt-1 text-xs font-medium text-diary-ink">{error}</p>}
+      {error && <p role="alert" className="mt-1 text-label font-semibold text-text-primary">{error}</p>}
     </section>
   );
 }

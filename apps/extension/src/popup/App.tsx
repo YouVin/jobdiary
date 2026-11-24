@@ -246,8 +246,8 @@ export function App() {
   return (
     <div className="diary-popup">
       <header className="diary-brand">
-        <img src="/logo-128.png" alt="취준일기 로고" className="h-6 w-6 grayscale" />
-        <h1 className="text-sm font-semibold">취준일기</h1>
+        <img src="/logo.svg" alt="" aria-hidden="true" className="h-7 w-7" />
+        <h1>취준일기</h1>
       </header>
 
       <div className="diary-content">
@@ -268,15 +268,15 @@ export function App() {
           <div className="diary-collect-status" role="status" aria-atomic="true">
             {collectState.status === 'success' && (
               <>
-                <p className="text-xs text-diary-secondary">
+                <p className="text-label text-text-secondary">
                   {collectState.count}
                   건 수집됨
                 </p>
                 {collectState.truncated && (
-                  <p className="text-xs font-medium text-diary-ink">{TRUNCATED_MESSAGE}</p>
+                  <p className="text-label font-semibold text-text-primary">{TRUNCATED_MESSAGE}</p>
                 )}
                 {collectState.deadlines && (
-                  <p className="text-xs text-diary-secondary">
+                  <p className="text-label text-text-secondary">
                     {collectState.deadlines.lookupFailed
                       ? collectState.deadlines.matchedCount > 0
                         ? `마감일 ${collectState.deadlines.matchedCount}건 확인 · 일부 조회는 실패했어요. 지원내역은 저장됐어요.`
@@ -288,22 +288,22 @@ export function App() {
             )}
             {collectState.status === 'empty' && (
               <>
-                <p className="text-xs text-diary-secondary">{EMPTY_RESULT_MESSAGE}</p>
+                <p className="text-label text-text-secondary">{EMPTY_RESULT_MESSAGE}</p>
                 {collectState.truncated && (
-                  <p className="text-xs font-medium text-diary-ink">{TRUNCATED_MESSAGE}</p>
+                  <p className="text-label font-semibold text-text-primary">{TRUNCATED_MESSAGE}</p>
                 )}
               </>
             )}
             {collectState.status === 'unsupported' && (
               <div className="flex flex-col gap-2">
-                <p className="text-xs text-diary-secondary">{UNSUPPORTED_MESSAGE}</p>
+                <p className="text-label text-text-secondary">{UNSUPPORTED_MESSAGE}</p>
                 <div className="flex flex-col gap-1">
                   {SITE_APPLY_STATUS_LINKS.map(link => (
                     <button
                       key={link.platform}
                       type="button"
                       onClick={() => chrome.tabs.create({ url: link.url })}
-                      className="text-left text-xs text-diary-ink underline underline-offset-2"
+                      className="text-left text-label text-text-primary underline underline-offset-2"
                     >
                       {link.label}
                       {' '}
@@ -314,13 +314,13 @@ export function App() {
               </div>
             )}
             {collectState.status === 'error' && (
-              <p className="text-xs font-medium text-diary-ink">{COLLECT_FAILED_MESSAGE}</p>
+              <p className="text-label font-semibold text-text-primary">{COLLECT_FAILED_MESSAGE}</p>
             )}
             {collectState.status === 'busy' && (
-              <p className="text-xs text-diary-secondary">{BUSY_MESSAGE}</p>
+              <p className="text-label text-text-secondary">{BUSY_MESSAGE}</p>
             )}
             {collectState.status === 'loading' && (
-              <p className="text-xs text-diary-secondary">
+              <p className="text-label text-text-secondary">
                 {recovering ? '페이지를 준비하는 중...' : '수집하는 중이에요…'}
               </p>
             )}
@@ -329,8 +329,8 @@ export function App() {
 
         <section className="diary-records" aria-label="저장된 지원내역" aria-busy={countsState.status === 'loading'}>
           <div role="status" aria-atomic="true">
-            {countsState.status === 'loading' && <p className="text-xs text-diary-secondary">저장 내역 불러오는 중…</p>}
-            {countsState.status === 'error' && <p className="text-xs font-medium text-diary-ink">저장 내역을 불러오지 못했어요.</p>}
+            {countsState.status === 'loading' && <p className="text-label text-text-secondary">저장 내역 불러오는 중…</p>}
+            {countsState.status === 'error' && <p className="text-label font-semibold text-text-primary">저장 내역을 불러오지 못했어요.</p>}
           </div>
           {countsState.status === 'error' && <Button variant="secondary" onClick={() => void refreshSiteCounts()}>다시 불러오기</Button>}
           {countsState.status === 'ready' && <>
@@ -341,7 +341,7 @@ export function App() {
             <ul className="diary-site-counts">
               {PLATFORM_ORDER.map(p => (
                 <li key={p}>
-                  <span>{PLATFORM_LABEL[p]}</span>
+                  <span className="diary-site-name"><img src={`/brands/${p}.png`} alt="" aria-hidden="true" className="diary-site-icon" />{PLATFORM_LABEL[p]}</span>
                   <span className="diary-count">{countsState.counts[p]}<small>건</small></span>
                 </li>
               ))}
@@ -358,7 +358,7 @@ export function App() {
             )}
           </div>
           <p role="status" aria-atomic="true" className="sr-only">{copyState === 'idle' ? '' : COPY_BUTTON_LABEL[copyState]}</p>
-          {resetError && <p role="alert" className="text-xs font-medium text-diary-ink">초기화하지 못했어요. 다시 시도해 주세요.</p>}
+          {resetError && <p role="alert" className="text-label font-semibold text-text-primary">초기화하지 못했어요. 다시 시도해 주세요.</p>}
         </section>
 
         <HistoryDisplayPanel state={historyDisplay.state} saving={historyDisplay.saving} error={historyDisplay.error}

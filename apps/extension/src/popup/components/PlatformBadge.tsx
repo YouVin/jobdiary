@@ -13,5 +13,5 @@ interface PlatformBadgeProps {
 export function PlatformBadge({ platform }: PlatformBadgeProps) {
   return platform
     ? <span className="diary-platform">{PLATFORM_LABEL[platform]}</span>
-    : <span className="text-xs text-diary-secondary">지원현황에서 수집할 수 있어요</span>
+    : <span className="text-label text-text-secondary">지원현황에서 수집할 수 있어요</span>
 }

@@ -1,6 +1,6 @@
-import theme from '../../tailwind.config';
-
-const colors = theme.theme.extend.colors.diary;
+// 채용 사이트 화면에 붙는 지원 이력 배지는 사이트 디자인과 섞이지 않게 흑백으로 둔다(#136 사용자 승인).
+// 팝업이 웹앱 디자인 시스템으로 바뀌면서(#239) Tailwind 설정의 흑백 팔레트를 지웠으므로 배지 색은 여기서 정한다.
+const colors = { ink: '#18181B', paper: '#FFFFFF', secondary: '#52525B' } as const;
 export const HISTORY_BADGE_CSS = `
 :host { all: initial !important; display: inline-block !important; max-width: 100% !important;
   margin-inline-end: 8px !important; vertical-align: middle !important; pointer-events: none !important; }
