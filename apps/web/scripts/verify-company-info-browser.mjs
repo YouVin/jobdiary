@@ -83,8 +83,8 @@ try {
   await section.getByRole('group', { name: '회사 정보 만들기' }).waitFor();
   const pageButton = () => section.getByRole('button', { name: '공고 페이지에서 가져오기', exact: true });
   await pageButton().waitFor();
-  await section.getByText(/저장된 잡코리아 공고 페이지를 익스텐션이 읽어/).waitFor();
-  await section.getByText('공고 내용만 AI(Anthropic)로 보내 정리해요 · 공고 이미지는 저장하지 않아요 · 새로 만들기는 하루 5번').waitFor();
+  await section.getByText('잡코리아 공고를 읽고 회사 소개, 원하는 강점, 근무 조건을 정리해 드려요.').waitFor();
+  await section.getByText('공고 내용만 AI(Anthropic)에 보내요 · 하루 5번까지').waitFor();
   assert.equal(await section.locator('input[type="file"], textarea').count(), 0, '캡처·글 입력 칸 없음');
   for (const removed of [/공고 이미지 넣기/, /글로 붙여넣기/]) assert.equal(await section.getByRole('button', { name: removed }).count(), 0, `${removed} 버튼 없음`);
   await scan('회사 정보·빈 상태');
@@ -157,7 +157,7 @@ try {
   panel = await openPanel();
   section = panel.getByRole('region', { name: '회사 정보' });
   await section.getByRole('button', { name: '다시 만들기', exact: true }).click();
-  await section.getByText(/잡코리아·사람인·원티드 공고 주소가 있으면 회사 정보를 정리해 드려요/).waitFor();
+  await section.getByText(/잡코리아·사람인·원티드 공고 주소가 있어야 정리할 수 있어요/).waitFor();
   assert.equal(await pageButton().count(), 0, '주소가 없으면 가져오기 버튼 없음');
   await scan('회사 정보·공고 주소 없음');
   await section.getByRole('button', { name: '취소', exact: true }).click();
