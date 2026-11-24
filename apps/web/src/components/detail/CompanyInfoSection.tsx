@@ -10,7 +10,9 @@ import {
   COMPANY_INFO_MAX_LENGTH,
   COMPANY_INFO_MIN_LENGTH,
   fetchCompanyInfo,
+  naverMapHref,
   requestCompanyInfo,
+  websiteHref,
   type CompanyInfoPosting,
 } from '@/lib/companyInfoApi';
 import { MAX_POSTING_IMAGE_BYTES, MAX_POSTING_IMAGE_FILES, POSTING_IMAGE_TYPES, slicePostingImage } from '@/lib/postingImage';
@@ -324,64 +326,69 @@ export function CompanyInfoSection({ applicationId }: CompanyInfoSectionProps) {
   );
 }
 
-function SkillList({ label, skills }: { label: string; skills: string[] }) {
-  return (
-    <>
-      <dt className="text-label text-text-secondary">{label}</dt>
-      <dd className="flex flex-wrap gap-1">
-        {skills.length === 0 ? (
-          <span className="text-label text-text-secondary">없음</span>
-        ) : (
-          skills.map((skill) => <Badge key={skill}>{skill}</Badge>)
-        )}
-      </dd>
-    </>
-  );
-}
-
 const SUMMARY_CLASS =
   'flex cursor-pointer list-none items-center justify-between gap-2 rounded-md px-3 py-2 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring [&::-webkit-details-marker]:hidden';
+const LINK_CLASS = 'text-text-brand underline underline-offset-2';
 
-// 결과 판은 흰 바탕 + 얇은 테두리다. 회색 판(bg-subtle) 위에 기본 뱃지·보조 버튼(둘 다 bg-subtle)을 올리면
-// 경계가 사라져 글자만 떠 보였다(#229 스크린샷). 강점 줄은 회색으로 두어 판과 구분한다.
+// 결과 (#235): 이 회사는 → 원하는 강점(넣으면 좋은 경험) → 근무 조건. 정보는 꼭 필요한 것만 둔다(사용자 피드백).
+// 판은 흰 바탕 + 얇은 테두리, 강점 줄은 회색으로 구분한다(#229: 회색 판 위 회색 부품은 경계가 사라졌다).
 function CompanyInfoResult({ info, onRegenerate }: { info: CompanyInfo; onRegenerate: () => void }) {
+  const website = websiteHref(info.website);
+  const mapHref = naverMapHref(info.location);
+  const hasWorkplace = Boolean(info.location || info.workDays || info.workHours);
+
   return (
-    <div className="flex flex-col gap-4 rounded-lg p-4 ring-1 ring-inset ring-line-divider">
-      {info.summary && <p className="text-body text-text-primary">{info.summary}</p>}
+    <div className="flex flex-col gap-5 rounded-lg p-4 ring-1 ring-inset ring-line-divider">
+      <div className="flex flex-col gap-2">
+        <h4 className="text-label font-semibold text-text-primary">이 회사는</h4>
+        {info.about ? <p className="text-body text-text-primary">{info.about}</p> : <p className="text-label text-text-secondary">공고에서 회사 소개를 찾지 못했어요.</p>}
+        {(info.products.length > 0 || website) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {info.products.map((product) => (
+              <Badge key={product}>{product}</Badge>
+            ))}
+            {website && (
+              <a href={website} target="_blank" rel="noopener noreferrer" className={`text-label ${LINK_CLASS}`}>
+                대표 사이트
+                <span className="sr-only"> (새 탭에서 열림)</span>
+              </a>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="flex flex-col gap-2">
         <h4 className="text-label font-semibold text-text-primary">이 공고가 원하는 강점</h4>
         {info.strengths.length === 0 ? (
-          <p className="text-label text-text-secondary">공고에서 인재상 근거를 찾지 못했어요. 기술 요구를 참고해 주세요.</p>
+          <p className="text-label text-text-secondary">공고에서 인재상 근거를 찾지 못했어요.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {info.strengths.map((item, index) => (
-              <li key={`${item.strength}-${index}`}>
-                {/* 기본 details/summary: 키보드(Enter·Space)와 펼침 상태 읽기를 브라우저가 맡는다 */}
-                <details className="group rounded-md bg-subtle">
-                  <summary className={SUMMARY_CLASS}>
-                    <span className="text-body font-semibold text-text-primary">{item.strength}</span>
-                    <span aria-hidden="true" className="text-caption font-normal text-text-secondary group-open:hidden">
-                      근거 보기
-                    </span>
-                    <span aria-hidden="true" className="hidden text-caption font-normal text-text-secondary group-open:inline">
-                      접기
+              <li key={`${item.strength}-${index}`} className="flex flex-col gap-2 rounded-md bg-subtle p-3">
+                <p className="text-body font-semibold text-text-primary">{item.strength}</p>
+                {item.wants && <p className="text-label text-text-primary">{item.wants}</p>}
+                {item.experiences.length > 0 && (
+                  <div className="flex flex-col gap-1">
+                    <p className="text-label font-semibold text-text-brand">이런 경험을 넣으면 좋아요</p>
+                    <ul className="flex list-disc flex-col gap-1 pl-5 text-label text-text-secondary">
+                      {item.experiences.map((experience) => (
+                        <li key={experience}>{experience}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {/* 근거(공고 원문)는 접어 둔다. 기본 details/summary라 키보드·펼침 상태 읽기를 브라우저가 맡는다 */}
+                <details className="group">
+                  <summary className={`${SUMMARY_CLASS} -mx-3 -mb-1 text-caption font-normal text-text-secondary`}>
+                    <span>
+                      <span className="group-open:hidden">공고 근거 보기</span>
+                      <span className="hidden group-open:inline">공고 근거 접기</span>
                     </span>
                   </summary>
-                  {/* 위 여백: 요약 줄의 포커스 테두리(바깥 2px + 3px)가 인용 첫 줄을 가리지 않게 */}
-                  <div className="flex flex-col gap-2 px-3 pt-2 pb-3">
-                    <blockquote className="border-l-2 border-line-divider pl-3 text-label text-text-secondary">
-                      <span className="sr-only">공고 원문: </span>
-                      {item.quote}
-                    </blockquote>
-                    {item.reason && <p className="text-label text-text-primary">{item.reason}</p>}
-                    {item.prepQuestion && (
-                      <p className="text-label text-text-secondary">
-                        <span className="font-semibold text-text-primary">준비할 질문 </span>
-                        {item.prepQuestion}
-                      </p>
-                    )}
-                  </div>
+                  <blockquote className="mt-2 border-l-2 border-line-divider pl-3 text-label text-text-secondary">
+                    <span className="sr-only">공고 원문: </span>
+                    {item.quote}
+                  </blockquote>
                 </details>
               </li>
             ))}
@@ -389,40 +396,44 @@ function CompanyInfoResult({ info, onRegenerate }: { info: CompanyInfo; onRegene
         )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <h4 className="text-label font-semibold text-text-primary">기술</h4>
-        <dl className="grid grid-cols-[3rem_minmax(0,1fr)] items-start gap-x-3 gap-y-2">
-          <SkillList label="필수" skills={info.requiredSkills} />
-          <SkillList label="우대" skills={info.preferredSkills} />
-        </dl>
-      </div>
-
-      {/* 이미지 공고는 AI가 옮겨 적은 글이 인용의 기준이다. 사용자가 잘 읽었는지 직접 확인할 수 있게 둔다 (#232). */}
-      {info.transcript && (
-        <details className="group rounded-md bg-subtle">
-          <summary className={SUMMARY_CLASS}>
-            <span className="text-label font-semibold text-text-primary">이미지에서 읽은 글 보기</span>
-            <span aria-hidden="true" className="text-caption font-normal text-text-secondary group-open:hidden">
-              펼치기
-            </span>
-            <span aria-hidden="true" className="hidden text-caption font-normal text-text-secondary group-open:inline">
-              접기
-            </span>
-          </summary>
-          <div
-            tabIndex={0}
-            role="region"
-            aria-label="이미지에서 읽은 글"
-            className="mx-3 mt-2 mb-3 max-h-64 overflow-y-auto rounded-sm bg-surface p-3 text-label whitespace-pre-wrap text-text-secondary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-          >
-            {info.transcript}
-          </div>
-        </details>
+      {hasWorkplace && (
+        <div className="flex flex-col gap-2">
+          <h4 className="text-label font-semibold text-text-primary">근무 조건</h4>
+          <dl className="grid grid-cols-[4rem_minmax(0,1fr)] gap-x-3 gap-y-2 text-label">
+            {info.location && (
+              <>
+                <dt className="text-text-secondary">근무지</dt>
+                <dd className="text-text-primary">
+                  {mapHref ? (
+                    <a href={mapHref} target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
+                      {info.location}
+                      <span className="sr-only"> (네이버 지도에서 보기, 새 탭에서 열림)</span>
+                    </a>
+                  ) : (
+                    info.location
+                  )}
+                </dd>
+              </>
+            )}
+            {info.workDays && (
+              <>
+                <dt className="text-text-secondary">근무일</dt>
+                <dd className="text-text-primary">{info.workDays}</dd>
+              </>
+            )}
+            {info.workHours && (
+              <>
+                <dt className="text-text-secondary">근무 시간</dt>
+                <dd className="text-text-primary">{info.workHours}</dd>
+              </>
+            )}
+          </dl>
+        </div>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-caption font-normal text-text-secondary">
-          {formatKoreanDateTime(info.createdAt)} 기준{info.transcript ? ' · 이미지에서 읽은 내용 기준' : ''} · AI가 정리한 내용이라 틀릴 수 있어요.
+          {formatKoreanDateTime(info.createdAt)} 기준{info.fromImage ? ' · 이미지에서 읽은 내용' : ''} · AI가 정리한 내용이라 틀릴 수 있어요.
         </p>
         <Button variant="secondary" size="sm" onClick={onRegenerate}>
           다시 만들기

@@ -16,18 +16,22 @@ function strings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim() !== '') : [];
 }
 
+const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+const record = (value: unknown): Record<string, unknown> => (value && typeof value === 'object' ? (value as Record<string, unknown>) : {});
+
+// 예전(#229·#232) 결과는 reason이 "원하는 것" 자리였다. 저장된 예전 결과도 깨지지 않게 옮겨 읽는다.
 function strength(value: unknown): CompanyStrength | null {
-  if (!value || typeof value !== 'object') return null;
-  const { strength: name, quote, reason, prepQuestion } = value as Record<string, unknown>;
-  if (typeof name !== 'string' || typeof quote !== 'string') return null;
-  return { strength: name, quote, reason: typeof reason === 'string' ? reason : '', prepQuestion: typeof prepQuestion === 'string' ? prepQuestion : '' };
+  const raw = record(value);
+  if (typeof raw.strength !== 'string' || typeof raw.quote !== 'string') return null;
+  return { strength: raw.strength, quote: raw.quote, wants: text(raw.wants) || text(raw.reason), experiences: strings(raw.experiences) };
 }
 
 // 서버·DB의 결과(JSON)를 화면 형식으로. 모르는 모양이면 null(화면은 "없음"으로 다룬다).
 export function parseCompanyInfo(result: unknown, createdAt: unknown): CompanyInfo | null {
   if (!result || typeof result !== 'object' || typeof createdAt !== 'string') return null;
   const raw = result as Record<string, unknown>;
-  const skills = (raw.skills && typeof raw.skills === 'object' ? raw.skills : {}) as Record<string, unknown>;
+  const company = record(raw.company);
+  const workplace = record(raw.workplace);
   const strengths: CompanyStrength[] = [];
   if (Array.isArray(raw.strengths)) {
     for (const item of raw.strengths) {
@@ -36,14 +40,35 @@ export function parseCompanyInfo(result: unknown, createdAt: unknown): CompanyIn
     }
   }
   return {
-    transcript: typeof raw.transcript === 'string' ? raw.transcript : '',
-    summary: typeof raw.companySummary === 'string' ? raw.companySummary : '',
+    about: text(company.about) || text(raw.companySummary), // 예전 결과는 companySummary
+    products: strings(company.products).slice(0, 3),
+    website: text(company.website),
     hasTalentStatement: raw.hasTalentStatement === true,
     strengths,
-    requiredSkills: strings(skills.required),
-    preferredSkills: strings(skills.preferred),
+    location: text(workplace.location),
+    workDays: text(workplace.workDays),
+    workHours: text(workplace.workHours),
+    fromImage: text(raw.transcript) !== '',
     createdAt,
   };
+}
+
+// 대표 사이트를 새 탭 링크로. http(s)가 없으면 https를 붙이고, 그 밖의 주소(javascript: 등)는 버린다.
+export function websiteHref(website: string): string | null {
+  const value = website.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+// 근무지를 네이버 지도 검색으로 연다.
+export function naverMapHref(location: string): string | null {
+  const value = location.trim();
+  return value ? `https://map.naver.com/p/search/${encodeURIComponent(value)}` : null;
 }
 
 export async function fetchCompanyInfo(applicationId: string): Promise<{ data: CompanyInfo | null; error: string | null }> {
