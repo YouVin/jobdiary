@@ -37,6 +37,7 @@
 | 디자인·문서 AI 스킬 사용 기준 (#165) | [AI_SKILLS](AI_SKILLS.md) | 사용자 환경 `~/.claude` 플러그인·스킬, 저장소에는 포함하지 않음 |
 | UI 스타일·SVG 규칙 (#81), 그레이지·검정 강조 개편 (#193), 새 디자인 시스템 (#199·#200) | [DESIGN_SYSTEM](DESIGN_SYSTEM.md) | `apps/web/tailwind.config.ts`, `apps/web/src/components/common/`, `apps/web/public/icons/` |
 | 디자인 개편 트러블슈팅 수치 기록 (#199) | [REDESIGN_TROUBLESHOOTING](REDESIGN_TROUBLESHOOTING.md) | `apps/web/tailwind.config.ts`, `apps/web/scripts/check-ui-style.mjs` |
+| 회사 정보(AI)·공고 읽기·중복 판별 트러블슈팅 수치 기록 (#220·#226~#242) | [COMPANY_INFO_TROUBLESHOOTING](COMPANY_INFO_TROUBLESHOOTING.md) | `supabase/functions/_shared/`, `apps/extension/src/lib/postingReader.ts`, `apps/web/src/lib/postingPage.ts` |
 | 미사용 후보 조사 (#81) | [UNUSED_AUDIT](UNUSED_AUDIT.md) | 소스·자산·직접 의존성 참조 근거 |
 | 개발 순서·현황 | [ROADMAP](ROADMAP.md), [CONVENTION](CONVENTION.md) | `package.json`, `.github/workflows/ci.yml` |
 | 화면·구조 | [TECH_DESIGN](TECH_DESIGN.md) | `apps/web/src/app/(protected)/`, `apps/web/src/components/dashboard/`, `apps/web/src/components/board/` |
