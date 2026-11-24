@@ -93,6 +93,11 @@ await context.route('https://*.supabase.co/**', async route => {
       return send(found[0]);
     }
   }
+  // 상세 패널의 회사 정보 구역(#229)이 저장된 결과를 불러온다. 이 fixture에는 결과가 없다.
+  if (url.pathname === '/rest/v1/application_analyses') {
+    assert(user, '회사 정보 조회 인증 필요');
+    return send([]);
+  }
   throw new Error(`예상하지 않은 API: ${method} ${url.pathname}`);
 });
 // 화면 전환 애니메이션(#176)이 실제로 시작됐는지 센다. 지원하지 않는 브라우저 흉내는 아래 마지막 단계에서 한다.
@@ -261,7 +266,7 @@ try {
   await page.keyboard.press('Enter');
   await visible(panel);
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('role')), 'dialog');
-  await panel.getByRole('textbox').fill('포트폴리오 정리하기');
+  await panel.getByRole('form', { name: '기록 남기기' }).getByRole('textbox').fill('포트폴리오 정리하기');
   await panel.getByRole('button', { name: '기록 남기기' }).click();
   await visible(panel.getByText('기록을 남겼어요.'));
   assert.equal(rows[1].diary.length, 1);
@@ -277,12 +282,12 @@ try {
   await panel.getByRole('button', { name: '취소', exact: true }).click();
   assert.equal(await page.evaluate(() => document.activeElement?.textContent?.trim()), '정보 수정');
   rows[1].updated_at = '2026-11-02T00:00:00Z'; // 다른 탭에서 먼저 바뀐 것으로 만든다
-  await panel.getByRole('textbox').fill('충돌 확인');
+  await panel.getByRole('form', { name: '기록 남기기' }).getByRole('textbox').fill('충돌 확인');
   await panel.getByRole('button', { name: '기록 남기기' }).click();
   // #205: 기록 칸 오류는 다른 입력칸처럼 칸 아래 알림 영역(role=status, aria-describedby 연결)에 둔다
   await visible(panel.getByRole('status').filter({ hasText: '다른 곳에서 바뀌었' }));
-  assert.equal(await panel.getByRole('textbox').getAttribute('aria-invalid'), 'true');
-  assert.equal(await panel.getByRole('textbox').inputValue(), '충돌 확인');
+  assert.equal(await panel.getByRole('form', { name: '기록 남기기' }).getByRole('textbox').getAttribute('aria-invalid'), 'true');
+  assert.equal(await panel.getByRole('form', { name: '기록 남기기' }).getByRole('textbox').inputValue(), '충돌 확인');
   assert.equal(rows[1].diary.length, 1);
   await page.mouse.click(10, 400);
   await panel.waitFor({ state: 'detached' });
@@ -397,7 +402,7 @@ try {
   assert.equal(await dayButton.locator('[aria-hidden="true"]').evaluate(element => getComputedStyle(element).display), 'none', '누른 뒤에는 말풍선 대신 목록');
   await dayList.getByRole('button', { name: '달력 회사 개발자, 기록·상세 보기' }).click();
   const calendarPanel = page.getByRole('dialog', { name: '달력 회사' });
-  await visible(calendarPanel.getByRole('textbox'));
+  await visible(calendarPanel.getByRole('form', { name: '기록 남기기' }).getByRole('textbox'));
   await page.keyboard.press('Escape');
   await calendarPanel.waitFor({ state: 'detached' });
   assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), '달력 회사 개발자, 기록·상세 보기');

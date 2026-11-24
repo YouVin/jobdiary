@@ -47,6 +47,37 @@ for (const [copyIndex, sourceIndex, platform] of [[48, 0, 'saramin'], [49, 1, 'j
   Object.assign(rows[copyIndex], { company: rows[sourceIndex].company, position: rows[sourceIndex].position, platform });
 }
 
+// 회사 정보(#229): 지원별 저장된 결과와 Edge Function 요청 기록. 실제 AI는 부르지 않는다.
+// 공고 내용에 [한도초과]·[실패]를 넣으면 서버의 429·502 응답을 흉내 낸다.
+export const companyInfoStore = new Map();
+export const companyInfoRequests = [];
+export const SAMPLE_COMPANY_INFO = {
+  companySummary: '웹 서비스를 만드는 IT 회사예요.',
+  hasTalentStatement: true,
+  strengths: [
+    { strength: '소통', quote: '다양한 직군의 동료와 원활하게 소통하는 분', reason: '여러 직군과 함께 일하는 환경을 강조해요.', prepQuestion: '다른 직군과 의견이 달랐던 경험을 말해 주세요.' },
+    { strength: '책임감', quote: '맡은 기능을 기획부터 배포까지 책임지고 완수해 본 경험', reason: '기능을 끝까지 맡는 역할이에요.', prepQuestion: '처음부터 끝까지 맡아 출시한 기능이 있나요?' },
+  ],
+  skills: { required: ['React', 'TypeScript'], preferred: ['Next.js', '테스트 코드'] },
+};
+
+async function routeCompanyInfo(route, url, send) {
+  const method = route.request().method();
+  if (method === 'OPTIONS') return route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS' } });
+  if (url.pathname === '/rest/v1/application_analyses') {
+    const id = url.searchParams.get('application_id')?.replace(/^eq\./, '');
+    const row = id ? companyInfoStore.get(id) : undefined;
+    return send(row ? [row] : []);
+  }
+  const body = route.request().postDataJSON();
+  companyInfoRequests.push(body);
+  if (body.postingText.includes('[한도초과]')) return send({ error: '회사 정보는 하루 5번까지 새로 만들 수 있어요. 내일 다시 해 주세요.', code: 'daily_limit' }, 429);
+  if (body.postingText.includes('[실패]')) return send({ error: 'AI 응답을 받지 못했어요. 잠시 후 다시 해 주세요.', code: 'ai_unavailable' }, 502);
+  const createdAt = new Date().toISOString();
+  companyInfoStore.set(body.applicationId, { result: SAMPLE_COMPANY_INFO, created_at: createdAt });
+  return send({ companyInfo: { result: SAMPLE_COMPANY_INFO, model: 'claude-haiku-5-5', createdAt }, cached: false });
+}
+
 export async function routeSupabase(context) {
   await context.route('https://*.supabase.co/**', async (route) => {
     const url = new URL(route.request().url());
@@ -80,6 +111,7 @@ export async function routeSupabase(context) {
       }
       return send(rows);
     }
+    if (url.pathname === '/rest/v1/application_analyses' || url.pathname === '/functions/v1/company-info') return routeCompanyInfo(route, url, send);
     if (url.pathname === '/auth/v1/logout') return route.fulfill({ status: 204 });
     throw new Error(`예상하지 않은 요청: ${route.request().method()} ${url.pathname}`);
   });
