@@ -233,7 +233,7 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
   if (source.kind === 'page') {
     postingText = source.postingText;
     if (postingText.length < MIN_PAGE_TEXT_LENGTH && source.images.length === 0) {
-      return fail(400, '공고 페이지에서 공고 내용을 찾지 못했어요. 공고 화면을 캡처해 넣어 주세요.', 'page_empty');
+      return fail(400, '공고 페이지에서 공고 내용을 찾지 못했어요. 공고가 마감됐는지 확인해 주세요.', 'page_empty');
     }
   }
 
@@ -296,7 +296,7 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
     // 글이 거의 없고 이미지도 못 읽었으면 공고가 아닌 것으로 본다(공고 페이지 글이 충분하면 이미지를 못 읽어도 진행)
     if (transcript.length < MIN_TRANSCRIPT_LENGTH && postingText.length < MIN_PAGE_TEXT_LENGTH) {
       await deps.releaseQuota(userId);
-      return fail(422, '이미지에서 공고 글을 읽지 못했어요. 공고 본문이 잘 보이게 캡처해 주세요.', 'unreadable_image');
+      return fail(422, '공고 이미지에서 글을 읽지 못했어요. 잠시 후 다시 해 주세요.', 'unreadable_image');
     }
   }
   const verified = keepVerifiedWebsite(keepVerifiedStrengths(outcome.result, quoteSource), quoteSource);
