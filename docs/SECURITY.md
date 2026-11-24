@@ -55,6 +55,16 @@ main(`f80dd16`) 이후 dev 변경(#215 화면 피드백, PR #216, 7개 파일: �
 - 코드: `dangerouslySetInnerHTML`·`eval`·`new Function` 0건. 바뀐 것은 배치·글자 표시와 로고 이미지 불러오기 시점(`loading="eager"`)뿐이다.
 - 복구 기준: 이전 main `f80dd16`, 이전 Production 배포 `jobdiary-7gweocwx2-youvins-projects.vercel.app`.
 
+### Claude SDK 추가와 zod 고정 (#226, 2026-11-24)
+
+공고 분석 실측을 위해 웹앱 의존성에 `@anthropic-ai/sdk` 1.7.0(공개 2주 이상 된 버전, 정확한 버전으로 고정)을 추가했다.
+
+- 문제: SDK는 `zod`를 선택적 짝 의존성(peer)으로 요구한다. 그동안 개발 도구(eslint-plugin-react-hooks)만 쓰던 `zod 4.4.3`이 운영 의존성으로 함께 잡혀, `npm audit --omit=dev`가 **0건 → 1건(높음, zod <4.6.6)**이 됐다.
+- 수정: 웹앱 의존성에 `zod 4.6.7`(2026-10-12, 수정 버전 이후 2주 이상)을 명시하고, 루트 `overrides`로 저장소 전체 zod를 4.6.7 하나로 맞췄다. zod를 쓰는 개발 도구(eslint-plugin-react-hooks, zod-validation-error)는 모두 `^3.25.0 || ^4.0.0`을 허용한다.
+- 결과: 운영 의존성 **0건**, 전체 **13건 → 12건**(높음 4 → 3, zod 해결). lint·웹 테스트 140개·타입 검사·웹 빌드·익스텐션 테스트 221개 통과.
+- 설치 함정: `apps/web/node_modules/.release-tools`(브라우저 검증 도구, 자체 package.json 보유)가 있으면 npm 11.7.0 설치가 `Cannot read properties of null (reading 'location')`로 멈춘다. 설치할 때만 이 폴더를 잠시 옮겼다가 되돌린다.
+- API 키(`ANTHROPIC_API_KEY`)는 `apps/web/.env.local`에만 두고, 측정 스크립트는 값을 출력하지 않는다. 공고 원문·결과 폴더 `apps/web/.eval/`는 커밋하지 않는다.
+
 ## 릴리즈 판단 (#96·#97)
 
 계정 격리(#90), 편집 충돌(#93), 날짜 검증(#94)을 dev에 병합했다. #96·#97에서 정책 페이지·동의 확인을 추가하고 마이그레이션 이력 3건을 원격과 맞췄다. 브라우저 검증과 제한은 [RELEASE_CHECK](RELEASE_CHECK.md)에 기록한다. 사용자가 후속 검증과 main 병합까지 승인했으며, CI 통과를 확인한 커밋만 병합한다.
