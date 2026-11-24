@@ -33,7 +33,7 @@
 | 작업 | 문서 | 코드 진입점 |
 |---|---|---|
 | 기능·기술 결정 기록 (#224): 문제·숫자·선택지·결정·결과·회고 | [decisions/](decisions/README.md), [템플릿](decisions/TEMPLATE.md) | 결정마다 `docs/decisions/NNN-이름.md` |
-| 공고 분석 AI (인재상 → 강점, 회사 정보) 설계·실측 (#226) | [POSTING_ANALYSIS](POSTING_ANALYSIS.md) | `apps/web/src/lib/postingAnalysis/`, `apps/web/scripts/eval-posting-analysis.mjs` |
+| 회사 정보 (공고 분석 AI: 인재상 → 강점) 설계·실측·서버 (#226·#228) | [POSTING_ANALYSIS](POSTING_ANALYSIS.md) | `supabase/functions/company-info/`, `supabase/functions/_shared/`, `apps/web/scripts/eval-posting-analysis.mjs` |
 | 디자인·문서 AI 스킬 사용 기준 (#165) | [AI_SKILLS](AI_SKILLS.md) | 사용자 환경 `~/.claude` 플러그인·스킬, 저장소에는 포함하지 않음 |
 | UI 스타일·SVG 규칙 (#81), 그레이지·검정 강조 개편 (#193), 새 디자인 시스템 (#199·#200) | [DESIGN_SYSTEM](DESIGN_SYSTEM.md) | `apps/web/tailwind.config.ts`, `apps/web/src/components/common/`, `apps/web/public/icons/` |
 | 디자인 개편 트러블슈팅 수치 기록 (#199) | [REDESIGN_TROUBLESHOOTING](REDESIGN_TROUBLESHOOTING.md) | `apps/web/tailwind.config.ts`, `apps/web/scripts/check-ui-style.mjs` |
