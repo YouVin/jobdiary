@@ -32,7 +32,11 @@ export interface ApplicationRow {
   id: string;
   company: string;
   position: string;
+  status: string;
 }
+
+// 회사 정보는 서류 통과한 지원부터 만든다(#242 사용자 결정: 그 전에는 알 필요가 적고, AI 비용도 아낀다).
+export const COMPANY_INFO_STAGES = ['screening', 'interview', 'interviewed', 'offer'];
 
 export interface StoredAnalysis {
   id: string;
@@ -240,6 +244,7 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
   // 3) 본인 지원인지: 요청자 권한으로 읽어 RLS가 걸러 준다.
   const application = await deps.getApplication(body.applicationId);
   if (!application) return fail(404, '지원을 찾을 수 없어요.', 'not_found');
+  if (!COMPANY_INFO_STAGES.includes(application.status)) return fail(403, '회사 정보는 서류 통과한 지원부터 만들 수 있어요.', 'stage_not_ready');
 
   // 4) 같은 공고 결과가 있으면 그대로 쓴다. 한도도 비용도 들지 않는다.
   const fingerprint = source.kind === 'text'
