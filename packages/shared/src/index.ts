@@ -114,3 +114,66 @@ export function parseHistoryCache(value: unknown): HistoryCache | null {
   const snapshot = parseHistorySnapshot(value);
   return snapshot ? { ...snapshot, version: HISTORY_PROTOCOL_VERSION, syncedAt: value.syncedAt } : null;
 }
+
+// ── 공고 페이지 읽기 (#238, 결정 기록 003) ──
+// 웹앱이 익스텐션에 "이 공고 페이지를 읽어 달라"고 요청하고, 익스텐션이 사용자 브라우저에서 공고 페이지를 읽어
+// 본문 글·본문 이미지 주소·근무지 등을 돌려준다. 서버가 채용 사이트에 직접 접속하지 않는다.
+export const POSTING_READ_TYPE = 'JOBDIARY_POSTING_READ' as const;
+export const MAX_POSTING_TEXT_LENGTH = 15_000;
+export const MAX_POSTING_IMAGE_URLS = 5;
+
+export interface PostingReadRequest {
+  type: typeof POSTING_READ_TYPE;
+  url: string;
+}
+
+export interface PostingContent {
+  platform: 'jobkorea' | 'saramin';
+  postingId: string;
+  url: string;
+  title: string;
+  company: string;
+  location: string; // 페이지가 알려 준 정확한 근무지 주소 (없으면 빈 문자열)
+  workSchedule: string; // 근무 요일·시간 요약 (없으면 빈 문자열)
+  text: string; // 공고 본문 글
+  imageUrls: string[]; // 공고 본문 이미지 (허용된 이미지 서버만)
+}
+
+export type PostingReadResponse = { ok: true; posting: PostingContent } | { ok: false; error: string };
+
+// 공고 본문 이미지가 있는 서버. 잡코리아는 file*.jobkorea.co.kr(CORS 없음 → 서버가 대신 받음),
+// 사람인은 *.saraminimage.co.kr(CORS 허용). 이 밖의 주소는 받지 않는다(서버 대신 받기의 SSRF 방지와 같은 목록).
+export function isPostingImageUrl(value: unknown): value is string {
+  if (typeof value !== 'string' || value.length > 2048) return false;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.username || url.password || url.port) return false;
+    return /^file\d*\.jobkorea\.co\.kr$/.test(url.hostname) || /(^|\.)saraminimage\.co\.kr$/.test(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function clip(value: unknown, max: number): string {
+  return typeof value === 'string' ? value.trim().slice(0, max) : '';
+}
+
+// 익스텐션 응답 검사(웹앱 쪽). 모양이 틀리면 null, 길이는 자르고, 이미지 주소는 허용 목록만 남긴다.
+export function parsePostingContent(value: unknown): PostingContent | null {
+  if (!record(value) || (value.platform !== 'jobkorea' && value.platform !== 'saramin')) return null;
+  if (typeof value.postingId !== 'string' || !POSTING_ID.test(value.postingId)) return null;
+  const reference = getPostingReference(value.url);
+  if (!reference || reference.platform !== value.platform || reference.postingId !== value.postingId) return null;
+  const imageUrls = Array.isArray(value.imageUrls) ? value.imageUrls.filter(isPostingImageUrl).slice(0, MAX_POSTING_IMAGE_URLS) : [];
+  return {
+    platform: value.platform,
+    postingId: value.postingId,
+    url: reference.url,
+    title: clip(value.title, 200),
+    company: clip(value.company, 200),
+    location: clip(value.location, 300),
+    workSchedule: clip(value.workSchedule, 300),
+    text: clip(value.text, MAX_POSTING_TEXT_LENGTH),
+    imageUrls,
+  };
+}
