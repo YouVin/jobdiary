@@ -24,25 +24,36 @@ export interface AnalysisInput {
 }
 
 export interface AnalysisStrength {
-  strength: string;
-  quote: string;
-  reason: string;
-  prepQuestion: string;
+  strength: string; // 고정 목록 이름 (협동성 등)
+  quote: string; // 공고 원문 인용 (근거)
+  wants: string; // 회사가 원하는 것 한 줄 (인용을 되풀이하지 않고 쉬운 말로)
+  experiences: string[]; // 자기소개서·면접에 넣으면 좋은 경험 1~2개
 }
 
+// #235 결과 형식: 회사 소개(무엇을 만드는지·대표 서비스·대표 사이트) → 강점별 추천 경험 → 근무 조건.
+// 기술 목록·이유·예상 질문은 뺐다(사용자 피드백: 정보가 많고 애매하다).
 export interface AnalysisResult {
-  transcript?: string; // 이미지 공고일 때 AI가 이미지에서 옮겨 적은 글. 인용 검사의 기준
-  companySummary: string;
+  transcript?: string; // 이미지 공고일 때 AI가 이미지에서 옮겨 적은 글. 인용 검사에만 쓰고 화면에는 보여 주지 않는다
+  company: { about: string; products: string[]; website: string };
   hasTalentStatement: boolean;
   strengths: AnalysisStrength[];
-  skills: { required: string[]; preferred: string[] };
+  workplace: { location: string; workDays: string; workHours: string };
 }
 
 // 결과 형식(JSON 스키마). 강점 이름은 고정 목록만 허용한다.
 export const ANALYSIS_SCHEMA = {
   type: 'object',
   properties: {
-    companySummary: { type: 'string' },
+    company: {
+      type: 'object',
+      properties: {
+        about: { type: 'string' },
+        products: { type: 'array', items: { type: 'string' } },
+        website: { type: 'string' },
+      },
+      required: ['about', 'products', 'website'],
+      additionalProperties: false,
+    },
     hasTalentStatement: { type: 'boolean' },
     strengths: {
       type: 'array',
@@ -51,24 +62,25 @@ export const ANALYSIS_SCHEMA = {
         properties: {
           strength: { type: 'string', enum: STRENGTH_LABELS },
           quote: { type: 'string' },
-          reason: { type: 'string' },
-          prepQuestion: { type: 'string' },
+          wants: { type: 'string' },
+          experiences: { type: 'array', items: { type: 'string' } },
         },
-        required: ['strength', 'quote', 'reason', 'prepQuestion'],
+        required: ['strength', 'quote', 'wants', 'experiences'],
         additionalProperties: false,
       },
     },
-    skills: {
+    workplace: {
       type: 'object',
       properties: {
-        required: { type: 'array', items: { type: 'string' } },
-        preferred: { type: 'array', items: { type: 'string' } },
+        location: { type: 'string' },
+        workDays: { type: 'string' },
+        workHours: { type: 'string' },
       },
-      required: ['required', 'preferred'],
+      required: ['location', 'workDays', 'workHours'],
       additionalProperties: false,
     },
   },
-  required: ['companySummary', 'hasTalentStatement', 'strengths', 'skills'],
+  required: ['company', 'hasTalentStatement', 'strengths', 'workplace'],
   additionalProperties: false,
 };
 
@@ -81,25 +93,27 @@ export const IMAGE_ANALYSIS_SCHEMA = {
 
 const STRENGTH_GUIDE = STRENGTHS.map((strength) => `- ${strength.label}: ${strength.hint}`).join('\n');
 
-const COMMON_RULES = `너는 취업 준비생의 면접 준비를 돕는다. 채용 공고에서 회사가 원하는 인재상과 기술을 정리한다.
+const COMMON_RULES = `너는 취업 준비생을 돕는다. 채용 공고를 읽고 이 회사가 어떤 곳인지, 어떤 강점을 가진 사람을 원하는지, 그래서 지원자가 어떤 경험을 보여 주면 좋은지 정리한다.
 
 규칙:
+- company.about은 이 회사가 무엇을 만드는(개발하는) 회사인지 한두 문장으로 쓴다. 공고에 나온 서비스·제품·고객을 바탕으로 "○○를 만드는 회사예요"처럼 분명하게 쓴다.
+- company.products에는 공고에 이름이 나온 대표 서비스·제품을 최대 3개 쓴다. 없으면 빈 배열.
+- company.website에는 공고에 적힌 회사 대표 사이트 주소를 그대로 쓴다. 공고에 없으면 빈 문자열이다. 주소를 추측해 만들지 않는다.
 - strengths의 strength에는 아래 목록의 이름만 쓴다.
 ${STRENGTH_GUIDE}
 - quote는 공고 본문에서 그대로 복사한 연속된 부분이다. 고치거나 요약하거나 줄임표를 넣지 않는다. 공고에 없는 내용으로 강점을 만들지 않는다.
-- 공고에 인재상·자격·우대 문장이 없어 근거를 찾을 수 없으면 hasTalentStatement를 false로 두고 strengths는 빈 배열로 둔다.
-- skills.required에는 자격 요건(필수)에 나온 기술, skills.preferred에는 우대 사항에 나온 기술을 이름만 쓴다(예: React, TypeScript).
-- prepQuestion은 지원자가 자기 경험으로 답을 준비할 면접 질문 한 문장이다.
-- 회사에 대해서는 주어진 회사 자료와 홈페이지 본문에 있는 내용만 쓴다. 없으면 쓰지 않는다.
+- wants는 회사가 이 강점에서 실제로 원하는 모습을 쉬운 말로 한 문장으로 쓴다. quote를 바꿔 말하지 말고, 이 직무에서 그 강점이 왜 필요한지 드러나게 쓴다.
+- experiences에는 이 강점을 보여 주려면 자기소개서·면접에 어떤 경험을 넣으면 좋은지 구체적인 예를 1~2개 쓴다. "○○한 경험"처럼 지원자가 바로 떠올릴 수 있는 장면으로 쓴다.
+- 인재상 칸이 따로 없어도 주요 업무·자격 요건·우대 사항에 드러난 강점을 찾는다(예: "새 기술을 직접 시도" → 자기주도성, "여러 팀과 협업" → 협동성). 공고에 업무나 자격 내용이 있으면 strengths는 최소 2개 쓴다.
+- 공고에 업무·자격·우대·인재상 내용이 전혀 없을 때만 hasTalentStatement를 false로 두고 strengths는 빈 배열로 둔다.
+- workplace.location은 공고에 적힌 근무지 주소를 그대로 쓴다(지도에서 검색할 수 있게). workDays는 근무 요일·일수(예: 주 5일, 월~금), workHours는 근무 시간(예: 10:00~19:00, 유연 근무). 공고에 없으면 빈 문자열이다.
+- 회사에 대해서는 공고와 주어진 회사 자료·홈페이지 본문에 있는 내용만 쓴다. 없으면 쓰지 않는다.
 - 문장은 한국어 해요체로 짧게 쓴다.`;
 
-// 비용 절감 전(baseline)과 후(lean). 다른 점: 회사 숫자 다시 쓰기, 강점 개수·인용 길이, 생각 깊이, 입력 다듬기.
+// 비용 절감 전(baseline)과 후(lean). 다른 점: 강점 개수·인용 길이, 생각 깊이, 입력 다듬기.
 const VARIANT_RULES: Record<AnalysisVariant, string> = {
-  baseline: `- companySummary는 회사 소개를 3~5문장으로 자세히 쓴다. 회사 자료의 직원 수·설립 연도·위치 같은 숫자도 문장에 넣는다.
-- 공고에서 찾을 수 있는 강점은 모두 쓴다. quote에는 근거가 되는 문장 전체를 쓴다.`,
-  lean: `- companySummary는 회사가 하는 일을 한 문장(60자 이내)으로만 쓴다. 직원 수·설립 연도·주소 같은 숫자는 화면에 따로 보여 주므로 쓰지 않는다.
-- strengths는 근거가 가장 분명한 것부터 최대 5개만 쓴다. quote는 근거가 되는 핵심 구절만 100자 이내로 쓴다.
-- reason과 prepQuestion은 각각 한 문장으로 쓴다.`,
+  baseline: `- 공고에서 찾을 수 있는 강점은 모두 쓴다. quote에는 근거가 되는 문장 전체를 쓴다.`,
+  lean: `- strengths는 근거가 가장 분명한 것부터 최대 4개만 쓴다. quote는 근거가 되는 핵심 구절만 100자 이내로 쓴다.`,
 };
 
 // 이미지 공고 규칙 (#232). 조각은 위아래가 조금 겹쳐 온다(브라우저가 잘린 줄이 없게 겹쳐 자른다).
@@ -115,13 +129,14 @@ export function buildSystemPrompt(variant: AnalysisVariant, source: 'text' | 'im
 }
 
 // 강점 분석에 쓰지 않는 공고 칸. 이 제목 아래 줄은 lean에서 보내지 않는다.
+// #235부터 근무지·근무 조건은 화면에 보여 주므로 빼지 않는다(오히려 다시 보내기 시작하는 칸이다).
 const DROP_HEADINGS = [
-  '복리후생', '복지', '혜택', '근무조건', '근무지', '근무위치', '근무장소', '위치', '오시는길', '지원방법', '접수방법', '접수기간',
+  '복리후생', '복지', '혜택', '지원방법', '접수방법', '접수기간',
   '전형절차', '채용절차', '채용과정', '전형과정', '제출서류', '유의사항', '참고사항', '기타사항', '기타', '문의',
 ];
 // 다시 보내기 시작하는 공고 칸
 const KEEP_HEADINGS = [
-  '주요업무', '담당업무', '업무내용', '자격요건', '지원자격', '필수', '우대사항', '우대', '인재상', '이런분', '이런분을',
+  '근무조건', '근무지', '근무위치', '근무장소', '근무시간', '근무형태', '주요업무', '담당업무', '업무내용', '자격요건', '지원자격', '필수', '우대사항', '우대', '인재상', '이런분', '이런분을',
   '함께', '팀소개', '회사소개', '기술스택', '사용기술', '모집부문', '모집분야',
 ];
 const HEADING_PREFIX = /^[\s[\]【】()<>■□●○◆◇▶▷►•·\-#*✔✅📌☑︎0-9.:]+/u;
@@ -220,8 +235,10 @@ export function buildAnalysisRequest(model: AnalysisModel, variant: AnalysisVari
 }
 
 // ── 결과 검사 ──
+// 글자·숫자만 남겨 비교한다. 가운뎃점·글머리표·괄호·줄바꿈 같은 차이로 진짜 인용을 버리지 않게 한다(#237).
+// 공고에 없는 문장은 글자가 달라 여전히 걸러진다.
 function normalizeForQuote(value: string): string {
-  return value.normalize('NFKC').replace(/^["'“”‘’「」『』\s]+|["'“”‘’「」『』\s]+$/g, '').replace(/\s+/g, ' ').trim();
+  return value.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
 }
 
 // 인용이 공고 원문에 그대로 있는지. 공백·전각 차이만 무시한다.
