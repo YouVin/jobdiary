@@ -227,3 +227,44 @@ test('지시문은 인재상 칸이 없어도 업무·자격에서 강점을 찾
   assert.match(prompt, /인재상 칸이 따로 없어도 주요 업무·자격 요건·우대 사항/);
   assert.match(prompt, /최소 2개/);
 });
+
+// ── #238 공고 페이지에서 읽은 입력 ──
+const PAGE = { text: POSTING, title: '프론트엔드 개발자', location: '서울 강남구 도산대로56길 5 (청담동) 지하1층,1층', workSchedule: '주5일(월~금)' };
+const pageResult = (workplace = { location: '서울', workDays: '', workHours: '' }, extra = {}) => ({
+  ...structuredClone(AI_RESULT), workplace, ...extra,
+});
+
+test('공고 페이지 입력: 근무지·근무 일정은 AI 값보다 페이지 값을 쓰고, 페이지 사실을 지시문 자료로 보낸다', async () => {
+  const { deps, calls } = fakeDeps({
+    analyze: async (request) => { calls.analyze.push(request); return { stopReason: 'end_turn', model: COMPANY_INFO_MODEL, usage: { input_tokens: 1, output_tokens: 1 }, result: pageResult() }; },
+  });
+  const response = await handleCompanyInfo(deps, { applicationId: APP_ID, postingPage: PAGE });
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.body.companyInfo.result.workplace, { location: PAGE.location, workDays: '주5일(월~금)', workHours: '' });
+  const content = calls.analyze[0].messages[0].content;
+  assert.equal(typeof content, 'string', '이미지가 없으면 글만 보낸다');
+  assert.match(content, /근무지 주소\(공고 페이지\): 서울 강남구 도산대로56길 5/);
+  assert.deepEqual(calls.saved[0].usage.diagnostics.source, 'page');
+});
+
+test('공고 페이지 입력: 글과 이미지가 함께면 둘 다 보내고, 인용은 페이지 글과 읽은 글 모두에서 찾는다', async () => {
+  const { deps, calls } = fakeDeps({
+    analyze: async (request) => { calls.analyze.push(request); return { stopReason: 'end_turn', model: COMPANY_INFO_MODEL, usage: { input_tokens: 1, output_tokens: 1 }, result: pageResult(undefined, { transcript: '이미지에만 있는 문장: 기획부터 배포까지 책임지고 완수해 본 경험' }) }; },
+  });
+  const response = await handleCompanyInfo(deps, { applicationId: APP_ID, postingPage: { ...PAGE, images: [IMAGE] } });
+  const blocks = calls.analyze[0].messages[0].content;
+  assert.deepEqual(blocks.map((block) => block.type), ['text', 'image', 'text']);
+  assert.match(blocks[0].text, /\[공고 본문 글\]/);
+  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['소통', '책임감']);
+});
+
+test('공고 페이지 입력: 글도 이미지도 없으면 400, 글·이미지·페이지를 섞어 보내면 400', async () => {
+  const { deps, calls } = fakeDeps();
+  const empty = await handleCompanyInfo(deps, { applicationId: APP_ID, postingPage: { ...PAGE, text: '짧음' } });
+  assert.deepEqual([empty.status, empty.body.code], [400, 'page_empty']);
+  const mixed = await handleCompanyInfo(deps, { applicationId: APP_ID, postingPage: PAGE, postingText: POSTING });
+  assert.equal(mixed.status, 400);
+  const badFacts = await handleCompanyInfo(deps, { applicationId: APP_ID, postingPage: { ...PAGE, location: 3 } });
+  assert.equal(badFacts.status, 400);
+  assert.equal(calls.consume + calls.analyze.length, 0);
+});

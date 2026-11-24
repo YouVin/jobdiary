@@ -16,7 +16,7 @@ import {
 
 export const COMPANY_INFO_MODEL: AnalysisModel = 'claude-haiku-5-5'; // 결정 기록 001: 1차 실측 근거로 Haiku 5.5로 시작
 export const COMPANY_INFO_VARIANT = 'lean' as const; // 비용 절감 방식 (1차 실측: 1건 $0.0007, 4.6초)
-export const PROMPT_VERSION = '2026-11-25.3'; // 지시문·결과 형식을 바꾸면 올린다. 같은 공고라도 버전이 다르면 새로 만든다 (#237 업무·자격에서도 강점 찾기)
+export const PROMPT_VERSION = '2026-11-25.4'; // 지시문·결과 형식을 바꾸면 올린다. 같은 공고라도 버전이 다르면 새로 만든다 (#237 업무·자격에서도 강점 찾기)
 export const DAILY_LIMIT = 5; // 사용자당 하루(한국 날짜) 새로 만드는 횟수
 export const MIN_POSTING_LENGTH = 200;
 export const MAX_POSTING_LENGTH = 15_000;
@@ -66,7 +66,44 @@ export interface HandlerResponse {
   body: Record<string, unknown>;
 }
 
-type PostingSource = { kind: 'text'; postingText: string } | { kind: 'image'; images: PostingImage[] };
+// 공고 페이지에서 읽은 사실(#238, 결정 기록 003). 익스텐션이 공고 페이지 구조화 데이터·요약 칸에서 읽은 값이라
+// AI가 읽은 값보다 정확하다. 근무지·근무 일정은 결과에서 이 값을 우선한다.
+export interface PageFacts {
+  title: string;
+  location: string;
+  workSchedule: string;
+}
+
+type PostingSource =
+  | { kind: 'text'; postingText: string }
+  | { kind: 'image'; images: PostingImage[] }
+  | { kind: 'page'; postingText: string; images: PostingImage[]; facts: PageFacts };
+
+export const MIN_PAGE_TEXT_LENGTH = 100; // 공고 페이지 글이 이보다 짧고 이미지도 없으면 읽을 게 없는 것으로 본다
+
+function shortText(value: unknown, max: number): string | null {
+  if (value === undefined) return '';
+  return typeof value === 'string' ? value.trim().slice(0, max) : null;
+}
+
+// 공고 페이지 입력 검사: 글(15,000자까지)·이미지 조각(선택)·페이지 사실(각 300자까지)
+function readPage(value: unknown): Extract<PostingSource, { kind: 'page' }> | 'too_large' | null {
+  if (!value || typeof value !== 'object') return null;
+  const page = value as Record<string, unknown>;
+  const text = shortText(page.text, MAX_POSTING_LENGTH);
+  const title = shortText(page.title, 300);
+  const location = shortText(page.location, 300);
+  const workSchedule = shortText(page.workSchedule, 300);
+  if (text === null || title === null || location === null || workSchedule === null) return null;
+  let images: PostingImage[] = [];
+  if (page.images !== undefined && !(Array.isArray(page.images) && page.images.length === 0)) {
+    const read = readImages(page.images);
+    if (!read) return null;
+    if (read === 'too_large') return 'too_large';
+    images = read;
+  }
+  return { kind: 'page', postingText: text, images, facts: { title, location, workSchedule } };
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -95,14 +132,19 @@ function readImages(value: unknown): PostingImage[] | 'too_large' | null {
 
 function readBody(body: unknown): { applicationId: string; source: PostingSource | 'too_large'; regenerate: boolean } | null {
   if (!body || typeof body !== 'object') return null;
-  const { applicationId, postingText, postingImages, regenerate } = body as Record<string, unknown>;
+  const { applicationId, postingText, postingImages, postingPage, regenerate } = body as Record<string, unknown>;
   if (typeof applicationId !== 'string' || !UUID.test(applicationId)) return null;
   if (regenerate !== undefined && typeof regenerate !== 'boolean') return null;
   const hasText = postingText !== undefined;
   const hasImages = postingImages !== undefined;
-  if (hasText === hasImages) return null; // 글과 이미지 중 정확히 하나
+  const hasPage = postingPage !== undefined;
+  if (Number(hasText) + Number(hasImages) + Number(hasPage) !== 1) return null; // 글·이미지·공고 페이지 중 정확히 하나
   let source: PostingSource | 'too_large';
-  if (hasText) {
+  if (hasPage) {
+    const page = readPage(postingPage);
+    if (!page) return null;
+    source = page;
+  } else if (hasText) {
     if (typeof postingText !== 'string') return null;
     source = { kind: 'text', postingText };
   } else {
@@ -141,6 +183,29 @@ export function keepVerifiedWebsite(result: AnalysisResult, postingText: string)
   return found ? result : { ...result, company: { ...result.company, website: '' } };
 }
 
+// 공고 페이지 입력의 지문: 글·이미지·페이지 사실이 모두 같아야 같은 공고로 본다.
+export function pageFingerprint(companyName: string, page: Extract<PostingSource, { kind: 'page' }>): string {
+  return [PROMPT_VERSION, COMPANY_INFO_MODEL, COMPANY_INFO_VARIANT, 'page', companyName.normalize('NFKC').trim(),
+    page.facts.title, page.facts.location, page.facts.workSchedule, page.postingText.normalize('NFKC').replace(/\s+/g, ' ').trim(),
+    ...page.images.map((image) => `${image.mediaType}:${image.data}`)].join('\n');
+}
+
+function pageFactsForPrompt(facts: PageFacts): Record<string, string> {
+  const result: Record<string, string> = {};
+  if (facts.title) result['공고 제목'] = facts.title;
+  if (facts.location) result['근무지 주소(공고 페이지)'] = facts.location;
+  if (facts.workSchedule) result['근무 일정(공고 페이지)'] = facts.workSchedule;
+  return result;
+}
+
+// 근무지·근무 일정은 AI가 읽은 값보다 공고 페이지 값이 정확하다(#238: 캡처에서는 "서울"만 나왔다).
+export function preferPageFacts(result: AnalysisResult, facts: PageFacts): AnalysisResult {
+  const workplace = { ...result.workplace };
+  if (facts.location) workplace.location = facts.location;
+  if (facts.workSchedule && !workplace.workDays && !workplace.workHours) workplace.workDays = facts.workSchedule;
+  return { ...result, workplace };
+}
+
 function publicView(analysis: StoredAnalysis, cached: boolean): HandlerResponse {
   return { status: 200, body: { companyInfo: { result: analysis.result, model: analysis.model, createdAt: analysis.createdAt }, cached } };
 }
@@ -165,6 +230,12 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
     }
     postingText = trimmed.slice(0, MAX_POSTING_LENGTH);
   }
+  if (source.kind === 'page') {
+    postingText = source.postingText;
+    if (postingText.length < MIN_PAGE_TEXT_LENGTH && source.images.length === 0) {
+      return fail(400, '공고 페이지에서 공고 내용을 찾지 못했어요. 공고 화면을 캡처해 넣어 주세요.', 'page_empty');
+    }
+  }
 
   // 3) 본인 지원인지: 요청자 권한으로 읽어 RLS가 걸러 준다.
   const application = await deps.getApplication(body.applicationId);
@@ -173,7 +244,9 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
   // 4) 같은 공고 결과가 있으면 그대로 쓴다. 한도도 비용도 들지 않는다.
   const fingerprint = source.kind === 'text'
     ? postingFingerprint(application.company, postingText)
-    : imageFingerprint(application.company, source.images);
+    : source.kind === 'image'
+      ? imageFingerprint(application.company, source.images)
+      : pageFingerprint(application.company, source);
   const postingHash = await deps.sha256(fingerprint);
   if (!body.regenerate) {
     const existing = await deps.findAnalysis(postingHash);
@@ -193,7 +266,8 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
   const request = buildAnalysisRequest(COMPANY_INFO_MODEL, COMPANY_INFO_VARIANT, {
     companyName: application.company,
     postingText,
-    images: source.kind === 'image' ? source.images : undefined,
+    images: source.kind === 'text' || source.images.length === 0 ? undefined : source.images,
+    facts: source.kind === 'page' ? pageFactsForPrompt(source.facts) : undefined,
   });
   let outcome: AnalyzeOutcome;
   try {
@@ -215,19 +289,23 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
 
   // 7) 인용 검사. 이미지 공고는 AI가 옮겨 적은 글이 기준이다. 글을 거의 못 읽었으면 공고 이미지가 아닌 것으로 본다.
   let quoteSource = postingText;
-  if (source.kind === 'image') {
-    quoteSource = outcome.result.transcript?.trim() ?? '';
-    if (quoteSource.length < MIN_TRANSCRIPT_LENGTH) {
+  const hasImages = source.kind !== 'text' && source.images.length > 0;
+  if (hasImages) {
+    const transcript = outcome.result.transcript?.trim() ?? '';
+    quoteSource = [postingText, transcript].filter(Boolean).join('\n');
+    // 글이 거의 없고 이미지도 못 읽었으면 공고가 아닌 것으로 본다(공고 페이지 글이 충분하면 이미지를 못 읽어도 진행)
+    if (transcript.length < MIN_TRANSCRIPT_LENGTH && postingText.length < MIN_PAGE_TEXT_LENGTH) {
       await deps.releaseQuota(userId);
       return fail(422, '이미지에서 공고 글을 읽지 못했어요. 공고 본문이 잘 보이게 캡처해 주세요.', 'unreadable_image');
     }
   }
-  const result = keepVerifiedWebsite(keepVerifiedStrengths(outcome.result, quoteSource), quoteSource);
+  const verified = keepVerifiedWebsite(keepVerifiedStrengths(outcome.result, quoteSource), quoteSource);
+  const result = source.kind === 'page' ? preferPageFacts(verified, source.facts) : verified;
 
   // 진단(#237): 강점이 비었을 때 "AI가 못 찾았나, 인용 검사에서 버렸나, 글을 덜 읽었나"를 숫자로 가린다. 내용은 남기지 않는다.
   const diagnostics = {
     source: source.kind,
-    imageCount: source.kind === 'image' ? source.images.length : 0,
+    imageCount: source.kind === 'text' ? 0 : source.images.length,
     readChars: quoteSource.length,
     strengthsReturned: outcome.result.strengths.length,
     strengthsKept: result.strengths.length,
