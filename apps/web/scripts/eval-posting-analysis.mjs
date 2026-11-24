@@ -21,7 +21,7 @@ import { createSourceLoader } from '../tests/loadSource.mjs';
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 process.chdir(webRoot);
 const load = createSourceLoader();
-const { buildAnalysisRequest, verifyQuotes, estimateCostUsd, MODEL_PRICES, MAX_OUTPUT_TOKENS, USD_TO_KRW } = load('@/lib/postingAnalysis/analysis');
+const { buildAnalysisRequest, verifyQuotes, estimateCostUsd, MODEL_PRICES, MAX_OUTPUT_TOKENS, USD_TO_KRW } = load('../../supabase/functions/_shared/postingAnalysis/analysis.ts');
 
 const MODEL_IDS = { haiku: 'claude-haiku-5-5', sonnet: 'claude-sonnet-5-5', opus: 'claude-opus-5-5' };
 const POSTINGS_DIR = path.join(webRoot, '.eval', 'postings');
