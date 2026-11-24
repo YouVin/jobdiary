@@ -63,11 +63,31 @@ describe('postingReader', () => {
     expect(posting.text).toContain('- 웹 서비스 개발');
   });
 
-  it('공고 주소가 아니거나 원티드면 아무것도 요청하지 않는다', async () => {
+  it('공고 주소가 아니면 아무것도 요청하지 않는다', async () => {
     const { fetchText, requested } = fakeFetch({});
-    for (const url of ['https://evil.example.com/Recruit/GI_Read/1', 'https://www.wanted.co.kr/wd/123', 'javascript:alert(1)']) {
+    for (const url of ['https://evil.example.com/Recruit/GI_Read/1', 'https://www.wanted.co.kr/company/123', 'javascript:alert(1)']) {
       await expect(readPosting(url, fetchText)).rejects.toThrow('unsupported-posting');
     }
     expect(requested).toEqual([]);
+  });
+
+  it('원티드는 공고 페이지 하나의 Next.js 데이터에서 칸별 본문·근무지·회사를 읽고 이미지는 없다', async () => {
+    const initialData = {
+      id: 381742, position: '프론트엔드 개발자', company: { company_name: '스튜디오프리윌루전' },
+      address: { full_location: '서울 서초구 매헌로16길 32, 희경빌딩F동 401호' },
+      intro: '영상 콘텐츠 스타트업입니다.', main_tasks: '• 플랫폼 프론트엔드 개발', requirements: '• Next.js, TypeScript 경험', preferred_points: '', benefits: '• 점심 식대',
+    };
+    const page = `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps: { initialData } } })}</script></html>`;
+    const { fetchText, requested } = fakeFetch({ 'https://www.wanted.co.kr/wd/381742': page });
+    const posting = await readPosting('https://www.wanted.co.kr/wd/381742?utm_source=x', fetchText);
+    expect(requested).toEqual(['https://www.wanted.co.kr/wd/381742']);
+    expect(posting).toMatchObject({ platform: 'wanted', title: '프론트엔드 개발자', company: '스튜디오프리윌루전', location: '서울 서초구 매헌로16길 32, 희경빌딩F동 401호', imageUrls: [] });
+    expect(posting.text).toBe('[회사 소개]\n영상 콘텐츠 스타트업입니다.\n\n[주요업무]\n• 플랫폼 프론트엔드 개발\n\n[자격요건]\n• Next.js, TypeScript 경험\n\n[혜택 및 복지]\n• 점심 식대');
+  });
+
+  it('원티드 데이터의 공고 번호가 다르면(다른 공고) 본문을 쓰지 않는다', async () => {
+    const page = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps: { initialData: { id: 1, main_tasks: '다른 공고' } } } })}</script>`;
+    const { fetchText } = fakeFetch({ 'https://www.wanted.co.kr/wd/381742': page });
+    expect((await readPosting('https://www.wanted.co.kr/wd/381742', fetchText)).text).toBe('');
   });
 });

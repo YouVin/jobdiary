@@ -11,6 +11,8 @@ import {
 // - 잡코리아: 공고 페이지 JSON-LD(JobPosting)에 제목·회사·정확한 근무지 주소, 요약 칸에 "근무시간",
 //   본문은 같은 사이트 /Recruit/GI_Read_Comt_Ifrm?Gno=… (글 또는 file*.jobkorea.co.kr 이미지)
 // - 사람인: 본문은 /zf_user/jobs/relay/view-detail?rec_idx=…&rec_seq=0 (글 + *.saraminimage.co.kr 이미지, 근무지도 본문 글에)
+// - 원티드: 공고 페이지 하나의 __NEXT_DATA__(props.pageProps.initialData)에 회사 소개·주요 업무·자격·우대·혜택이 글로,
+//   address.full_location에 정확한 근무지가 있다. 본문 이미지가 없어 이미지 읽기가 필요 없다.
 
 const REQUEST_TIMEOUT_MS = 6000;
 const MAX_HTML_LENGTH = 3_000_000;
@@ -111,13 +113,48 @@ async function readSaramin(postingId: string, url: string, fetchText: FetchText)
   return { platform: 'saramin', postingId, url, title: '', company: '', location, workSchedule: '', text, imageUrls: readImageUrls(body, bodyUrl) };
 }
 
-// 공고 주소 검사는 공유 계약(getPostingReference)을 쓴다. 잡코리아·사람인 공고 페이지만 읽는다(원티드는 아직 아님).
+const text = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+
+// 원티드 공고 페이지의 Next.js 데이터 → 칸 이름을 붙인 본문 글. 구조가 바뀌면 JSON-LD(짧은 설명·근무지)로 물러난다.
+export function readWantedPage(html: string, postingId: string): Omit<PostingContent, 'platform' | 'postingId' | 'url'> {
+  const summary = readJobkoreaSummary(html); // JSON-LD JobPosting 읽기는 같은 형식이다
+  let detail: Record<string, unknown> | null = null;
+  const nextData = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)?.[1];
+  if (nextData) {
+    try {
+      const data: unknown = JSON.parse(nextData);
+      const initial = record(data) && record(data.props) && record(data.props.pageProps) ? data.props.pageProps.initialData : null;
+      if (record(initial) && String(initial.id) === postingId) detail = initial;
+    } catch {
+      detail = null;
+    }
+  }
+  if (!detail) return { title: summary.title, company: summary.company, location: summary.location, workSchedule: '', text: '', imageUrls: [] };
+  const sections: Array<[string, unknown]> = [
+    ['회사 소개', detail.intro], ['주요업무', detail.main_tasks], ['자격요건', detail.requirements],
+    ['우대사항', detail.preferred_points], ['혜택 및 복지', detail.benefits], ['채용 전형', detail.hire_rounds],
+  ];
+  const body = sections.filter(([, value]) => text(value)).map(([label, value]) => `[${label}]\n${text(value)}`).join('\n\n');
+  const company = record(detail.company) ? text(detail.company.company_name) : '';
+  const location = record(detail.address) ? text(detail.address.full_location) : '';
+  return {
+    title: text(detail.position) || summary.title,
+    company: company || summary.company,
+    location: location || summary.location,
+    workSchedule: '',
+    text: body.slice(0, MAX_POSTING_TEXT_LENGTH),
+    imageUrls: [],
+  };
+}
+
+// 공고 주소 검사는 공유 계약(getPostingReference)을 쓴다. 잡코리아·사람인·원티드 공고 페이지만 읽는다.
 export async function readPosting(rawUrl: string, fetchText: FetchText): Promise<PostingContent> {
   const reference = getPostingReference(rawUrl);
-  if (!reference || reference.platform === 'wanted') throw new Error('unsupported-posting');
-  return reference.platform === 'jobkorea'
-    ? readJobkorea(reference.postingId, reference.url, fetchText)
-    : readSaramin(reference.postingId, reference.url, fetchText);
+  if (!reference) throw new Error('unsupported-posting');
+  if (reference.platform === 'jobkorea') return readJobkorea(reference.postingId, reference.url, fetchText);
+  if (reference.platform === 'saramin') return readSaramin(reference.postingId, reference.url, fetchText);
+  const page = await fetchText(reference.url);
+  return { platform: 'wanted', postingId: reference.postingId, url: reference.url, ...readWantedPage(page, reference.postingId) };
 }
 
 // 실제 요청: 로그인 정보(쿠키)를 보내지 않고, 다른 곳으로 넘어가면 실패로 본다(마감일 읽기와 같은 기준).

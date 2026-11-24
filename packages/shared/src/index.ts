@@ -128,7 +128,7 @@ export interface PostingReadRequest {
 }
 
 export interface PostingContent {
-  platform: 'jobkorea' | 'saramin';
+  platform: JobPlatform;
   postingId: string;
   url: string;
   title: string;
@@ -160,13 +160,13 @@ function clip(value: unknown, max: number): string {
 
 // 익스텐션 응답 검사(웹앱 쪽). 모양이 틀리면 null, 길이는 자르고, 이미지 주소는 허용 목록만 남긴다.
 export function parsePostingContent(value: unknown): PostingContent | null {
-  if (!record(value) || (value.platform !== 'jobkorea' && value.platform !== 'saramin')) return null;
+  if (!record(value) || !JOB_PLATFORMS.includes(value.platform as JobPlatform)) return null;
   if (typeof value.postingId !== 'string' || !POSTING_ID.test(value.postingId)) return null;
   const reference = getPostingReference(value.url);
   if (!reference || reference.platform !== value.platform || reference.postingId !== value.postingId) return null;
   const imageUrls = Array.isArray(value.imageUrls) ? value.imageUrls.filter(isPostingImageUrl).slice(0, MAX_POSTING_IMAGE_URLS) : [];
   return {
-    platform: value.platform,
+    platform: value.platform as JobPlatform,
     postingId: value.postingId,
     url: reference.url,
     title: clip(value.title, 200),
