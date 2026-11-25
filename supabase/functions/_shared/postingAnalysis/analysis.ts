@@ -35,12 +35,13 @@ export interface AnalysisStrength {
 export interface AnalysisResult {
   transcript?: string; // 이미지 공고일 때 AI가 이미지에서 옮겨 적은 글. 인용 검사에만 쓰고 화면에는 보여 주지 않는다
   company: { about: string; products: string[]; website: string };
-  hasTalentStatement: boolean;
-  strengths: AnalysisStrength[];
+  strengths: AnalysisStrength[]; // 비었으면 공고에 업무·자격·인재상 내용이 없다는 뜻(#260 전에는 hasTalentStatement로 따로 받음)
   workplace: { location: string; workDays: string; workHours: string };
 }
 
-// 결과 형식(JSON 스키마). 강점 이름은 고정 목록만 허용한다.
+// 결과 형식(JSON 스키마). 형식은 입력 토큰으로 계산되므로 꼭 필요한 칸만 둔다(#260).
+// - 강점 이름 목록(enum)은 두지 않는다. 같은 목록이 지시문에 이미 있고, 목록 밖 이름은 서버가 버린다(keepKnownStrengths).
+// - "인재상 있음" 값은 두지 않는다. strengths가 비었는지로 알 수 있다.
 export const ANALYSIS_SCHEMA = {
   type: 'object',
   properties: {
@@ -54,13 +55,12 @@ export const ANALYSIS_SCHEMA = {
       required: ['about', 'products', 'website'],
       additionalProperties: false,
     },
-    hasTalentStatement: { type: 'boolean' },
     strengths: {
       type: 'array',
       items: {
         type: 'object',
         properties: {
-          strength: { type: 'string', enum: STRENGTH_LABELS },
+          strength: { type: 'string' },
           quote: { type: 'string' },
           wants: { type: 'string' },
           experiences: { type: 'array', items: { type: 'string' } },
@@ -80,7 +80,7 @@ export const ANALYSIS_SCHEMA = {
       additionalProperties: false,
     },
   },
-  required: ['company', 'hasTalentStatement', 'strengths', 'workplace'],
+  required: ['company', 'strengths', 'workplace'],
   additionalProperties: false,
 };
 
@@ -105,7 +105,7 @@ ${STRENGTH_GUIDE}
 - wants는 회사가 이 강점에서 실제로 원하는 모습을 쉬운 말로 한 문장으로 쓴다. quote를 바꿔 말하지 말고, 이 직무에서 그 강점이 왜 필요한지 드러나게 쓴다.
 - experiences에는 이 강점을 보여 주려면 자기소개서·면접에 어떤 경험을 넣으면 좋은지 구체적인 예를 1~2개 쓴다. "○○한 경험"처럼 지원자가 바로 떠올릴 수 있는 장면으로 쓴다.
 - 인재상 칸이 따로 없어도 주요 업무·자격 요건·우대 사항에 드러난 강점을 찾는다(예: "새 기술을 직접 시도" → 자기주도성, "여러 팀과 협업" → 협동성). 공고에 업무나 자격 내용이 있으면 strengths는 최소 2개 쓴다.
-- 공고에 업무·자격·우대·인재상 내용이 전혀 없을 때만 hasTalentStatement를 false로 두고 strengths는 빈 배열로 둔다.
+- 공고에 업무·자격·우대·인재상 내용이 전혀 없을 때만 strengths를 빈 배열로 둔다.
 - workplace.location은 공고에 적힌 근무지 주소를 그대로 쓴다(지도에서 검색할 수 있게). workDays는 근무 요일·일수(예: 주 5일, 월~금), workHours는 근무 시간(예: 10:00~19:00, 유연 근무). 공고에 없으면 빈 문자열이다.
 - 회사에 대해서는 공고와 주어진 회사 자료·홈페이지 본문에 있는 내용만 쓴다. 없으면 쓰지 않는다.
 - 문장은 한국어 해요체로 짧게 쓴다.`;
@@ -238,6 +238,20 @@ export function buildAnalysisRequest(model: AnalysisModel, variant: AnalysisVari
 }
 
 // ── 결과 검사 ──
+// 강점 이름을 고정 목록으로 맞춘다(#260, 스키마의 목록 제한 대신). 띄어쓰기 차이("소통능력")는 목록 이름으로 고치고,
+// 목록에 없는 이름은 버린다. 회사끼리 강점을 비교·집계하려면 이름이 목록 안에 있어야 한다.
+const compactLabel = (value: string) => value.normalize('NFKC').replace(/\s+/g, '');
+const LABEL_BY_COMPACT = new Map(STRENGTH_LABELS.map((label) => [compactLabel(label), label]));
+
+export function keepKnownStrengths(result: AnalysisResult): { result: AnalysisResult; dropped: number } {
+  const strengths: AnalysisStrength[] = [];
+  for (const item of result.strengths) {
+    const label = LABEL_BY_COMPACT.get(compactLabel(item.strength));
+    if (label) strengths.push(label === item.strength ? item : { ...item, strength: label });
+  }
+  return { result: { ...result, strengths }, dropped: result.strengths.length - strengths.length };
+}
+
 // 글자·숫자만 남겨 비교한다. 가운뎃점·글머리표·괄호·줄바꿈 같은 차이로 진짜 인용을 버리지 않게 한다(#237).
 // 공고에 없는 문장은 글자가 달라 여전히 걸러진다.
 function normalizeForQuote(value: string): string {

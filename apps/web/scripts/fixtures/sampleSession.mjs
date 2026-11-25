@@ -54,7 +54,6 @@ export const companyInfoRequests = [];
 export const SAMPLE_COMPANY_INFO = {
   // #235 형식: 회사 소개 → 강점별 추천 경험 → 근무 조건
   company: { about: '웹 서비스를 만드는 IT 회사예요.', products: ['루트노트'], website: 'www.rootlabs.example' },
-  hasTalentStatement: true,
   strengths: [
     { strength: '소통 능력', quote: '다양한 직군의 동료와 원활하게 소통하는 분', wants: '디자이너·기획자와 의견을 맞춰 가며 일할 사람을 원해요.', experiences: ['다른 직군과 의견이 달랐을 때 조율해 결과를 낸 경험'] },
     { strength: '책임감', quote: '맡은 기능을 기획부터 배포까지 책임지고 완수해 본 경험', wants: '기능 하나를 처음부터 끝까지 맡을 사람을 원해요.', experiences: ['혼자 맡아 출시까지 끝낸 기능', '출시 뒤 문제를 직접 고친 경험'] },

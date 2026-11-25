@@ -12,7 +12,7 @@ test('서버 결과(JSON)를 화면 형식으로 옮기고, 모양이 틀린 강
   const info = parseCompanyInfo({
     transcript: '이미지에서 읽은 글',
     company: { about: '시선추적 SDK를 만드는 회사예요.', products: ['SeeSo', 'READ', 3, '하나', '둘'], website: 'www.visual.camp' },
-    hasTalentStatement: true,
+    hasTalentStatement: true, // #260 전 저장된 결과에는 남아 있다(읽을 때 무시)
     strengths: [
       { strength: '협동성', quote: '함께 일하는 분', wants: '여러 직군과 맞춰 가는 사람', experiences: ['팀 프로젝트에서 역할을 나눈 경험', ''] },
       { strength: '책임감', quote: 42 },
