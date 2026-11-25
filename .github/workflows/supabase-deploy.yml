@@ -24,6 +24,8 @@ concurrency:
 jobs:
   deploy:
     name: Apply migrations and deploy functions
+    # 기본 브랜치가 dev라 손으로 돌릴 때 dev가 기본 선택된다. 운영에는 main만 반영한다.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

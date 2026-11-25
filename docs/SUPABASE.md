@@ -51,7 +51,7 @@ main에 병합되면 GitHub Actions [`supabase-deploy.yml`](../.github/workflows
 | `supabase/functions/<이름>/**` | 그 함수만 `functions deploy --use-api` |
 | `supabase/functions/_shared/**` | 함수 전부 배포 |
 
-- DB를 먼저, 함수를 나중에 반영한다. 웹앱(Vercel) 배포와는 따로 돌며, 실패하면 이 워크플로만 실패로 보인다. 손으로 다시 돌리려면 Actions → Supabase deploy → Run workflow(남은 SQL 적용 + 함수 전부 배포).
+- DB를 먼저, 함수를 나중에 반영한다. 웹앱(Vercel) 배포와는 따로 돌며, 실패하면 이 워크플로만 실패로 보인다. 손으로 다시 돌리려면 Actions → Supabase deploy → Run workflow에서 **브랜치를 main으로 바꿔** 실행한다(남은 SQL 적용 + 함수 전부 배포). 기본 브랜치가 dev라 그대로 누르면 dev가 선택되며, 이때는 작업이 건너뛰어진다.
 - 비밀값 `SUPABASE_ACCESS_TOKEN`·`SUPABASE_DB_PASSWORD`·`SUPABASE_PROJECT_ID`는 GitHub Actions Secrets에만 둔다.
 - **새 SQL은 반드시 `supabase/migrations/`에 새 파일로** 추가한다. 이미 적용된 파일을 고치면 다시 실행되지 않는다. SQL Editor로 직접 실행했다면 `npx supabase migration repair --status applied <버전> --linked`로 기록을 맞춘다.
 - 2026-11-25 시작 시점: `20261124120000_company_info.sql`은 SQL Editor로 적용돼 원격 기록에 없었다. 표 3개가 운영에 있는 것(브라우저 권한 거부 42501 = 표 있음)을 확인한 뒤 `migration repair --status applied`로 기록만 맞췄다(SQL 재실행 없음). 이후 `db push --dry-run` 결과 "Remote database is up to date".
