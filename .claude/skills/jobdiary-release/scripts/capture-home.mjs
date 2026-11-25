@@ -74,7 +74,7 @@ async function shoot(data, shots) {
   for (const [route, width, name] of shots) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(origin + route);
-    await page.getByRole('button', { name: '지원추가' }).waitFor();
+    await page.getByRole('button', { name: '지원 추가', exact: true }).waitFor(); // #203 헤더 개편 뒤 이름(예전 '지원추가')
     await page.waitForTimeout(800);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     if (overflow) failed = true;

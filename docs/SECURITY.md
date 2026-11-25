@@ -65,6 +65,22 @@ main(`f80dd16`) 이후 dev 변경(#215 화면 피드백, PR #216, 7개 파일: �
 - 설치 함정: `apps/web/node_modules/.release-tools`(브라우저 검증 도구, 자체 package.json 보유)가 있으면 npm 11.7.0 설치가 `Cannot read properties of null (reading 'location')`로 멈춘다. 설치할 때만 이 폴더를 잠시 옮겼다가 되돌린다.
 - API 키(`ANTHROPIC_API_KEY`)는 `apps/web/.env.local`에만 두고, 측정 스크립트는 값을 출력하지 않는다. 공고 원문·결과 폴더 `apps/web/.eval/`는 커밋하지 않는다.
 
+### 회사 정보(AI) 운영 반영 전 점검 (#250, 2026-11-25)
+
+main(`19ce64e`) 이후 dev 변경(PR #219~#249, 82개 파일)을 운영에 반영하기 전에 확인했다. 회사 정보 AI(#226~#243), 익스텐션 공고 읽기(#238)·팝업(#239)·지원 이력 배지(#246), 중복 판별(#220)이 들어 있다.
+
+- 운영 의존성: `npm audit --omit=dev` 0건. 개발 의존성 12건(높음 3: vite·undici·source-map-js, 중간 9)은 #226 때와 같고 #167에서 추적한다. 의존성 변경은 #226의 `@anthropic-ai/sdk` 1.7.0·`zod` 4.6.7 고정뿐이다.
+- 비밀값: 변경 diff의 키 패턴 일치는 모두 변수 이름(`ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)과 설명 문장이고 값은 없다. Anthropic 키는 Supabase 비밀값과 로컬 `apps/web/.env.local`에만 있다. 추적하는 환경 파일은 `apps/web/.env.example`뿐이다.
+- 코드: 웹앱·익스텐션 소스에 `dangerouslySetInnerHTML`·`eval`·`new Function` 0건.
+- 서버(Edge Function, 이미 운영 배포됨):
+  - `company-info`: JWT 필수(verify_jwt), 지원은 요청자 권한(RLS)으로 읽고, 서류 통과 전 지원은 403 `stage_not_ready`(한도·AI 호출 없음), 하루 5번 한도는 DB 함수 한 문장으로 센다. AI에는 공고 내용과 회사 이름만 보내고 사용자 id·이메일은 보내지 않는다.
+  - `posting-image`: JWT 필수, 잡코리아·사람인 이미지 서버 허용 목록(공유 계약과 테스트로 비교)·https만·리다이렉트 거절·이미지 형식·10MB 상한으로 서버를 거친 내부망 접근(SSRF)을 막는다. 받은 이미지는 저장하지 않는다.
+  - 배포본 확인: 운영 `company-info`(v5)를 내려받아 dev의 `index.ts`·`handler.ts`·`analysis.ts`·`strengths.ts`와 같음을 비교했다. `posting-image` v1 배포 확인. 무인증 호출 401은 #230 때 확인했다.
+- DB: 마이그레이션 `20261124120000_company_info.sql`(표 3개·한도 함수 2개)은 운영에 적용돼 있다(#230, 확인 SQL 통과). 결과 표는 본인 읽기만, 공고별 결과·사용량 표는 service_role만.
+- 익스텐션: 권한 변경 없음(`storage` + 기존 채용 사이트 host 3개). 공고 페이지는 쿠키 없이(`credentials: omit`) 읽는다. manifest 변경은 32px 아이콘 추가뿐이다. 스토어 출시는 이번 웹 배포와 따로 한다.
+- 개인정보처리방침: Anthropic 처리위탁·국외 처리, 공고 이미지 미저장, 익스텐션 공고 페이지 읽기와 서버 이미지 대신 받기를 #229·#238에서 추가했다.
+- 복구 기준: 이전 main `19ce64e`, 이전 Production 배포 `jobdiary-ac4if0r5a-youvins-projects.vercel.app`.
+
 ## 릴리즈 판단 (#96·#97)
 
 계정 격리(#90), 편집 충돌(#93), 날짜 검증(#94)을 dev에 병합했다. #96·#97에서 정책 페이지·동의 확인을 추가하고 마이그레이션 이력 3건을 원격과 맞췄다. 브라우저 검증과 제한은 [RELEASE_CHECK](RELEASE_CHECK.md)에 기록한다. 사용자가 후속 검증과 main 병합까지 승인했으며, CI 통과를 확인한 커밋만 병합한다.
