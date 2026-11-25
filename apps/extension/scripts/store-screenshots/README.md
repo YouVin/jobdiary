@@ -9,7 +9,7 @@
 | docs/store-screenshots/1-overview.png | 수집·가져오기 소개 |
 | docs/store-screenshots/2-copy.png | 실제 복사 완료 UI |
 | docs/store-screenshots/3-start.png | 빈 상태에서 수집 시작 |
-| docs/store-screenshots/4-sites.png | 세 사이트 수집 슬롯 |
+| docs/store-screenshots/4-company.png | 공고 페이지를 읽어 만든 회사 정보(웹앱 화면) |
 | docs/store-screenshots/5-history.png | 실제 엔진이 표시한 지원/취소 배지 |
 | docs/store-screenshots/raw/ | 실제 UI 원본과 촬영 manifest |
 | docs/usage-guides/guide-*.png | 사이트별 수집 위치 도식 |
