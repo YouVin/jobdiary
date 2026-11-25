@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL, SEARCH_INDEXABLE } from "@/lib/siteMetadata";
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SkipLink />
         <AuthProvider>{children}</AuthProvider>
+        <SiteAnalytics />
       </body>
     </html>
   );
