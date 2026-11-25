@@ -31,6 +31,34 @@ export function saveLastImportAt(userId: string, importedAt: string): void {
   }
 }
 
+const ACTIVITY_DATE_KEY_PREFIX = 'jobdiary:activityDate:';
+
+// 계정별로 이 브라우저에서 방문 날짜를 마지막으로 기록한 한국 날짜(YYYY-MM-DD, #256).
+// 같은 날 다시 요청하지 않기 위한 편의 값이다. 저장할 수 없는 환경에서는 null(매번 기록 요청, 서버가 하루 한 줄로 합친다).
+export function loadActivityDate(userId: string): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    return localStorage.getItem(ACTIVITY_DATE_KEY_PREFIX + userId);
+  } catch {
+    return null;
+  }
+}
+
+export function saveActivityDate(userId: string, date: string): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(ACTIVITY_DATE_KEY_PREFIX + userId, date);
+  } catch {
+    // 저장하지 못해도 기록은 이미 서버에 있다
+  }
+}
+
 // 계정 초기화 시 이전 localStorage 지원 목록을 빈 배열로 덮어쓴다.
 export function saveApplications(apps: Application[]): void {
   if (typeof window === 'undefined') {
