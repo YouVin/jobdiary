@@ -16,7 +16,8 @@ cd /c/jobdiary
 git fetch -q --prune && git status --short && git branch --show-current
 gh pr list --state open
 git log --oneline --no-merges origin/main..origin/dev      # 운영에 아직 없는 변경
-git diff --stat origin/main..origin/dev -- supabase         # DB 변경 여부 (있으면 마이그레이션 계획부터)
+git diff --stat origin/main..origin/dev -- supabase         # DB·함수 변경 여부 (main 병합 시 supabase-deploy.yml이 자동 반영, #258)
+npx supabase db push --linked --dry-run                     # 병합 때 적용될 SQL 미리 보기 (원격 기록과 다르면 먼저 맞춘다)
 ```
 
 - 열린 PR의 대상 브랜치(base)를 확인한다. 앞 PR 위에 쌓은 PR은 앞 PR이 병합될 때 dev로 자동으로 바뀌지 않을 수 있다. #152~#155가 dev가 아니라 중간 브랜치로 병합돼 dev에 대시보드가 빠졌던 적이 있다. 쌓은 PR은 병합 전에 base가 dev인지 확인하고, 아니면 `gh pr edit <번호> --base dev`를 제안한다.
@@ -98,7 +99,8 @@ grep -rn -E 'dangerouslySetInnerHTML|eval\(|new Function' apps/web/src apps/exte
 
 ```bash
 bash .claude/skills/jobdiary-release/scripts/wait-production.sh <main 병합 커밋 SHA>
-gh run list --branch main --limit 1
+gh run list --branch main --limit 3                         # CI와, supabase/가 바뀌었으면 "Supabase deploy"도
+npx supabase migration list --linked                        # local·remote 열이 같아야 한다
 ```
 
 배포 상태가 `success`이고 main CI가 성공이어야 한다. 실패하면 복구 기준(이전 Production 배포를 Vercel에서 다시 운영으로 승격, 또는 main 되돌리기 PR)을 사용자에게 제시하고 임의로 되돌리지 않는다.

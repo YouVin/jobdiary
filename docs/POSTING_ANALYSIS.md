@@ -56,6 +56,8 @@
 
 ### 운영 반영 (사용자가 직접)
 
+> 2026-11-25(#258)부터 1번 DB와 4번 함수 배포는 main 병합 시 자동이다([SUPABASE.md 자동 반영](SUPABASE.md#자동-반영-258-2026-11-25부터)). 아래는 처음 적용할 때의 기록이다. 키(3번)는 여전히 손으로 넣는다.
+
 1. **DB:** Supabase 대시보드 → SQL Editor에서 `supabase/migrations/20261124120000_company_info.sql` 전체를 실행한다.
 2. **확인:** 같은 곳에서 `supabase/checks/company_info_verify.sql`을 실행한다(모두 롤백). 첫 줄이 모두 `true`·정책 1, `six_tries`가 `{t,t,t,t,t,f}`, `count_after` 5, `after_release` true면 정상.
 3. **키:** 운영용 API 키를 따로 만들어 `npx supabase secrets set ANTHROPIC_API_KEY=... --project-ref <프로젝트 ref>`. 키는 채팅·커밋·로그에 남기지 않는다.

@@ -92,6 +92,13 @@ main(`19ce64e`) 이후 dev 변경(PR #219~#249, 82개 파일)을 운영에 반�
 - 익스텐션: 스토어에 제출한 1.2.0 ZIP(SHA256 2d4eccb7…ec74)은 그대로 두었다. 새 도구로 빌드하면 번들 파일 이름·내용이 달라지므로 다음 출시 때 새로 검증한다.
 - 검증: lint·웹 테스트 172개·tsc·웹 빌드, 익스텐션 테스트 231개·tsc·빌드 통과.
 
+### Supabase 자동 반영 비밀값 (#258, 2026-11-25)
+
+- GitHub Actions `supabase-deploy.yml`이 main push에서만 운영 DB·Edge Function에 반영한다. PR·dev에서는 돌지 않는다(포크 PR에 비밀값이 넘어가지 않음).
+- 비밀값 `SUPABASE_ACCESS_TOKEN`(개인 접근 토큰)·`SUPABASE_DB_PASSWORD`·`SUPABASE_PROJECT_ID`는 Actions Secrets에만 둔다. 저장소·로그·채팅에 쓰지 않는다. 워크플로는 값이 비어 있는지만 확인하고 출력하지 않는다.
+- 권한: `contents: read`만. setup-cli 액션은 커밋 SHA(v3.2.0)로, CLI는 2.112.0으로 고정했다(2주 기준).
+- 토큰이 유출되면 Supabase 계정 → Access Tokens에서 폐기하고 새로 등록한다. DB 비밀번호를 바꾸면 Secrets도 함께 바꾼다.
+
 ## 릴리즈 판단 (#96·#97)
 
 계정 격리(#90), 편집 충돌(#93), 날짜 검증(#94)을 dev에 병합했다. #96·#97에서 정책 페이지·동의 확인을 추가하고 마이그레이션 이력 3건을 원격과 맞췄다. 브라우저 검증과 제한은 [RELEASE_CHECK](RELEASE_CHECK.md)에 기록한다. 사용자가 후속 검증과 main 병합까지 승인했으며, CI 통과를 확인한 커밋만 병합한다.
