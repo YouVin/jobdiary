@@ -23,3 +23,6 @@ export const STATUS_ORDER: Status[] = [
   'rejected',
   'canceled',
 ];
+
+// 회사 정보(#242)를 만들 수 있는 단계: 서류 통과부터. 서버 supabase/functions/_shared/companyInfo/handler.ts의 COMPANY_INFO_STAGES와 같게 둔다.
+export const COMPANY_INFO_STATUSES: Status[] = ['screening', 'interview', 'interviewed', 'offer'];

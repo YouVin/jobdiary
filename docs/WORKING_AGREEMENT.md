@@ -34,38 +34,26 @@
 
 ---
 
-## 2. 디자인 규칙 (Figma 디자인 시스템 준수)
+## 2. 디자인 규칙 (디자인 시스템 준수)
 
-모든 UI는 확정된 디자인 시스템을 따른다. 임의의 색/크기 사용 금지.
+모든 UI는 확정된 디자인 시스템(#199 개편, #200~#206)을 따른다. 임의의 색/크기 사용 금지.
 
-상세 기준은 [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md). 간격·크기는 정수 Tailwind 단위만 사용하고 소수 클래스(`h-4.5`, `gap-1.5` 등)를 추가하지 않는다. SVG는 `public/icons/` 파일과 공통 `Icon`으로 관리한다.
+**기준은 [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)와 `apps/web/tailwind.config.ts`다.** 색 값·글자 크기를 이 문서에 베껴 두지 않는다(예전에 베껴 둔 값이 #206에서 토큰을 바꾼 뒤에도 남아 있었다, #222).
 
-### 색상 — tailwind.config.ts 토큰만 사용
-```
-brand: #4F46E5 / hover #4338CA / tint #EEF2FF / text #3730A3
-status: applied #A1A1AA / screening #378ADD / interview #7F77DD / offer #639922 / rejected #E24B4A
-bg: page #FAFAFA / column #F2F2F4 / card-border #DEDEE2
-text: primary #18181B / secondary #52525B / muted #A1A1AA
-platform: saramin(#F4F4F5/#3F3F46) / wanted(#EEF2FF/#3730A3) / jobkorea(#FEF2F2/#991B1B)
-```
-→ 하드코딩 금지. `bg-brand`, `text-status-offer` 처럼 토큰으로.
+- 색상: 역할 이름 토큰만 쓴다. 예 `bg-surface`, `text-text-secondary`, `bg-action-primary`, `bg-stage-screening`, `bg-today-tint`. `#3461D1` 같은 값을 화면에 직접 쓰지 않는다.
+- 글자: Pretendard 7단계(`display`·`title-1`·`title-2`·`title-3`·`body`·`label`·`caption`), 모바일은 `display-sm`·`title-1-sm`. Tailwind 기본 크기(`text-sm` 등)는 쓰지 않는다.
+- 간격·크기는 정수 Tailwind 단위만 사용하고 소수 클래스(`h-4.5`, `gap-1.5` 등)를 추가하지 않는다. 같은 속성 클래스를 겹쳐 쓰지 않는다(`Card`의 `padding`·`gap` 속성 사용).
+- 화면은 `apps/web/src/components/ui/` 공통 부품을 조합한다. SVG는 `public/icons/` 파일과 공통 `Icon`으로 관리한다.
+- `npm run check:ui`(lint에 포함)가 예전 토큰 이름과 Tailwind 기본 글자 크기를 실패로 막는다.
 
-### 타이포그래피 — Pretendard
+### 반응형 — 모바일 우선
 ```
-heading/xl  28 · 600      heading/lg  22 · 500
-heading/md  18 · 500      body        14 · 400
-small        13 · 400     card/company 13 · 500     label 12 · 500
-caption     11 · 400      badge       10 · 500
+기본      ~639px     모바일
+sm:       640px~     글자 한 단계 키움(display-sm → display 등)
+md:       768px~     헤더 메뉴 한 줄 등 일부 배치
+lg:       1024px~    주된 레이아웃 전환(로그인 2단, 홈 카드 배치 등)
 ```
-
-### 반응형 — 3개 브레이크포인트 (mobile-first)
-```
-Mobile   ~767px      기본 스타일
-Tablet   768~1023px  md:
-Desktop  1024px~     lg:
-```
-모든 컴포넌트는 세 화면을 고려한다.
-예) 현재 칸반은 `grid-cols-1 md:grid-cols-3 lg:grid-cols-7`
+모든 화면은 390·768·1440px에서 가로 넘침 없이 확인한다. 예) 지원 보드 칸반은 열 폭 144px를 지키고 좁은 화면에서 가로로 넘긴다.
 
 ---
 
@@ -77,7 +65,7 @@ Desktop  1024px~     lg:
 - 단계 주석 한국어로
 - Server/Client 컴포넌트 분리 (표시용 Server, 상태/이벤트 Client)
 - 클라이언트 상태 Zustand, 조건부 클래스 clsx
-- 지원 내역 저장은 `applicationStore.ts` → `lib/applicationsApi.ts` → Supabase 경유. `lib/storage.ts`는 이전 localStorage 구현이다.
+- 지원 내역 저장은 `applicationStore.ts` → `lib/applicationsApi.ts` → Supabase 경유. `lib/storage.ts`는 브라우저에만 두는 값(지원 보드 보기 선택, 마지막 가져오기 시각 등)만 다룬다.
 
 ---
 

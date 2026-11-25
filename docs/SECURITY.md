@@ -36,6 +36,51 @@ main(`502b728`) 이후 dev 변경(#171·#173~#176, 44개 파일)을 운영에 �
 - 비밀값: 변경 diff에서 키·토큰·개인키 패턴 없음(검사 명령을 적은 릴리즈 스킬 문서 한 줄만 걸린다). 저장소가 추적하는 환경 파일은 `apps/web/.env.example`뿐이다.
 - 코드: 웹앱·익스텐션 소스에 `dangerouslySetInnerHTML`·`eval`·`new Function`이 없고 `innerHTML`은 익스텐션 테스트에만 있다. 새 탭 링크 4개(상세 패널 "공고 열기" 추가)는 모두 `rel="noopener noreferrer"`이고, "공고 열기"는 http(s) 주소일 때만 보인다. 기록 남기기는 React 텍스트로만 표시하고 2000자로 자르며, 저장은 기존 `expectedUpdatedAt` 충돌 검사를 거친다.
 
+### 디자인 개편 운영 반영 전 점검 (#214, 2026-11-24)
+
+main(`a0628c7`) 이후 dev 변경(#199 디자인 개편 #200~#206, PR #207~#213, 177개 파일)을 운영에 반영하기 전에 확인했다. DB(`supabase/`) 변경과 의존성 변경(lockfile)은 없다.
+
+- 운영 의존성: `npm audit --omit=dev` 0건.
+- 개발 의존성: `npm audit` 전체 13건(높음 4, 중간 9)으로 #181 때와 같다. vite·vitest·undici·zod·source-map-js·minimatch·@typescript-eslint/* 등 빌드·테스트·린트 도구라 배포물에는 포함되지 않는다. 계속 #167에서 추적한다.
+- 비밀값: 변경 diff에서 키·토큰·개인키 패턴 없음. 저장소가 추적하는 환경 파일은 `apps/web/.env.example`뿐이다.
+- 코드: 웹앱·익스텐션 소스에 `dangerouslySetInnerHTML`·`eval`·`new Function`이 없고 `innerHTML`은 익스텐션 테스트에만 있다. 새 탭 링크 6개(약관·개인정보 링크, 중복 보기·결과 기다리는 목록·상세 패널의 공고 링크, 홈 요약 카드)는 모두 `rel="noopener noreferrer"`다. 화면 부품을 바꾸는 개편이라 인증(`AuthGuard`)·저장 경로(`applicationStore` → `applicationsApi`)는 그대로이고, 운영 빌드 fixture 검증(release 14 등)으로 계정 전환 격리·편집 충돌을 다시 확인했다.
+- 복구 기준: 이전 main `a0628c7`, 이전 Production 배포 `jobdiary-24u4tr3bh-youvins-projects.vercel.app`.
+
+### 화면 피드백 운영 반영 전 점검 (#217, 2026-11-24)
+
+main(`f80dd16`) 이후 dev 변경(#215 화면 피드백, PR #216, 7개 파일: 화면 4개·문서 3개)을 운영에 반영하기 전에 확인했다. DB·의존성·익스텐션 변경은 없다.
+
+- 운영 의존성: `npm audit --omit=dev` 0건. 개발 의존성 13건(높음 4, 중간 9)은 #214 때와 같고 #167에서 추적한다.
+- 비밀값: 변경 diff에서 키·토큰·개인키 패턴 0건. 환경 파일은 `apps/web/.env.example`뿐이다.
+- 코드: `dangerouslySetInnerHTML`·`eval`·`new Function` 0건. 바뀐 것은 배치·글자 표시와 로고 이미지 불러오기 시점(`loading="eager"`)뿐이다.
+- 복구 기준: 이전 main `f80dd16`, 이전 Production 배포 `jobdiary-7gweocwx2-youvins-projects.vercel.app`.
+
+### Claude SDK 추가와 zod 고정 (#226, 2026-11-24)
+
+공고 분석 실측을 위해 웹앱 의존성에 `@anthropic-ai/sdk` 1.7.0(공개 2주 이상 된 버전, 정확한 버전으로 고정)을 추가했다.
+
+- 문제: SDK는 `zod`를 선택적 짝 의존성(peer)으로 요구한다. 그동안 개발 도구(eslint-plugin-react-hooks)만 쓰던 `zod 4.4.3`이 운영 의존성으로 함께 잡혀, `npm audit --omit=dev`가 **0건 → 1건(높음, zod <4.6.6)**이 됐다.
+- 수정: 웹앱 의존성에 `zod 4.6.7`(2026-10-12, 수정 버전 이후 2주 이상)을 명시하고, 루트 `overrides`로 저장소 전체 zod를 4.6.7 하나로 맞췄다. zod를 쓰는 개발 도구(eslint-plugin-react-hooks, zod-validation-error)는 모두 `^3.25.0 || ^4.0.0`을 허용한다.
+- 결과: 운영 의존성 **0건**, 전체 **13건 → 12건**(높음 4 → 3, zod 해결). lint·웹 테스트 140개·타입 검사·웹 빌드·익스텐션 테스트 221개 통과.
+- 설치 함정: `apps/web/node_modules/.release-tools`(브라우저 검증 도구, 자체 package.json 보유)가 있으면 npm 11.7.0 설치가 `Cannot read properties of null (reading 'location')`로 멈춘다. 설치할 때만 이 폴더를 잠시 옮겼다가 되돌린다.
+- API 키(`ANTHROPIC_API_KEY`)는 `apps/web/.env.local`에만 두고, 측정 스크립트는 값을 출력하지 않는다. 공고 원문·결과 폴더 `apps/web/.eval/`는 커밋하지 않는다.
+
+### 회사 정보(AI) 운영 반영 전 점검 (#250, 2026-11-25)
+
+main(`19ce64e`) 이후 dev 변경(PR #219~#249, 82개 파일)을 운영에 반영하기 전에 확인했다. 회사 정보 AI(#226~#243), 익스텐션 공고 읽기(#238)·팝업(#239)·지원 이력 배지(#246), 중복 판별(#220)이 들어 있다.
+
+- 운영 의존성: `npm audit --omit=dev` 0건. 개발 의존성 12건(높음 3: vite·undici·source-map-js, 중간 9)은 #226 때와 같고 #167에서 추적한다. 의존성 변경은 #226의 `@anthropic-ai/sdk` 1.7.0·`zod` 4.6.7 고정뿐이다.
+- 비밀값: 변경 diff의 키 패턴 일치는 모두 변수 이름(`ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)과 설명 문장이고 값은 없다. Anthropic 키는 Supabase 비밀값과 로컬 `apps/web/.env.local`에만 있다. 추적하는 환경 파일은 `apps/web/.env.example`뿐이다.
+- 코드: 웹앱·익스텐션 소스에 `dangerouslySetInnerHTML`·`eval`·`new Function` 0건.
+- 서버(Edge Function, 이미 운영 배포됨):
+  - `company-info`: JWT 필수(verify_jwt), 지원은 요청자 권한(RLS)으로 읽고, 서류 통과 전 지원은 403 `stage_not_ready`(한도·AI 호출 없음), 하루 5번 한도는 DB 함수 한 문장으로 센다. AI에는 공고 내용과 회사 이름만 보내고 사용자 id·이메일은 보내지 않는다.
+  - `posting-image`: JWT 필수, 잡코리아·사람인 이미지 서버 허용 목록(공유 계약과 테스트로 비교)·https만·리다이렉트 거절·이미지 형식·10MB 상한으로 서버를 거친 내부망 접근(SSRF)을 막는다. 받은 이미지는 저장하지 않는다.
+  - 배포본 확인: 운영 `company-info`(v5)를 내려받아 dev의 `index.ts`·`handler.ts`·`analysis.ts`·`strengths.ts`와 같음을 비교했다. `posting-image` v1 배포 확인. 무인증 호출 401은 #230 때 확인했다.
+- DB: 마이그레이션 `20261124120000_company_info.sql`(표 3개·한도 함수 2개)은 운영에 적용돼 있다(#230, 확인 SQL 통과). 결과 표는 본인 읽기만, 공고별 결과·사용량 표는 service_role만.
+- 익스텐션: 권한 변경 없음(`storage` + 기존 채용 사이트 host 3개). 공고 페이지는 쿠키 없이(`credentials: omit`) 읽는다. manifest 변경은 32px 아이콘 추가뿐이다. 스토어 출시는 이번 웹 배포와 따로 한다.
+- 개인정보처리방침: Anthropic 처리위탁·국외 처리, 공고 이미지 미저장, 익스텐션 공고 페이지 읽기와 서버 이미지 대신 받기를 #229·#238에서 추가했다.
+- 복구 기준: 이전 main `19ce64e`, 이전 Production 배포 `jobdiary-ac4if0r5a-youvins-projects.vercel.app`.
+
 ## 릴리즈 판단 (#96·#97)
 
 계정 격리(#90), 편집 충돌(#93), 날짜 검증(#94)을 dev에 병합했다. #96·#97에서 정책 페이지·동의 확인을 추가하고 마이그레이션 이력 3건을 원격과 맞췄다. 브라우저 검증과 제한은 [RELEASE_CHECK](RELEASE_CHECK.md)에 기록한다. 사용자가 후속 검증과 main 병합까지 승인했으며, CI 통과를 확인한 커밋만 병합한다.

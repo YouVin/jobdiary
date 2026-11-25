@@ -16,13 +16,11 @@
 
 </div>
 
-> 이 README와 이미지는 **dev 구현 기준**입니다. 웹앱은 main 병합 시 Vercel에 배포되고, 익스텐션은 Chrome 웹스토어 제출이 별도라 스토어 버전과 차이가 있을 수 있습니다. 이미지에는 예시 데이터만 사용했습니다.
 
 ## 어떤 문제를 해결하나요?
 
 지원 기록이 사람인·잡코리아·원티드에 흩어져 있으면 전체 진행 상황을 확인하거나 같은 내용을 다시 입력하기 번거롭습니다. 취준일기는 사용자가 로그인해 보는 지원현황에서 내역을 수집하고, 웹앱에서 단계별로 관리하도록 연결합니다.
 
-웹앱에 저장한 이력은 공고를 둘러볼 때도 활용합니다. 잡코리아·사람인에서 정확히 같은 공고 ID가 확인되면 지원 또는 지원취소 이력을 표시합니다. 회사 이름이나 제목만으로 지원 사실을 추정하지 않습니다.
 
 ## 주요 기능
 
@@ -37,7 +35,9 @@
 | 팝업 | 흑백 일기장 UI, 오늘 날짜·작은 달력, 명확한 보조 버튼·접기 가능한 설정 |
 | 마감일 | 출처에서 확인할 수 있는 명시 날짜만 선택적으로 보충하고, 확인되지 않으면 비워 둠 |
 
-원티드 자동 표시와 모든 사이트의 모든 화면 지원은 포함하지 않습니다. 웹앱의 단계 변경 이력 저장, 기록 수정·삭제와 이미지 공유는 후속 계획입니다. 상세 범위는 [지원 이력 표시](docs/APPLICATION_HISTORY_BADGES.md), [마감일 검증](docs/DEADLINE_VALIDATION.md), [웹앱 로드맵](docs/ROADMAP.md)에 기록했습니다.
+원티드 자동 표시와 모든 사이트의 모든 화면 지원은 포함하지 않습니다.
+웹앱의 단계 변경 이력 저장, 기록 수정·삭제와 이미지 공유는 후속 계획입니다.
+상세 범위는 [지원 이력 표시](docs/APPLICATION_HISTORY_BADGES.md), [마감일 검증](docs/DEADLINE_VALIDATION.md), [웹앱 로드맵](docs/ROADMAP.md)에 기록했습니다.
 
 ## 사용 흐름
 
@@ -54,13 +54,12 @@
 
 <img src="docs/images/web-login.png" alt="취준일기 로그인: 왼쪽 이메일·Google 로그인 폼, 오른쪽 예시 화면을 담은 노트북 소개" width="960">
 
-1024px 이상은 폼 오른쪽에 노트북 소개를, 그보다 좁으면 위쪽에 휴대폰 소개를 보여줍니다. 회원가입은 `/signup`으로 나뉘어 있습니다.
 
 ### 웹앱 홈
 
 <img src="docs/images/web-home-dashboard.png" alt="취준일기 웹앱 홈: 한 문장 요약과 숫자 4칸, 전형 여정 비율 막대, 지원 경로 도넛, 주별로 묶은 다가오는 일정, 최근 8주 주간 지원 막대, 지원 달력" width="960">
 
-웹앱 프로덕션 빌드를 예시 데이터 50건으로 촬영했습니다(`apps/web/scripts/capture-readme-screens.mjs`). 회사명과 숫자는 지어낸 예시이며 실제 계정 데이터가 아닙니다. 설계와 사용자 피드백 반영 과정은 [홈 대시보드 기록](docs/HOME_DASHBOARD.md)에, 2026-11 전체 디자인 개편은 [디자인 시스템](docs/DESIGN_SYSTEM.md)과 [개편 트러블슈팅](docs/REDESIGN_TROUBLESHOOTING.md)에 남겼습니다.
+회사명과 숫자는 지어낸 예시이며 실제 계정 데이터가 아닙니다.
 
 ### 웹앱 지원 보드
 
@@ -68,7 +67,7 @@
 
 <img src="docs/images/web-board-panel.png" alt="지원 상세 패널: 단계 트랙, 지원 정보, 단계별 질문으로 기록 남기기, 지원일·면접과 기록을 모은 지나온 기록" width="960">
 
-주간 보기가 기본이고, 오른쪽 위 **보드**로 7단계 칸반(끌기·키보드로 단계 옮기기)과 검색·사이트 칩을, **중복**으로 여러 사이트에 지원한 묶음을 엽니다. 주 이동·보기 전환은 React `ViewTransition`으로 부드럽게 넘어가며, 지원하지 않는 브라우저나 동작 줄이기 설정에서는 애니메이션 없이 같게 동작합니다. 계산 기준과 결정은 [지원보드 기록](docs/BOARD.md)에 남겼습니다.
+주간 보기가 기본이고, 오른쪽 위 **보드**로 7단계 칸반(끌기·키보드로 단계 옮기기)과 검색·사이트 칩을, **중복**으로 여러 사이트에 지원한 묶음을 엽니다.
 
 ### 익스텐션
 
@@ -76,7 +75,6 @@
 | --- | --- |
 | ![표 전체 복사](apps/extension/docs/store-screenshots/2-copy.png) | ![정확한 공고에 지원 이력 표시](apps/extension/docs/store-screenshots/5-history.png) |
 
-이미지의 팝업은 실제 개발 확장 화면입니다. 사이트 영역은 설명용 예시이며 실제 로그인 화면이 아닙니다. [전체 이미지·재제작 방법](apps/extension/scripts/store-screenshots/README.md)을 제공합니다.
 
 ## 모노레포 구조
 
@@ -90,7 +88,7 @@ jobdiary/
 └── package-lock.json  루트에서 관리하는 단일 잠금 파일
 </pre>
 
-별도 저장소로 개발하던 웹앱과 확장을 npm workspaces로 통합했습니다. 연동 계약을 한 PR에서 검토하면서 앱별 실행·빌드·버전·출시 경계는 유지합니다. Git 이력과 대표 웹앱 주소를 보존한 과정은 [모노레포 전환 사례](docs/MONOREPO_CASE_STUDY.md)에 남겼습니다.
+별도 저장소로 개발하던 웹앱과 확장을 npm workspaces로 통합했습니다. 연동 계약을 한 PR에서 검토하면서 앱별 실행·빌드·버전·출시 경계는 유지합니다.
 
 ## 데이터 흐름과 책임
 
@@ -117,7 +115,6 @@ flowchart LR
 | Tailwind CSS · Zustand · dnd-kit | React · Tailwind CSS · chrome.storage | Node test runner · Vitest · Chromium 표본 검증 |
 | Supabase · Vercel | 사이트별 DOM 파서·수명주기 관리 | GitHub Actions의 앱별 테스트·빌드 |
 
-정확한 버전은 각 앱의 package.json과 루트 package-lock.json을 기준으로 합니다.
 
 ## 로컬 실행
 

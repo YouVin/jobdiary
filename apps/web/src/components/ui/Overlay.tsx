@@ -106,7 +106,7 @@ export function SidePanel({ isOpen, onClose, title, description, children, close
         className={clsx(
           'absolute inset-x-0 bottom-0 flex max-h-[90dvh] flex-col gap-5 overflow-y-auto rounded-t-xl bg-surface p-6 shadow-lg focus:outline-none',
           'transition duration-base ease-soft starting:translate-y-4 starting:opacity-0 motion-reduce:transition-none',
-          'sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-110 sm:rounded-none sm:starting:translate-x-4 sm:starting:translate-y-0',
+          'sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-120 lg:w-130 sm:rounded-none sm:starting:translate-x-4 sm:starting:translate-y-0',
         )}
       >
         <SheetHandle />

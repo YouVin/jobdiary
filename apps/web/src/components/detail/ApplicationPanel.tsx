@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { CompanyInfoSection } from '@/components/detail/CompanyInfoSection';
 import { DiaryComposer } from '@/components/diary/DiaryComposer';
 import { JourneyList } from '@/components/diary/JourneyList';
 import { EditApplicationForm } from '@/components/modal/EditApplicationForm';
@@ -9,7 +10,7 @@ import { Button, buttonClassName } from '@/components/ui/Button';
 import { SidePanel } from '@/components/ui/Overlay';
 import { StageTrack } from '@/components/ui/StageTrack';
 import { PLATFORM_INFO } from '@/constants/platform';
-import { STATUS_INFO } from '@/constants/status';
+import { COMPANY_INFO_STATUSES, STATUS_INFO } from '@/constants/status';
 import { useApplicationStore } from '@/store/applicationStore';
 import type { Application, Status } from '@/types/application';
 import { toDateOnly } from '@/utils/applicationStats';
@@ -134,6 +135,13 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
                 )}
               </div>
             </section>
+
+            <CompanyInfoSection
+              key={`company-${application.id}`}
+              applicationId={application.id}
+              postingUrl={application.url}
+              stage={COMPANY_INFO_STATUSES.includes(application.status) ? 'ready' : application.status === 'applied' ? 'early' : 'closed'}
+            />
 
             <DiaryComposer key={application.id} application={application} onSavingChange={setIsBusy} />
             <JourneyList application={application} />

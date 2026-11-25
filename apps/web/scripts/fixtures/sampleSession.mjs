@@ -47,6 +47,46 @@ for (const [copyIndex, sourceIndex, platform] of [[48, 0, 'saramin'], [49, 1, 'j
   Object.assign(rows[copyIndex], { company: rows[sourceIndex].company, position: rows[sourceIndex].position, platform });
 }
 
+// 회사 정보(#229): 지원별 저장된 결과와 Edge Function 요청 기록. 실제 AI는 부르지 않는다.
+// 공고 내용에 [한도초과]·[실패]를 넣으면 서버의 429·502 응답을 흉내 낸다.
+export const companyInfoStore = new Map();
+export const companyInfoRequests = [];
+export const SAMPLE_COMPANY_INFO = {
+  // #235 형식: 회사 소개 → 강점별 추천 경험 → 근무 조건
+  company: { about: '웹 서비스를 만드는 IT 회사예요.', products: ['루트노트'], website: 'www.rootlabs.example' },
+  hasTalentStatement: true,
+  strengths: [
+    { strength: '소통 능력', quote: '다양한 직군의 동료와 원활하게 소통하는 분', wants: '디자이너·기획자와 의견을 맞춰 가며 일할 사람을 원해요.', experiences: ['다른 직군과 의견이 달랐을 때 조율해 결과를 낸 경험'] },
+    { strength: '책임감', quote: '맡은 기능을 기획부터 배포까지 책임지고 완수해 본 경험', wants: '기능 하나를 처음부터 끝까지 맡을 사람을 원해요.', experiences: ['혼자 맡아 출시까지 끝낸 기능', '출시 뒤 문제를 직접 고친 경험'] },
+  ],
+  workplace: { location: '서울 서초구 동산로 13', workDays: '주 5일(월~금)', workHours: '10:00~19:00' },
+};
+export const SAMPLE_TRANSCRIPT = `[주요 업무]
+- React로 사용자 화면을 만들어요
+[자격 요건]
+- 다양한 직군의 동료와 원활하게 소통하는 분
+- 맡은 기능을 기획부터 배포까지 책임지고 완수해 본 경험`;
+
+async function routeCompanyInfo(route, url, send) {
+  const method = route.request().method();
+  if (method === 'OPTIONS') return route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS' } });
+  if (url.pathname === '/rest/v1/application_analyses') {
+    const id = url.searchParams.get('application_id')?.replace(/^eq\./, '');
+    const row = id ? companyInfoStore.get(id) : undefined;
+    return send(row ? [row] : []);
+  }
+  const body = route.request().postDataJSON();
+  companyInfoRequests.push(body);
+  const text = body.postingText ?? body.postingPage?.text ?? ''; // 공고 페이지 입력(#238)도 같은 표시로 흉내 낸다
+  if (text.includes('[한도초과]')) return send({ error: '회사 정보는 하루 5번까지 새로 만들 수 있어요. 내일 다시 해 주세요.', code: 'daily_limit' }, 429);
+  if (text.includes('[실패]')) return send({ error: 'AI 응답을 받지 못했어요. 잠시 후 다시 해 주세요.', code: 'ai_unavailable' }, 502);
+  // 이미지 공고(#232)는 AI가 옮겨 적은 글(transcript)도 함께 돌려준다.
+  const result = body.postingImages ? { transcript: SAMPLE_TRANSCRIPT, ...SAMPLE_COMPANY_INFO } : SAMPLE_COMPANY_INFO;
+  const createdAt = new Date().toISOString();
+  companyInfoStore.set(body.applicationId, { result, created_at: createdAt });
+  return send({ companyInfo: { result, model: 'claude-haiku-5-5', createdAt }, cached: false });
+}
+
 export async function routeSupabase(context) {
   await context.route('https://*.supabase.co/**', async (route) => {
     const url = new URL(route.request().url());
@@ -80,6 +120,7 @@ export async function routeSupabase(context) {
       }
       return send(rows);
     }
+    if (url.pathname === '/rest/v1/application_analyses' || url.pathname === '/functions/v1/company-info') return routeCompanyInfo(route, url, send);
     if (url.pathname === '/auth/v1/logout') return route.fulfill({ status: 204 });
     throw new Error(`예상하지 않은 요청: ${route.request().method()} ${url.pathname}`);
   });

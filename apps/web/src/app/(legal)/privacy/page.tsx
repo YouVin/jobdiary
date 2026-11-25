@@ -6,13 +6,14 @@ export default function PrivacyPage() {
   return (
     <>
       <h1 className="text-title-1-sm text-text-primary sm:text-title-1">개인정보처리방침</h1>
-      <p>시행일: 2026년 10월 17일 · 최종 수정: 2026년 11월 6일. 취준일기 운영자 및 개인정보 보호 담당자 황유빈은 서비스 제공에 필요한 개인정보를 다음과 같이 처리합니다. 문의·권리 행사: <a href="mailto:dbqls1210@gmail.com" className="text-text-brand underline underline-offset-2">dbqls1210@gmail.com</a></p>
+      <p>시행일: 2026년 10월 17일 · 최종 수정: 2026년 11월 24일. 취준일기 운영자 및 개인정보 보호 담당자 황유빈은 서비스 제공에 필요한 개인정보를 다음과 같이 처리합니다. 문의·권리 행사: <a href="mailto:dbqls1210@gmail.com" className="text-text-brand underline underline-offset-2">dbqls1210@gmail.com</a></p>
       <section className="space-y-2">
         <h2 className="text-title-3 text-text-primary">1. 처리 항목과 목적</h2>
         <p>계약 체결·이행을 위해 이메일, 계정 식별자, 인증 정보, 약관 확인 버전·시점을 처리합니다. 이메일 가입의 비밀번호는 인증 제공업체가 해시로 저장하며 운영자가 원문을 조회하지 않습니다. Google 로그인에서는 Google 계정 식별자, 이메일과 제공되는 이름·프로필 이미지 정보를 인증 제공업체가 전달받습니다. Google 비밀번호는 받지 않습니다.</p>
         <p>지원 관리 기능을 이용할 때 회사명, 직무, 플랫폼, 지원 상태·출처, 지원일, 마감일, 면접일, 공고 링크, 외부 지원 식별자 및 선택 입력한 메모·일기를 저장합니다. 확장 프로그램 가져오기는 이용자가 요청한 지원 내역을 처리하며, 외부 채용 사이트의 비밀번호를 취준일기 서버에 저장하지 않습니다.</p>
         <p>익스텐션이 설치된 브라우저에서는 저장한 지원 이력의 사이트·공고 ID·지원/취소 구분, 주소를 확인하지 못한 건수, 계정 구분용 단방향 해시와 갱신 시각을 익스텐션의 로컬 비교 캐시로 전달할 수 있습니다. 회사명·공고명·이메일·인증 토큰·메모·일기는 비교 캐시에 넣지 않습니다. 이 정보는 잡코리아·사람인의 일치 공고에 지원 이력을 표시하는 데 사용하며, 원티드는 현재 자동 표시 대상이 아닙니다.</p>
         <p>자동 표시는 익스텐션에서 끌 수 있으며 웹앱 로그아웃·계정 변경 시 해당 브라우저의 비교 캐시를 정리합니다. 채용 사이트 로그아웃과는 별개이며 웹앱을 닫은 동안 다른 기기의 변경을 즉시 반영하지는 못합니다. 수집 내역 초기화는 별도의 비교 캐시나 웹앱 지원 기록을 삭제하지 않습니다. 자세한 처리 방식은 <a href="https://youvin.github.io/jobdiary-extension/privacy/" className="text-text-brand underline underline-offset-2">익스텐션 개인정보처리방침</a>에서 확인할 수 있습니다.</p>
+        <p>회사 정보 기능(선택)을 이용하면 이용자가 넣은 채용 공고 내용(글 또는 캡처 이미지)과 회사명을 AI로 정리하기 위해 처리하고, 정리 결과(이미지 공고는 이미지에서 읽은 글 포함)와 이용 횟수(하루 5회 제한)를 저장합니다. 공고 이미지는 정리 요청에만 쓰고 저장하지 않습니다. “공고 페이지에서 가져오기”를 누르면 익스텐션이 이용자의 브라우저에서 저장된 공고 주소의 공개 공고 페이지를 읽고(채용 사이트 로그인 정보는 보내지 않음), 공고 본문 이미지가 다른 서버에 있으면 취준일기 서버가 그 이미지 파일만 대신 받아 이용자의 브라우저에 넘깁니다. 대신 받은 이미지는 저장하지 않습니다. 같은 공고 내용의 정리 결과는 이용자 식별 정보 없이 저장해 다른 이용자에게도 재사용합니다. 공고 내용이나 캡처에 개인정보가 들어가지 않도록 안내하며, 이용자의 이메일·계정 식별자는 AI 제공업체에 보내지 않습니다.</p>
         <p>서비스 제공·보안과 장애 대응을 위해 접속 IP, 브라우저 정보, 요청 시각·경로, 인증 및 오류 기록이 인프라 제공업체에서 처리될 수 있습니다. 문의 시 이메일과 문의 내용을 처리합니다. 광고 목적의 개인정보 판매나 별도의 광고 추적 기능은 사용하지 않습니다.</p>
       </section>
       <section className="space-y-2">
@@ -22,8 +23,9 @@ export default function PrivacyPage() {
       </section>
       <section className="space-y-2">
         <h2 className="text-title-3 text-text-primary">3. 처리위탁 및 국외 처리</h2>
-        <p>서비스 계약 이행에 필요한 인증·데이터 저장을 Supabase Pte. Ltd.에, 웹 호스팅·전송·보안을 Vercel Inc.에 위탁합니다. 별도의 마케팅 목적으로 제3자에게 개인정보를 제공하지 않습니다. 법령에 따른 의무가 있는 경우에는 그 범위에서 처리합니다.</p>
+        <p>서비스 계약 이행에 필요한 인증·데이터 저장을 Supabase Pte. Ltd.에, 웹 호스팅·전송·보안을 Vercel Inc.에, 회사 정보 기능의 공고 내용 정리(AI 처리)를 Anthropic, PBC에 위탁합니다. 별도의 마케팅 목적으로 제3자에게 개인정보를 제공하지 않습니다. 법령에 따른 의무가 있는 경우에는 그 범위에서 처리합니다.</p>
         <p>주 데이터베이스와 인증 서비스는 Supabase의 대한민국 서울 리전(ap-northeast-2)에 있습니다. 운영·지원 과정에서 Supabase의 싱가포르 본사와 미국 관계사 및 수탁 인프라에서 계정·접속 정보가 처리될 수 있습니다. Vercel은 미국 사업자로 접속 IP, 요청 경로, 브라우저·오류 정보를 글로벌 전송·보안 인프라에서 처리합니다. 서비스 접속·인증·지원 요청 시 암호화된 네트워크로 처리되며 목적은 서비스 제공, 보안 및 장애 대응입니다.</p>
+        <p>회사 정보 기능을 이용할 때에만 이용자가 넣은 공고 내용(글 또는 이미지)과 회사명이 미국 사업자인 Anthropic, PBC의 API로 암호화된 네트워크를 통해 전송되어 정리 결과를 만드는 데 처리됩니다. 처리 목적은 공고에서 회사가 원하는 강점·기술을 정리하는 것이며, Anthropic의 상업 약관에 따라 모델 학습에 사용되지 않습니다. Anthropic은 API 입력·출력을 받은 날부터 30일 안에 삭제하며, 이용 정책 위반 점검이나 법령 준수가 필요한 경우에는 그 정책에 따라 더 오래 보관할 수 있습니다. 이 기능을 쓰지 않으면 전송되지 않으며, 연락처는 privacy@anthropic.com입니다. 자세한 내용은 <a className="text-text-brand underline underline-offset-2" href="https://privacy.claude.com/en/articles/7996866-how-long-do-you-store-my-organization-s-data">Anthropic 데이터 보관 안내</a>에서 확인할 수 있습니다.</p>
         <p>위탁 정보의 보유는 계약에 따른 서비스 제공 기간과 제공업체의 로그·백업 보존 기간에 따릅니다. Supabase 연락처는 privacy@supabase.io, Vercel 연락처는 privacy@vercel.com입니다. 최신 처리 장소와 세부 보존 정책은 <a className="text-text-brand underline underline-offset-2" href="https://supabase.com/legal/privacy-resources/data-residency-and-transfers-faq">Supabase 데이터 처리 안내</a>와 <a className="text-text-brand underline underline-offset-2" href="https://vercel.com/legal/dpa">Vercel 처리위탁 계약</a>에서 확인할 수 있습니다.</p>
         <p>해당 처리를 원하지 않으면 가입·로그인을 진행하지 않거나 계정 설정에서 탈퇴하고 담당자에게 처리 중단을 요청할 수 있습니다. 인증·호스팅은 서비스 제공에 필수적이므로 이를 거부하면 서비스 이용이 제한됩니다. Google 로그인 이용 시 Google 자체 개인정보 처리에는 Google의 정책이 적용되며 이메일 가입을 대신 선택할 수 있습니다.</p>
       </section>
