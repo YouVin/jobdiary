@@ -5,6 +5,7 @@ import { Fragment, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useApplicationStore } from '@/store/applicationStore';
 import { ConsentGate } from '@/components/auth/ConsentGate';
+import { useDailyActivity } from '@/hooks/useDailyActivity';
 import { hasCurrentConsent } from '@/lib/legal';
 
 interface AuthGuardProps {
@@ -23,6 +24,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const consented = useAuthStore((state) => hasCurrentConsent(state.session?.user.user_metadata));
   const applicationUserId = useApplicationStore((state) => state.userId);
   const sessionVersion = useApplicationStore((state) => state.sessionVersion);
+  const ready = status === 'authenticated' && userId === applicationUserId;
+
+  // 사용량 지표: 동의까지 마친 사용자만 방문 날짜를 남긴다 (#256)
+  useDailyActivity(userId, ready && consented);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -34,7 +39,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
   }, [status, router]);
 
-  if (status === 'authenticated' && userId === applicationUserId) {
+  if (ready) {
     // 계정 변경 때 헤더 모달·필터·익스텐션 알림 등 내부 화면 상태도 새로 만든다.
     return <Fragment key={sessionVersion}>{consented ? children : <ConsentGate />}</Fragment>;
   }

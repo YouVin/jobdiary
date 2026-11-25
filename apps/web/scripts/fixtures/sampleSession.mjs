@@ -122,6 +122,7 @@ export async function routeSupabase(context) {
     }
     if (url.pathname === '/rest/v1/application_analyses' || url.pathname === '/functions/v1/company-info') return routeCompanyInfo(route, url, send);
     if (url.pathname === '/auth/v1/logout') return route.fulfill({ status: 204 });
+    if (url.pathname === '/rest/v1/rpc/record_daily_activity') return route.fulfill({ status: 204 }); // 방문 기록(#256)
     throw new Error(`예상하지 않은 요청: ${route.request().method()} ${url.pathname}`);
   });
 }
