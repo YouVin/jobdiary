@@ -12,7 +12,6 @@ export interface CompanyInfo {
   about: string; // 무엇을 만드는(개발하는) 회사인지
   products: string[]; // 대표 서비스·제품
   website: string; // 공고에 적힌 대표 사이트 (서버가 원문에 있는지 확인한 것만)
-  hasTalentStatement: boolean;
   strengths: CompanyStrength[];
   location: string; // 근무지 주소
   workDays: string;

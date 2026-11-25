@@ -1,6 +1,7 @@
 import {
   buildAnalysisRequest,
   estimateCostUsd,
+  keepKnownStrengths,
   verifyQuotes,
   type AnalysisModel,
   type AnalysisResult,
@@ -16,7 +17,7 @@ import {
 
 export const COMPANY_INFO_MODEL: AnalysisModel = 'claude-haiku-5-5'; // 결정 기록 001: 1차 실측 근거로 Haiku 5.5로 시작
 export const COMPANY_INFO_VARIANT = 'lean' as const; // 비용 절감 방식 (1차 실측: 1건 $0.0007, 4.6초)
-export const PROMPT_VERSION = '2026-11-25.4'; // 지시문·결과 형식을 바꾸면 올린다. 같은 공고라도 버전이 다르면 새로 만든다 (#237 업무·자격에서도 강점 찾기)
+export const PROMPT_VERSION = '2026-11-25.5'; // 지시문·결과 형식을 바꾸면 올린다. 같은 공고라도 버전이 다르면 새로 만든다 (#260 결과 형식 줄이기)
 export const DAILY_LIMIT = 5; // 사용자당 하루(한국 날짜) 새로 만드는 횟수
 export const MIN_POSTING_LENGTH = 200;
 export const MAX_POSTING_LENGTH = 15_000;
@@ -304,7 +305,9 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
       return fail(422, '공고 이미지에서 글을 읽지 못했어요. 잠시 후 다시 해 주세요.', 'unreadable_image');
     }
   }
-  const verified = keepVerifiedWebsite(keepVerifiedStrengths(outcome.result, quoteSource), quoteSource);
+  // 강점 이름은 고정 목록만 남긴다(#260: 결과 형식에서 목록 제한을 빼고 서버가 검사)
+  const known = keepKnownStrengths(outcome.result);
+  const verified = keepVerifiedWebsite(keepVerifiedStrengths(known.result, quoteSource), quoteSource);
   const result = source.kind === 'page' ? preferPageFacts(verified, source.facts) : verified;
 
   // 진단(#237): 강점이 비었을 때 "AI가 못 찾았나, 인용 검사에서 버렸나, 글을 덜 읽었나"를 숫자로 가린다. 내용은 남기지 않는다.
@@ -313,9 +316,13 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
     imageCount: source.kind === 'text' ? 0 : source.images.length,
     readChars: quoteSource.length,
     strengthsReturned: outcome.result.strengths.length,
+    strengthsUnknownLabel: known.dropped,
     strengthsKept: result.strengths.length,
   };
-  if (result.strengths.length < outcome.result.strengths.length) {
+  if (known.dropped > 0) {
+    deps.logError('[company-info] 목록에 없는 강점 이름을 버림', diagnostics);
+  }
+  if (result.strengths.length < known.result.strengths.length) {
     deps.logError('[company-info] 인용 검사로 강점을 버림', diagnostics);
   }
 

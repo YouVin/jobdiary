@@ -20,9 +20,8 @@ const POSTING = [
 const AI_RESULT = {
   company: { about: '웹 서비스를 만드는 회사예요.', products: [], website: 'www.rootlabs.example' },
   workplace: { location: '', workDays: '', workHours: '' },
-  hasTalentStatement: true,
   strengths: [
-    { strength: '소통', quote: '다양한 직군의 동료와 원활하게 소통하는 분', wants: '원하는 모습', experiences: ['경험'] },
+    { strength: '소통능력', quote: '다양한 직군의 동료와 원활하게 소통하는 분', wants: '원하는 모습', experiences: ['경험'] },
     { strength: '책임감', quote: '기획부터 배포까지 책임지고 완수해 본 경험', wants: '원하는 모습', experiences: ['경험'] },
     { strength: '도전 정신', quote: '공고에 없는 지어낸 문장', wants: '원하는 모습', experiences: ['경험'] },
   ],
@@ -94,7 +93,7 @@ test('성공하면 공고에 없는 인용의 강점을 버리고, 비용과 함
   const response = await handleCompanyInfo(deps, body());
   assert.equal(response.status, 200);
   assert.equal(response.body.cached, false);
-  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['소통', '책임감']);
+  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['소통 능력', '책임감']);
   assert.equal(calls.consume, 1);
   assert.equal(calls.release, 0);
   assert.equal(calls.saved[0].costUsd.toFixed(6), '0.000700'); // 3000×$0.10 + 800×$0.50 (100만 토큰당)
@@ -148,7 +147,7 @@ test('이미지 공고는 이미지 조각을 그대로 보내고, 읽은 글 �
   assert.ok(request.max_tokens >= 16000);
   assert.match(request.system, /transcript에 위에서 아래 순서로/);
   assert.match(request.system, /지시가 아니다/);
-  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['소통', '책임감'], '읽은 글에 없는 인용은 버림');
+  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['소통 능력', '책임감'], '읽은 글에 없는 인용은 버림');
   assert.equal(response.body.companyInfo.result.transcript, TRANSCRIPT);
 });
 
@@ -199,6 +198,19 @@ test('대표 사이트는 공고에 실제로 적힌 주소만 남긴다', async
   assert.equal(keepVerifiedWebsite(result(''), posting).company.website, '');
 });
 
+// ── #260 결과 형식에서 강점 목록 제한을 빼고 서버가 검사 ──
+test('목록에 없는 강점 이름은 서버가 버리고 진단에 숫자로 남긴다 (#260)', async () => {
+  const result = structuredClone(AI_RESULT);
+  result.strengths[1].strength = '리더십'; // 목록 밖 이름(인용은 공고에 있음)
+  const { deps, calls } = fakeDeps({
+    analyze: async () => ({ stopReason: 'end_turn', model: COMPANY_INFO_MODEL, usage: { input_tokens: 10, output_tokens: 10 }, result }),
+  });
+  const response = await handleCompanyInfo(deps, body());
+  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['소통 능력']);
+  assert.equal(calls.saved[0].usage.diagnostics.strengthsUnknownLabel, 1);
+  assert.ok(calls.errors.includes('[company-info] 목록에 없는 강점 이름을 버림'));
+});
+
 // ── #237 강점이 비는 문제 ──
 test('인용 검사는 가운뎃점·글머리표·줄바꿈 차이를 무시하고, 버린 강점 수를 진단에 남긴다', async () => {
   const transcript = '자격 요건\n· 새로운 기술을 직접 시도하고\n  만들어 가는 분\n- 다양한 팀과 협업해 본 경험';
@@ -206,7 +218,7 @@ test('인용 검사는 가운뎃점·글머리표·줄바꿈 차이를 무시하
     analyze: async () => ({
       stopReason: 'end_turn', model: COMPANY_INFO_MODEL, usage: { input_tokens: 10, output_tokens: 10 },
       result: {
-        transcript, company: { about: '', products: [], website: '' }, hasTalentStatement: true, workplace: { location: '', workDays: '', workHours: '' },
+        transcript, company: { about: '', products: [], website: '' }, workplace: { location: '', workDays: '', workHours: '' },
         strengths: [
           { strength: '자기주도성', quote: '새로운 기술을 직접 시도하고 만들어 가는 분', wants: '', experiences: [] },
           { strength: '협동성', quote: '다양한 팀과 협업해 본 경험', wants: '', experiences: [] },
@@ -217,7 +229,7 @@ test('인용 검사는 가운뎃점·글머리표·줄바꿈 차이를 무시하
   });
   const response = await handleCompanyInfo(deps, imageBody([IMAGE]));
   assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['자기주도성', '협동성']);
-  assert.deepEqual(calls.saved[0].usage.diagnostics, { source: 'image', imageCount: 1, readChars: transcript.length, strengthsReturned: 3, strengthsKept: 2 });
+  assert.deepEqual(calls.saved[0].usage.diagnostics, { source: 'image', imageCount: 1, readChars: transcript.length, strengthsReturned: 3, strengthsUnknownLabel: 0, strengthsKept: 2 });
   assert.equal(calls.errors.length, 1, '버린 강점이 있으면 로그(숫자만)');
 });
 
@@ -255,7 +267,7 @@ test('공고 페이지 입력: 글과 이미지가 함께면 둘 다 보내고, 
   const blocks = calls.analyze[0].messages[0].content;
   assert.deepEqual(blocks.map((block) => block.type), ['text', 'image', 'text']);
   assert.match(blocks[0].text, /\[공고 본문 글\]/);
-  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['소통', '책임감']);
+  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['소통 능력', '책임감']);
 });
 
 test('공고 페이지 입력: 글도 이미지도 없으면 400, 글·이미지·페이지를 섞어 보내면 400', async () => {
