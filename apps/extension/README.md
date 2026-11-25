@@ -43,11 +43,11 @@
 | --- | --- |
 | ![전체 복사 완료 UI](docs/store-screenshots/2-copy.png) | ![지원현황에서 수집 시작](docs/store-screenshots/3-start.png) |
 
-| 세 사이트의 수집 내역 | 지원·취소 이력 표시 |
+| 공고 페이지로 회사 정보 정리 | 지원·취소 이력 표시 |
 | --- | --- |
-| ![사람인·잡코리아·원티드 수집](docs/store-screenshots/4-sites.png) | ![실제 확장 엔진이 표시한 지원 이력](docs/store-screenshots/5-history.png) |
+| ![공고 페이지를 읽어 만든 회사 정보](docs/store-screenshots/4-company.png) | ![실제 확장 엔진이 표시한 지원 이력](docs/store-screenshots/5-history.png) |
 
-팝업은 실제 개발 확장에서 촬영했습니다. 사이트 구성과 회사명·지원 내역은 예시이며 사용자 계정을 사용하지 않았습니다. [원본·규격·재생성 절차](scripts/store-screenshots/README.md)를 함께 제공합니다.
+팝업은 실제 확장에서, 회사 정보는 취준일기 웹앱에서 예시 데이터로 촬영했습니다. 사이트 구성과 회사명·지원 내역은 예시이며 사용자 계정을 사용하지 않았습니다. [원본·규격·재생성 절차](scripts/store-screenshots/README.md)를 함께 제공합니다.
 
 ## 사용 방법
 
