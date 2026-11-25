@@ -1,0 +1,89 @@
+# main에 병합되면 Supabase에 자동 반영한다 (#258).
+# - supabase/migrations/** 가 바뀌면: 아직 적용 안 된 SQL만 db push (먼저 dry-run 결과를 로그에 남김)
+# - supabase/functions/** 가 바뀌면: 바뀐 Edge Function만 배포(_shared가 바뀌면 전부)
+# 웹앱(Vercel) 배포와는 따로 돈다. 실패하면 이 워크플로만 실패로 표시된다.
+# 비밀값: SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, SUPABASE_PROJECT_ID (Settings → Secrets → Actions)
+name: Supabase deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+  workflow_dispatch: # 손으로 돌리면 남은 SQL 적용 + 함수 전부 배포
+
+permissions:
+  contents: read
+
+# 두 병합이 겹쳐도 하나씩 차례로 반영한다
+concurrency:
+  group: supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Apply migrations and deploy functions
+    # 기본 브랜치가 dev라 손으로 돌릴 때 dev가 기본 선택된다. 운영에는 main만 반영한다.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 2.112.0
+
+      - name: Check secrets
+        run: |
+          for name in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_PROJECT_ID; do
+            if [ -z "${!name}" ]; then echo "::error::$name 비밀값이 없습니다"; exit 1; fi
+          done
+
+      # 무엇이 바뀌었는지: push면 이전 main과 비교, 손으로 돌렸거나 비교할 수 없으면 전부
+      - name: Detect changes
+        id: changes
+        env:
+          BEFORE: ${{ github.event.before }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" != "push" ] || [ -z "$BEFORE" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "migrations=true" >> "$GITHUB_OUTPUT"
+            echo "functions=company-info delete-account posting-image" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$BEFORE" "$GITHUB_SHA")
+          echo "$changed"
+          if echo "$changed" | grep -q '^supabase/migrations/'; then echo "migrations=true" >> "$GITHUB_OUTPUT"; fi
+          if echo "$changed" | grep -q '^supabase/functions/_shared/'; then
+            functions="company-info delete-account posting-image"
+          else
+            functions=$(echo "$changed" | sed -n 's#^supabase/functions/\([^/]*\)/.*#\1#p' | sort -u | tr '\n' ' ')
+          fi
+          echo "functions=$functions" >> "$GITHUB_OUTPUT"
+
+      # DB를 먼저: 함수가 새 표·함수를 쓸 수 있다
+      - name: Apply migrations
+        if: steps.changes.outputs.migrations == 'true'
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+          supabase migration list --linked --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Deploy functions
+        if: steps.changes.outputs.functions != ''
+        env:
+          FUNCTIONS: ${{ steps.changes.outputs.functions }}
+        run: |
+          for name in $FUNCTIONS; do
+            if [ ! -f "supabase/functions/$name/index.ts" ]; then echo "건너뜀(함수 아님): $name"; continue; fi
+            echo "배포: $name"
+            supabase functions deploy "$name" --project-ref "$SUPABASE_PROJECT_ID" --use-api
+          done

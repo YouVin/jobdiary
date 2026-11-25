@@ -41,6 +41,22 @@
 
 camelCase(TS) ↔ snake_case(DB) 변환은 `supabase-js`가 자동으로 해주지 않으므로, DB 접근 계층에 얇은 매핑 함수를 두고 `applicationStore`를 포함한 나머지 코드는 지금처럼 camelCase `Application`만 다루게 한다 (아래 4번 참고).
 
+#### 자동 반영 (#258, 2026-11-25부터)
+
+main에 병합되면 GitHub Actions [`supabase-deploy.yml`](../.github/workflows/supabase-deploy.yml)이 Supabase에 반영한다. **SQL Editor 실행이나 `functions deploy`를 손으로 하지 않는다.**
+
+| 바뀐 곳 | 하는 일 |
+|---|---|
+| `supabase/migrations/**` | `db push --dry-run`으로 적용할 파일을 로그에 남긴 뒤 `db push`(원격 기록에 없는 파일만, 파일 이름 순서) |
+| `supabase/functions/<이름>/**` | 그 함수만 `functions deploy --use-api` |
+| `supabase/functions/_shared/**` | 함수 전부 배포 |
+
+- DB를 먼저, 함수를 나중에 반영한다. 웹앱(Vercel) 배포와는 따로 돌며, 실패하면 이 워크플로만 실패로 보인다. 손으로 다시 돌리려면 Actions → Supabase deploy → Run workflow에서 **브랜치를 main으로 바꿔** 실행한다(남은 SQL 적용 + 함수 전부 배포). 기본 브랜치가 dev라 그대로 누르면 dev가 선택되며, 이때는 작업이 건너뛰어진다.
+- 비밀값 `SUPABASE_ACCESS_TOKEN`·`SUPABASE_DB_PASSWORD`·`SUPABASE_PROJECT_ID`는 GitHub Actions Secrets에만 둔다.
+- **새 SQL은 반드시 `supabase/migrations/`에 새 파일로** 추가한다. 이미 적용된 파일을 고치면 다시 실행되지 않는다. SQL Editor로 직접 실행했다면 `npx supabase migration repair --status applied <버전> --linked`로 기록을 맞춘다.
+- 2026-11-25 시작 시점: `20261124120000_company_info.sql`은 SQL Editor로 적용돼 원격 기록에 없었다. 표 3개가 운영에 있는 것(브라우저 권한 거부 42501 = 표 있음)을 확인한 뒤 `migration repair --status applied`로 기록만 맞췄다(SQL 재실행 없음). 이후 `db push --dry-run` 결과 "Remote database is up to date".
+- 확인: `npx supabase migration list --linked`에서 local과 remote 열이 같으면 정상.
+
 상태 출처를 사용하는 웹앱 배포 전에는 [상태 출처 마이그레이션](../supabase/migrations/202610130001_application_status_source.sql)을 Supabase SQL Editor에서 한 번 실행해야 한다. 이 파일은 컬럼, 기존 진행/종료 상태 보호용 보정, 수동 상태 보호 트리거를 함께 만든다. 저장소에 파일이 존재하는 것만으로 운영 DB에 적용되지는 않는다. 재수집 규칙과 기존 데이터 처리 범위는 [INTEGRATION.md §5](./INTEGRATION.md#5-재수집과-수동-상태-보존)를 참고한다.
 
 #### 상태 출처 적용 기록 — 2026-10-13, 이슈 #67
