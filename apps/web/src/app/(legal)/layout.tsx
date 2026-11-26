@@ -9,6 +9,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex min-h-full flex-1 flex-col bg-page">
       <main id={MAIN_CONTENT_ID} tabIndex={-1} className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-8 focus:outline-none sm:py-10">
+        {/* ── 위 줄: 로고(홈) | 이용약관·개인정보처리방침 ── */}
         <nav aria-label="정책 문서" className="flex flex-wrap items-center justify-between gap-4 px-1">
           <Link href="/" aria-label="취준일기 홈" className="rounded-sm focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-focus-ring">
             <BrandLogo className="h-7 w-auto" alt="" />
@@ -22,6 +23,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
             </Link>
           </span>
         </nav>
+        {/* ── 문서 본문(흰 카드) ── */}
         <article className="flex flex-col gap-6 rounded-xl bg-surface p-5 text-body text-text-secondary sm:p-8">{children}</article>
       </main>
     </div>

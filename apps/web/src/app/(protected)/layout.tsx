@@ -17,7 +17,9 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       <ToastProvider>
         <ExtensionImportProvider>
           <div className="flex min-h-full flex-1 flex-col bg-page">
+            {/* ── 머리: 로고·메뉴 | 가져오기·지원 추가·내 계정 ── */}
             <Header />
+            {/* ── 본문: 가져오기 오류 알림 → 각 페이지 ── */}
             <main
               id={MAIN_CONTENT_ID}
               tabIndex={-1}

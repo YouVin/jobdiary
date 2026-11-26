@@ -4,6 +4,7 @@ import { publicPageMetadata, SITE_DESCRIPTION } from '@/lib/siteMetadata';
 
 export const metadata = publicPageMetadata('로그인', SITE_DESCRIPTION, '/login');
 
+// 로그인(/login) · 틀은 (entry)/layout.tsx의 AuthShell(폼 | 소개). 폼은 components/auth/LoginForm.tsx
 export default function LoginPage() {
   return (
     <>
