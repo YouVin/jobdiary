@@ -72,6 +72,7 @@ for (const [copyIndex, sourceIndex, platform] of [[48, 0, 'saramin'], [49, 1, 'j
 export const companyInfoStore = new Map();
 export const companyInfoRequests = [];
 export const feedbackRequests = [];
+export const acquisitionRequests = []; // 가입 경로(#290)
 export const SAMPLE_COMPANY_INFO = {
   // #235 형식: 회사 소개 → 강점별 추천 경험 → 근무 조건
   company: { about: '웹 서비스를 만드는 IT 회사예요.', products: ['루트노트'], website: 'www.rootlabs.example' },
@@ -154,6 +155,11 @@ export async function routeSupabase(context) {
       const { p_message: message, p_page: page } = route.request().postDataJSON();
       feedbackRequests.push({ message, page });
       return send(!message.includes('[한도]'));
+    }
+    // 가입 경로(#290): 예시 계정은 새 가입자처럼 받는다
+    if (url.pathname === '/rest/v1/rpc/record_acquisition') {
+      acquisitionRequests.push(route.request().postDataJSON());
+      return send(true);
     }
     throw new Error(`예상하지 않은 요청: ${route.request().method()} ${url.pathname}`);
   });
