@@ -56,6 +56,7 @@ main에 병합되면 GitHub Actions [`supabase-deploy.yml`](../.github/workflows
 - **새 SQL은 반드시 `supabase/migrations/`에 새 파일로** 추가한다. 이미 적용된 파일을 고치면 다시 실행되지 않는다. SQL Editor로 직접 실행했다면 `npx supabase migration repair --status applied <버전> --linked`로 기록을 맞춘다.
 - 2026-11-25 시작 시점: `20261124120000_company_info.sql`은 SQL Editor로 적용돼 원격 기록에 없었다. 표 3개가 운영에 있는 것(브라우저 권한 거부 42501 = 표 있음)을 확인한 뒤 `migration repair --status applied`로 기록만 맞췄다(SQL 재실행 없음). 이후 `db push --dry-run` 결과 "Remote database is up to date".
 - 확인: `npx supabase migration list --linked`에서 local과 remote 열이 같으면 정상.
+- SQL 적용은 `supabase link` 없이 DB 비밀번호로 서울 Session pooler에 직접 연결한다(`--db-url`). 첫 실행(2026-11-26)에서 `link`가 프로젝트 설정 API를 불러 최소 권한 토큰(프로젝트 설정·API 키·DB 설정 읽기, Edge Functions 쓰기)이 403으로 막혔다. 토큰 권한을 넓히지 않고 연결 방식을 바꿨다.
 
 상태 출처를 사용하는 웹앱 배포 전에는 [상태 출처 마이그레이션](../supabase/migrations/202610130001_application_status_source.sql)을 Supabase SQL Editor에서 한 번 실행해야 한다. 이 파일은 컬럼, 기존 진행/종료 상태 보호용 보정, 수동 상태 보호 트리거를 함께 만든다. 저장소에 파일이 존재하는 것만으로 운영 DB에 적용되지는 않는다. 재수집 규칙과 기존 데이터 처리 범위는 [INTEGRATION.md §5](./INTEGRATION.md#5-재수집과-수동-상태-보존)를 참고한다.
 
