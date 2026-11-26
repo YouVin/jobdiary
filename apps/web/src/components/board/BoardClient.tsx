@@ -1,17 +1,17 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { addTransitionType, startTransition, useMemo, useState, ViewTransition } from 'react';
 import { BoardFilters } from '@/components/board/BoardFilters';
 import { DuplicateGroups } from '@/components/board/DuplicateGroups';
-import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { ResultRow, StagePills } from '@/components/board/StageSummary';
 import { WaitingList } from '@/components/board/WaitingList';
 import { WeekTimeline, weekTitle } from '@/components/board/WeekTimeline';
 import { ApplicationErrorNotice } from '@/components/dashboard/ApplicationNotices';
-import { ApplicationPanel } from '@/components/detail/ApplicationPanel';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Tabs } from '@/components/ui/Tabs';
 import { useApplicationsLoader } from '@/hooks/useApplicationsLoader';
+import { usePreloadOnIdle } from '@/hooks/usePreloadOnIdle';
 import { useStageMove } from '@/hooks/useStageMove';
 import { type BoardView, loadBoardView, saveBoardView } from '@/lib/storage';
 import { useApplicationStore } from '@/store/applicationStore';
@@ -21,6 +21,13 @@ import { DEFAULT_APPLICATION_FILTERS, filterApplications } from '@/utils/applica
 import { getDuplicateGroups } from '@/utils/duplicateDetection';
 import { getWaitingBoard } from '@/utils/waitingList';
 import { getWeekTimeline } from '@/utils/weekTimeline';
+
+// 상세 패널(회사 정보·공고 이미지 처리 포함)은 회사를 누를 때만 필요하다. 첫 로드에서 빼고 한가할 때 미리 받는다 (#265).
+const loadApplicationPanel = () => import('@/components/detail/ApplicationPanel').then((module) => module.ApplicationPanel);
+const ApplicationPanel = dynamic(loadApplicationPanel);
+// 칸반(끌기 라이브러리 dnd-kit 포함)은 '보드' 보기에서만 필요하다. 기본 보기는 주간이라 같은 방식으로 뺀다.
+const loadKanbanBoard = () => import('@/components/board/KanbanBoard').then((module) => module.KanbanBoard);
+const KanbanBoard = dynamic(loadKanbanBoard);
 
 // 머리말 한 줄 (#204): 지금 보기에서 가장 먼저 알아야 할 것. 숫자 부분만 진하게.
 function Lede({ view, offset, interviewCount, deadlineCount, groupCount }: {
@@ -52,6 +59,7 @@ function Lede({ view, offset, interviewCount, deadlineCount, groupCount }: {
 export function BoardClient() {
   // ── 데이터 ──
   const isReady = useApplicationsLoader();
+  usePreloadOnIdle(loadApplicationPanel, loadKanbanBoard);
   const applications = useApplicationStore((state) => state.applications);
   const error = useApplicationStore((state) => state.error);
   const [view, setView] = useState<BoardView>(loadBoardView);

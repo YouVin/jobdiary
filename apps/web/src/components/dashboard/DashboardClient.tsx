@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 import { ApplicationErrorNotice } from '@/components/dashboard/ApplicationNotices';
 import { CalendarCard } from '@/components/dashboard/CalendarCard';
@@ -8,8 +9,8 @@ import { RouteCard } from '@/components/dashboard/RouteCard';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
 import { UpcomingCard } from '@/components/dashboard/UpcomingCard';
 import { WeeklyCard } from '@/components/dashboard/WeeklyCard';
-import { ApplicationPanel } from '@/components/detail/ApplicationPanel';
 import { useApplicationsLoader } from '@/hooks/useApplicationsLoader';
+import { usePreloadOnIdle } from '@/hooks/usePreloadOnIdle';
 import { useStageMove } from '@/hooks/useStageMove';
 import { useApplicationStore } from '@/store/applicationStore';
 import type { Platform } from '@/types/application';
@@ -22,6 +23,10 @@ import {
   getWeeklyApplications,
 } from '@/utils/applicationStats';
 
+// 상세 패널(회사 정보·공고 이미지 처리 포함)은 회사를 누를 때만 필요하다. 첫 로드에서 빼고 한가할 때 미리 받는다 (#265).
+const loadApplicationPanel = () => import('@/components/detail/ApplicationPanel').then((module) => module.ApplicationPanel);
+const ApplicationPanel = dynamic(loadApplicationPanel);
+
 // 첫 화면에서 카드가 위에서부터 차례로 올라온다 (motion-safe에서만, 60ms 간격).
 function riseDelay(order: number): React.CSSProperties {
   return { animationDelay: `${order * 60}ms` };
@@ -33,6 +38,7 @@ function riseDelay(order: number): React.CSSProperties {
 export function DashboardClient() {
   // ── 데이터 ──
   const isReady = useApplicationsLoader();
+  usePreloadOnIdle(loadApplicationPanel);
   const applications = useApplicationStore((state) => state.applications);
   const error = useApplicationStore((state) => state.error);
   // 일정 줄과 달력 날짜 목록(#190)의 회사를 누르면 지원 보드와 같은 상세 패널을 연다 (#175). 삭제되면 패널도 함께 닫힌다.
