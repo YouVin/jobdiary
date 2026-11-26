@@ -20,6 +20,25 @@ const PLATFORMS = ['jobkorea', 'saramin', 'jobkorea', 'saramin', 'wanted'];
 const STATUSES = ['applied', 'applied', 'rejected', 'applied', 'screening', 'rejected', 'interview', 'canceled', 'applied', 'offer'];
 const POSITIONS = ['프론트엔드 개발자', '백엔드 개발자', '웹 퍼블리셔'];
 
+// 단계 변경 이력(#283). 지원일에서 며칠 뒤 옮겼는지로 만들고, 오늘을 넘기지 않는다.
+// 40번부터는 이력 기능 전 지원처럼 빈 배열이다.
+const PATHS = {
+  applied: [],
+  screening: [['applied', 'screening', 7]],
+  interview: [['applied', 'screening', 6], ['screening', 'interview', 9]],
+  offer: [['applied', 'screening', 5], ['screening', 'interview', 8], ['interview', 'offer', 16]],
+  canceled: [['applied', 'canceled', 3]],
+};
+function historyFor(index, status, applied, source) {
+  if (index >= 40) return [];
+  const at = (days) => `${[dateAt(0), new Date(Date.parse(`${applied}T00:00:00Z`) + days * DAY).toISOString().slice(0, 10)].sort()[0]}T01:00:00.000Z`;
+  const afterInterview = index % 10 === 5; // 면접까지 갔다가 탈락
+  const path = status !== 'rejected' ? PATHS[status] : afterInterview
+    ? [['applied', 'screening', 6], ['screening', 'interview', 9], ['interview', 'rejected', 14]]
+    : [['applied', 'rejected', 10]];
+  return [{ from: null, to: 'applied', source: 'extension', at: `${applied}T01:00:00.000Z` }, ...path.map(([from, to, days]) => ({ from, to, source: to === 'rejected' ? source : 'manual', at: at(days) }))];
+}
+
 export const rows = Array.from({ length: 50 }, (_, index) => {
   const applied = dateAt(-((index * 53) % 56) - (index % 3 === 0 ? 0 : 1));
   const status = STATUSES[index % STATUSES.length];
@@ -31,12 +50,13 @@ export const rows = Array.from({ length: 50 }, (_, index) => {
     platform: PLATFORMS[index % PLATFORMS.length],
     status,
     status_source: status === 'rejected' && index % 4 === 0 ? 'deadline' : 'manual',
+    status_history: historyFor(index, status, applied, status === 'rejected' && index % 4 === 0 ? 'deadline' : 'manual'),
     applied_at: `${applied}T01:00:00Z`,
     updated_at: `${applied}T01:00:00Z`,
     created_at: `${applied}T01:00:00Z`,
     memo: null,
     diary: [],
-    interview_date: status === 'interview' ? `${dateAt(2 + (index % 5))}T05:00:00Z` : null,
+    interview_date: status === 'interview' ? `${dateAt(2 + (index % 5))}T05:00:00Z` : index % 10 === 5 || index % 10 === 9 ? `${new Date(Date.parse(`${applied}T00:00:00Z`) + 11 * DAY).toISOString().slice(0, 10)}T05:00:00Z` : null,
     deadline_at: index % 6 === 0 ? dateAt(index % 20) : null,
     url: index % 4 === 0 ? `https://www.jobkorea.co.kr/Recruit/GI_Read/${1000 + index}` : null,
     external_id: null,
@@ -99,7 +119,12 @@ export async function routeSupabase(context) {
         if (!url.searchParams.has('id')) return send([]);
         const id = url.searchParams.get('id').replace(/^eq\./, '');
         const row = rows.find((item) => item.id === id);
-        Object.assign(row, route.request().postDataJSON(), { updated_at: new Date().toISOString() });
+        // DB 트리거(#283)처럼 단계가 바뀌면 이력을 붙이고, 보낸 이력은 무시한다
+        const { status_history: ignored, ...changes } = route.request().postDataJSON();
+        void ignored;
+        const history = [...(row.status_history ?? [])];
+        if (changes.status && changes.status !== row.status) history.push({ from: row.status, to: changes.status, source: changes.status_source, at: new Date().toISOString() });
+        Object.assign(row, changes, { status_history: history, updated_at: new Date().toISOString() });
         return send(row); // .single() 요청이라 객체 하나로 돌려준다
       }
       // 지원 추가(POST): 한 건(.single())이면 객체, 여러 건이면 배열로 돌려준다.
@@ -109,6 +134,7 @@ export async function routeSupabase(context) {
         const created = (Array.isArray(body) ? body : [body]).map((item, index) => ({
           id: `99999999-0000-4000-8000-${String(rows.length + index).padStart(12, '0')}`,
           created_at: now, updated_at: now, diary: [], memo: null, interview_date: null, url: null, external_id: null, ...item,
+          status_history: [{ from: null, to: item.status, source: item.status_source, at: now }],
         }));
         rows.push(...created);
         return send(Array.isArray(body) ? created : created[0], 201);
