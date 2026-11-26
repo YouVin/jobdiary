@@ -23,7 +23,7 @@ export interface DeleteResult {
 // update 시 필드별 의미: undefined = 변경 안 함(요청에서 제외), null = 명시적으로 비움(DB에 null 저장).
 // company/position 등 필수 필드는 애초에 비울 수 없으므로 null을 허용하지 않는다.
 export type ApplicationChanges = Partial<
-  Omit<Application, 'id' | 'updatedAt' | 'memo' | 'diary' | 'interviewDate' | 'deadlineAt' | 'url' | 'externalId'>
+  Omit<Application, 'id' | 'updatedAt' | 'memo' | 'diary' | 'interviewDate' | 'deadlineAt' | 'url' | 'externalId' | 'statusHistory'>
 > & {
   memo?: string | null;
   diary?: Application['diary'] | null;
@@ -53,6 +53,7 @@ interface ApplicationRow {
   deadline_at: string | null;
   url: string | null;
   external_id: string | null;
+  status_history?: Application['statusHistory'] | null; // DB 트리거만 쓴다 (#283). 보내지 않는다
 }
 
 // DB 행(snake_case) → 앱에서 쓰는 Application(camelCase)
@@ -72,6 +73,7 @@ function rowToApplication(row: ApplicationRow): Application {
     deadlineAt: row.deadline_at ?? undefined,
     url: row.url ?? undefined,
     externalId: row.external_id ?? undefined,
+    statusHistory: Array.isArray(row.status_history) ? row.status_history : [],
   };
 }
 

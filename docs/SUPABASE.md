@@ -38,6 +38,7 @@
 | `interviewDate` | `interview_date` | `timestamptz` | null 허용 | |
 | `url` | `url` | `text` | null 허용 | |
 | `externalId` | `external_id` | `text` | null 허용 | 원티드는 항상 null |
+| `statusHistory` | `status_history` | `jsonb` | not null, `default '[]'` | 단계 변경 이력 `{from, to, source, at}` (#283). 트리거 `record_application_status_history`만 쓰고 보낸 값은 무시, 최근 50개. 2026-11-26 전 지원은 빈 배열에서 시작 |
 
 camelCase(TS) ↔ snake_case(DB) 변환은 `supabase-js`가 자동으로 해주지 않으므로, DB 접근 계층에 얇은 매핑 함수를 두고 `applicationStore`를 포함한 나머지 코드는 지금처럼 camelCase `Application`만 다루게 한다 (아래 4번 참고).
 
