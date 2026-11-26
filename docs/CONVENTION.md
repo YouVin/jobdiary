@@ -175,6 +175,33 @@ const applications = useApplicationStore((s) => s.applications);
 const duplicateIds = getDuplicateApplicationIds(applications);
 ```
 
+### 화면 구역 주석 (#263)
+
+화면 파일은 위에서 아래로 읽으면 화면의 어느 부분인지 바로 찾을 수 있게 `── 이름 ──` 표시를 단다. 검색할 때는 `── `로 찾는다.
+
+```tsx
+// page.tsx 맨 위: 주소·로그인 필요 여부·화면 구성 파일·화면 순서
+// 지원 보드(/board) · 로그인 필요. 화면 구성: components/board/BoardClient.tsx
+
+export function BoardClient() {
+  // ── 데이터 ──          스토어·불러오기
+  // ── 처리 함수 ──       버튼·입력에 연결되는 함수
+  // ── 불러오는 중 ──     먼저 돌려주는 화면(early return)
+
+  return (
+    <>
+      {/* ── 머리말: 제목·한 줄 설명·보기 탭 ── */}
+      {/* ── 본문: 고른 보기 ── */}
+      {/* ── 상세 패널(오른쪽) ── */}
+    </>
+  );
+}
+```
+
+- 이름은 화면에 보이는 말로 쓰고, 구역 안의 순서가 중요하면 `→`로, 나란히 있으면 `|`로 적는다(예: `전형 여정 | 지원 경로`).
+- 짧은 공통 부품(`components/ui`)이나 구역이 하나뿐인 파일에는 달지 않는다.
+- 화면을 바꾸면 주석도 같이 고친다. 주석과 화면이 다르면 화면이 맞다.
+
 ---
 
 ## 7. 데이터 저장 규칙 (현재)
