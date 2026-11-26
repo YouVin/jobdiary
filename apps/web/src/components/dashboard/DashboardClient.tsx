@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 import { ApplicationErrorNotice } from '@/components/dashboard/ApplicationNotices';
 import { CalendarCard } from '@/components/dashboard/CalendarCard';
+import { GettingStartedCard } from '@/components/dashboard/GettingStartedCard';
 import { JourneyCard } from '@/components/dashboard/JourneyCard';
 import { RouteCard } from '@/components/dashboard/RouteCard';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
@@ -74,6 +75,11 @@ export function DashboardClient() {
         </div>
       </div>
     );
+  }
+
+  // ── 첫 사용: 지원이 하나도 없으면 빈 통계 대신 시작 안내 (#272) ──
+  if (!error && applications.length === 0) {
+    return <GettingStartedCard />;
   }
 
   return (

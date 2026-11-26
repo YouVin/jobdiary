@@ -11,3 +11,6 @@ export const JOBDIARY_EXTENSION_ID =
 
 // 익스텐션 → 웹앱 수집 데이터 전달 메시지의 type 값.
 export { COLLECT_MESSAGE_TYPE as JOBDIARY_COLLECT_MESSAGE_TYPE } from '@jobdiary/shared';
+
+// 크롬 웹스토어 설치 페이지 (첫 사용 안내 #272·소개 화면에서 쓴다)
+export const EXTENSION_STORE_URL = 'https://chromewebstore.google.com/detail/afnboeihbppogfinbickjaaadcgjkmil';
