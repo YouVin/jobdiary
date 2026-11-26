@@ -2,6 +2,7 @@
 
 import { clsx } from 'clsx';
 import { useState, ViewTransition } from 'react';
+import { StaleCleanup } from '@/components/board/StaleCleanup';
 import { Icon } from '@/components/common/Icon';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -103,10 +104,11 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
   const [isExpanded, setIsExpanded] = useState(false);
   const visible = isExpanded ? items : items.slice(0, limit);
   const hiddenCount = items.length - visible.length;
+  const staleItems = items.filter((item) => item.isStale);
 
   return (
     <Card aria-labelledby="waiting-title" padding="flush" gap="none">
-      {/* ── 머리: 제목·건수·단계 필터 해제 ── */}
+      {/* ── 머리: 제목·건수 | 소식 없는 지원 정리·단계 필터 해제 ── */}
       <div className={clsx('flex flex-wrap items-baseline justify-between gap-2 pb-3', ROW_PADDING)}>
         <h2 id="waiting-title" className="flex items-baseline gap-2 text-title-3 text-text-primary">
           결과 기다리는 중
@@ -121,6 +123,8 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
           >
             전체 보기
           </button>
+        ) : staleItems.length > 0 ? (
+          <StaleCleanup staleItems={staleItems} />
         ) : (
           <span className="text-label text-text-secondary">오래 기다린 순</span>
         )}
