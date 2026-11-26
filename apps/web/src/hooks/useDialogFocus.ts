@@ -46,7 +46,8 @@ export function useDialogFocus(containerRef: RefObject<HTMLElement | null>, { is
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !latest.current.closeDisabled) {
+      // 창 안의 달력(DateField) 등이 먼저 처리한 Esc는 창을 닫지 않는다(#293)
+      if (event.key === 'Escape' && !event.defaultPrevented && !latest.current.closeDisabled) {
         latest.current.onClose();
         return;
       }

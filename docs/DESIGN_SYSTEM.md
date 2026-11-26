@@ -41,6 +41,7 @@
 | Button · `buttonClassName` | `ui/Button.tsx` | 진짜 `<button>`. 비활성·로딩은 `aria-disabled`(포커스·이름 유지, 누름·제출만 막음), 로딩은 `aria-busy` + 숨은 "처리 중" |
 | IconButton | `ui/IconButton.tsx` | `label` 필수 → `aria-label`, 44×44 |
 | SelectField · TextAreaField | `ui/TextField.tsx` | 입력칸과 같은 이름표·도움말·오류 연결(#205). 선택칸은 브라우저 기본 select + 오른쪽 화살표(키보드 동작을 따로 만들지 않음), 여러 줄 칸은 글 길이만큼 늘어남(최소 96px) |
+| DateField | `ui/DateField.tsx` | 날짜 칸(#293). 직접 치는 것은 브라우저 날짜 칸 그대로, 오른쪽 달력 버튼(`aria-expanded`)으로 칸 아래에 디자인 시스템 달력(월요일 시작·모서리 16·오늘 마리골드)을 펼친다. 날짜는 이름("2026년 11월 27일 금요일")·고른 날 `aria-pressed`·오늘 `aria-current="date"`, 화살표·Home·End·PageUp·PageDown, Enter 고르기, Esc는 달력만 닫음. 휴대폰은 칸을 누르면 OS 선택기 |
 | TextField · PasswordField · SearchInput | `ui/TextField.tsx` | `<label for>` 자동 연결, 도움말·오류 `aria-describedby`(보이는 것만 연결), 오류 `aria-invalid`, 오류 자리는 비어 있어도 `role="status"`로 미리 둠, 비밀번호 보기는 이름 고정("○○ 보기") + `aria-pressed` + `aria-controls`, 검색 이름표는 sr-only, `ref`는 input까지 전달 |
 | TextLink · `textLinkClassName` | `ui/TextLink.tsx` | 글자 링크 2종: `brand`(가입하기·비밀번호 찾기, 파란 굵은 글자) · `quiet`(이용약관, 본문색 + 밑줄). 포커스 링 3px |
 | Checkbox | `ui/Checkbox.tsx` | 이름표 전체가 눌림 영역, 상자 20px, 오류 자리는 TextField와 같은 방식 |
@@ -57,7 +58,7 @@
 | StageTrack | `ui/StageTrack.tsx` | 점이 버튼, 현재 `aria-current="step"`, 24×24 |
 | EmptyState | `ui/EmptyState.tsx` | 상황 + 다음 행동 |
 | ToastProvider · useToast | `ui/Toast.tsx` | 항상 그려 둔 `role="status"` 영역, 3초(되돌리기 5초) |
-| Dialog · SidePanel | `ui/Overlay.tsx` | `useDialogFocus`: 포커스 이동·Tab 순환·Esc·되돌리기, 제목·설명 연결, 모바일 아래 시트. 지원 추가는 Dialog(저장 버튼은 footer, `form` 속성으로 연결), 상세는 SidePanel(#205) |
+| Dialog · SidePanel | `ui/Overlay.tsx` | body에 그린다(#293, 연 자리의 transform에 막이 갇히지 않게). `useDialogFocus`: 포커스 이동·Tab 순환·Esc·되돌리기, 제목·설명 연결, 모바일 아래 시트. 지원 추가는 Dialog(저장 버튼은 footer, `form` 속성으로 연결), 상세는 SidePanel(#205) |
 | SkipLink | `ui/SkipLink.tsx` | 첫 Tab에 "본문으로 건너뛰기", 각 `<main id="main-content" tabIndex={-1}>` |
 
 - 검사: `npm run verify:ui`(개발 서버 실행 중, 기본 `http://localhost:3000`, 다른 주소면 `TEST_ORIGIN`)가 `/dev/ui`를 axe(WCAG 2.2 AA + best-practice)와 키보드 시나리오로 검사한다.
