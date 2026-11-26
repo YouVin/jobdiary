@@ -54,6 +54,7 @@
 | Google 콜백·재시도 점검 (#101) | [AUTH_CHECK](AUTH_CHECK.md) | `apps/web/scripts/verify-auth-browser.mjs`, `apps/web/tests/googleSignIn.test.mjs` |
 | 인증 스크린리더·오류 포커스 (#109) | [AUTH_CHECK](AUTH_CHECK.md) | `apps/web/scripts/verify-auth-accessibility.mjs`, `ConsentGate.tsx` |
 | 사용량 지표(가입·활성·재방문·유입 경로) 정의와 보는 법 (#256) | [METRICS](METRICS.md) | `supabase/checks/usage_metrics.sql`, `apps/web/src/lib/activityApi.ts`, `apps/web/src/components/analytics/` |
+| 코드 정리 기록(폴더 역할·구역 주석·폼 나누기·JS 크기) 전후 수치 (#262~#265) | [REFACTOR_LOG](REFACTOR_LOG.md) | `apps/web/scripts/check-layers.mjs`, `apps/web/src/hooks/` |
 | 보안 점검·릴리즈 보류 | [SECURITY](SECURITY.md) | `package.json`, `.github/workflows/ci.yml` |
 | 릴리즈 검증·마이그레이션 이력 (#96·#97) | [RELEASE_CHECK](RELEASE_CHECK.md) | `apps/web/scripts/verify-release-browser.mjs`, `apps/web/src/app/(legal)/` |
 | 익스텐션 계약 | [EXTENSION](EXTENSION.md), [INTEGRATION](INTEGRATION.md) | `apps/web/src/lib/extensionImport.ts` (익스텐션 구현은 `apps/extension/`) |
