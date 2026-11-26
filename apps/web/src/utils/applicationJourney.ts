@@ -1,9 +1,10 @@
 import type { Application, DiaryEntry, Status } from '@/types/application';
 import { getTodayInKorea } from '@/utils/applicationDeadline';
 import { toDateOnly } from '@/utils/applicationStats';
+import { getStatusSteps, type StatusStep } from '@/utils/statusHistory';
 
 // 지원 상세 패널의 "지나온 기록"과 "기록 남기기" (#175).
-// 단계 변경 이력은 저장하지 않으므로 지원일·면접일·공고 마감과 사용자가 쓴 기록만 보여준다.
+// 지원일·면접일·공고 마감, 단계가 바뀐 날(#283)과 사용자가 쓴 기록을 보여준다.
 
 export const DIARY_MAX_LENGTH = 2000;
 
@@ -18,7 +19,7 @@ export const DIARY_PROMPTS: Record<Status, string> = {
   canceled: '지원을 취소한 이유는 무엇인가요?',
 };
 
-export type JourneyKind = 'applied' | 'interview' | 'deadline' | 'note';
+export type JourneyKind = 'applied' | 'interview' | 'deadline' | 'status' | 'note';
 
 export interface JourneyItem {
   key: string;
@@ -26,6 +27,7 @@ export interface JourneyItem {
   date: string; // YYYY-MM-DD (기록은 한국 날짜)
   isUpcoming: boolean; // 오늘 이후의 면접·마감
   entry?: DiaryEntry; // kind가 note일 때
+  step?: StatusStep; // kind가 status일 때
 }
 
 // 시각(ISO)의 한국 날짜
@@ -35,7 +37,7 @@ function koreaDate(iso: string): string | null {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date(time));
 }
 
-// 새로운 것이 위. 같은 날에는 기록이 일정보다 위, 기록끼리는 쓴 시각 순(최근 위).
+// 새로운 것이 위. 같은 날에는 기록 → 단계 변경 → 일정 순, 같은 종류끼리는 시각 순(최근 위).
 export function getApplicationJourney(application: Application, today = getTodayInKorea()): JourneyItem[] {
   const items: Array<{ order: string; item: JourneyItem }> = [];
   const events: Array<[Exclude<JourneyKind, 'note'>, string | undefined]> = [
@@ -47,6 +49,9 @@ export function getApplicationJourney(application: Application, today = getToday
     const date = toDateOnly(value);
     if (!date) continue;
     items.push({ order: `${date}|0`, item: { key: kind, kind, date, isUpcoming: kind !== 'applied' && date > today } });
+  }
+  for (const step of getStatusSteps(application)) {
+    items.push({ order: `${step.date}|0|${step.at}`, item: { key: step.key, kind: 'status', date: step.date, isUpcoming: false, step } });
   }
   for (const entry of application.diary ?? []) {
     const date = koreaDate(entry.createdAt);
