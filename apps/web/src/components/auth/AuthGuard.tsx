@@ -5,6 +5,7 @@ import { Fragment, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useApplicationStore } from '@/store/applicationStore';
 import { ConsentGate } from '@/components/auth/ConsentGate';
+import { useAcquisition } from '@/hooks/useAcquisition';
 import { useDailyActivity } from '@/hooks/useDailyActivity';
 import { hasCurrentConsent } from '@/lib/legal';
 
@@ -28,6 +29,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   // 사용량 지표: 동의까지 마친 사용자만 방문 날짜를 남긴다 (#256)
   useDailyActivity(userId, ready && consented);
+  useAcquisition(userId, ready && consented);
 
   useEffect(() => {
     if (status === 'unauthenticated') {

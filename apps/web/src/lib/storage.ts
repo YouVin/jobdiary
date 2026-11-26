@@ -1,4 +1,5 @@
 import { Application } from '@/types/application';
+import type { Acquisition } from '@/utils/acquisition';
 
 const STORAGE_KEY = 'jobdiary:applications';
 
@@ -56,6 +57,48 @@ export function saveActivityDate(userId: string, date: string): void {
     localStorage.setItem(ACTIVITY_DATE_KEY_PREFIX + userId, date);
   } catch {
     // 저장하지 못해도 기록은 이미 서버에 있다
+  }
+}
+
+const ACQUISITION_KEY = 'jobdiary:acquisition';
+
+// 가입 경로(#290): 로그인 전 처음 들어온 출처. 계정이 생기기 전이라 브라우저 하나에 하나만 둔다.
+// 가입 직후 서버에 보내고 지운다. 저장할 수 없는 환경에서는 기록하지 않는다(가입에는 영향 없음).
+export function loadAcquisition(): Acquisition | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const value = localStorage.getItem(ACQUISITION_KEY);
+    const parsed = value ? (JSON.parse(value) as Acquisition) : null;
+    return parsed && typeof parsed.seenAt === 'string' && typeof parsed.landing === 'string' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveAcquisition(acquisition: Acquisition): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(ACQUISITION_KEY, JSON.stringify(acquisition));
+  } catch {
+    // 기억하지 못하면 가입 경로를 세지 않을 뿐이다
+  }
+}
+
+export function clearAcquisition(): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.removeItem(ACQUISITION_KEY);
+  } catch {
+    // 지우지 못해도 서버가 계정당 한 번만 받는다
   }
 }
 

@@ -9,7 +9,8 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true });
 try {
   const context = await browser.newContext({ javaScriptEnabled: false, reducedMotion: 'reduce' });
   const page = await context.newPage();
-  for (const [path, title] of [['/login?import=1', '로그인'], ['/signup?import=1', '회원가입'], ['/terms', '이용약관'], ['/privacy', '개인정보처리방침']]) {
+  const ogImages = new Set();
+  for (const [path, title] of [['/intro', '지원 내역을 한곳에 모으는 취업 준비 기록장'], ['/login?import=1', '로그인'], ['/signup?import=1', '회원가입'], ['/terms', '이용약관'], ['/privacy', '개인정보처리방침']]) {
     const response = await page.goto(origin + path);
     assert.equal(response.status(), 200);
     assert.equal(await page.title(), `${title} | 취준일기`);
@@ -18,9 +19,24 @@ try {
     assert.equal(await page.locator('meta[property="og:url"]').getAttribute('content'), canonicalOrigin + cleanPath);
     assert((await page.locator('meta[name="description"]').getAttribute('content')).length > 20);
     assert.match(await page.locator('meta[name="robots"]').getAttribute('content'), /index, follow/);
-    assert.equal(await page.locator('meta[name="twitter:card"]').getAttribute('content'), 'summary');
+    assert.equal(await page.locator('meta[name="twitter:card"]').getAttribute('content'), 'summary_large_image');
+    // 링크 미리보기 카드(#288): 모든 공개 페이지가 같은 1200×630 이미지와 대체 글을 쓴다
+    const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content');
+    assert.match(ogImage, /\/opengraph-image(\?.*)?$/);
+    assert.equal(await page.locator('meta[property="og:image:width"]').getAttribute('content'), '1200');
+    assert.equal(await page.locator('meta[property="og:image:height"]').getAttribute('content'), '630');
+    assert.ok((await page.locator('meta[property="og:image:alt"]').getAttribute('content')).startsWith('취준일기'));
+    assert.equal(await page.locator('meta[name="twitter:image"]').getAttribute('content'), ogImage);
+    ogImages.add(ogImage);
   }
-  console.log('PASS 공개 페이지 서버 title/description/canonical/OG/Twitter');
+  // 미리보기 이미지는 하나이고, 실제로 PNG 1200×630으로 내려온다
+  assert.equal(ogImages.size, 1);
+  const image = await context.request.get(new URL(new URL([...ogImages][0]).pathname + new URL([...ogImages][0]).search, origin).toString());
+  assert.equal(image.status(), 200);
+  assert.equal(image.headers()['content-type'], 'image/png');
+  const png = await image.body();
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [1200, 630]);
+  console.log('PASS 공개 페이지 서버 title/description/canonical/OG/Twitter·미리보기 이미지 1200×630');
   for (const path of ['/', '/board', '/account', '/reset-password', '/update-password']) {
     await page.goto(origin + path);
     assert.match(await page.locator('meta[name="robots"]').getAttribute('content'), /noindex/);
@@ -32,8 +48,8 @@ try {
   const sitemap = await context.request.get(origin + '/sitemap.xml');
   assert.equal(sitemap.status(), 200);
   const xml = await sitemap.text();
-  assert.equal((xml.match(/<loc>/g) || []).length, 4);
-  for (const path of ['/login', '/signup', '/terms', '/privacy']) assert(xml.includes(`${canonicalOrigin}${path}`));
+  assert.equal((xml.match(/<loc>/g) || []).length, 5);
+  for (const path of ['/intro', '/login', '/signup', '/terms', '/privacy']) assert(xml.includes(`${canonicalOrigin}${path}`));
   assert(!xml.includes('/account'));
   assert(!xml.includes('/board'));
   console.log('PASS 개인/복구 페이지 noindex, robots/sitemap HTTP');
