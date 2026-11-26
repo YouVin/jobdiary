@@ -50,7 +50,7 @@ export function StagePills({ counts, resultTotal, stage, onStageChange }: StageP
           );
         })}
         <div className="col-span-2 flex flex-col items-center gap-1 rounded-md bg-subtle px-4 py-3 text-center sm:col-span-1">
-          <span className="text-label text-text-secondary">결과 나옴</span>
+          <span className="text-label text-text-secondary">끝난 지원</span>
           <span className="text-title-1 text-text-secondary tabular-nums">{resultTotal}</span>
         </div>
       </div>
@@ -66,13 +66,13 @@ interface ResultRowProps {
   onShowBoard: () => void; // 보드 보기로 바꾸기
 }
 
-// 결과가 나온 지원 한 줄 (#204). 합격·탈락·지원 취소 건수와 보드 보기로 가는 버튼.
+// 끝난 지원 한 줄 (#204, 문구 #293). 합격·탈락·지원 취소 건수와 보드 보기로 가는 버튼.
 export function ResultRow({ counts, total, onShowBoard }: ResultRowProps) {
   return (
     <Card padding="sm">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
       <h2 className="text-body text-text-secondary">
-        <b className="font-semibold text-text-primary tabular-nums">결과가 나온 지원 {total}건</b>
+        <b className="font-semibold text-text-primary tabular-nums">끝난 지원 {total}건</b>
         {RESULT_ORDER.map((status) => (
           <span key={status} className="tabular-nums">
             {' · '}

@@ -64,7 +64,7 @@ function FunnelSection({ funnel, durations }: { funnel: StageFunnel; durations: 
         })}
       </ol>
       <p className="text-label text-text-secondary tabular-nums">
-        {averages.length > 0 ? averages.join(' · ') : '서류 통과나 면접 결과로 옮긴 곳이 2곳 이상 쌓이면 걸린 날을 보여 드려요'}
+        {averages.length > 0 ? averages.join(' · ') : '단계를 옮긴 곳이 2곳 이상 쌓이면 걸린 날도 보여요'}
       </p>
     </section>
   );
