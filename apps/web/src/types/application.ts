@@ -10,6 +10,14 @@ export interface DiaryEntry {
   status?: Status; // 기록을 남길 때의 단계 (#175부터 쓴 기록에만 있다)
 }
 
+// 단계 변경 한 번 (#283). DB 트리거가 채우며 화면은 읽기만 한다.
+export interface StatusChange {
+  from: Status | null; // 처음 저장할 때는 null
+  to: Status;
+  source?: 'extension' | 'created' | 'manual' | 'deadline';
+  at: string; // 바뀐 시각 (ISO)
+}
+
 export interface Application {
   id: string;
   company: string; // 회사명
@@ -25,4 +33,5 @@ export interface Application {
   interviewDate?: string;
   url?: string;
   externalId?: string; // 각 사이트의 지원건 고유 ID (중복 판별용, 원티드는 없어서 optional)
+  statusHistory?: StatusChange[]; // 단계 변경 이력, 오래된 것부터 (#283). 2026-11-26 전 지원은 그 뒤 변경부터 있다
 }

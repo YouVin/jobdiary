@@ -77,3 +77,16 @@ test('DB: 브라우저는 방문 표를 직접 읽거나 쓰지 못하고, 함�
   const checks = fs.readFileSync('../../supabase/checks/usage_metrics.sql', 'utf8');
   assert.doesNotMatch(checks, /\b(insert|update|delete|drop|alter|create)\b/i, '집계 SQL은 읽기만');
 });
+
+test('DB: 의견은 브라우저가 표를 직접 읽거나 쓰지 못하고, 함수가 본인·하루 10번·1000자를 지킨다 (#278)', () => {
+  const sql = fs.readFileSync('../../supabase/migrations/20261126120000_feedback.sql', 'utf8');
+  assert.match(sql, /enable row level security/);
+  assert.match(sql, /revoke all on table public\.feedback from public, anon, authenticated/);
+  assert.match(sql, /security definer\s+set search_path = ''/);
+  assert.match(sql, /\(select auth\.uid\(\)\)/);
+  assert.match(sql, /v_today_count >= 10/);
+  assert.match(sql, /char_length\(message\) between 1 and 1000/);
+  assert.match(sql, /on delete cascade/);
+  assert.match(sql, /grant execute on function public\.send_feedback\(text, text\) to authenticated/);
+  assert.doesNotMatch(sql, /grant [^;]*feedback to (anon|authenticated)/);
+});

@@ -23,10 +23,13 @@ import {
   getUpcomingEvents,
   getWeeklyApplications,
 } from '@/utils/applicationStats';
+import { getStageDurations, getStageFunnel } from '@/utils/statusHistory';
 
 // 상세 패널(회사 정보·공고 이미지 처리 포함)은 회사를 누를 때만 필요하다. 첫 로드에서 빼고 한가할 때 미리 받는다 (#265).
 const loadApplicationPanel = () => import('@/components/detail/ApplicationPanel').then((module) => module.ApplicationPanel);
 const ApplicationPanel = dynamic(loadApplicationPanel);
+// 이번 달 돌아보기는 버튼을 누를 때만 불러온다 (#275)
+const MonthlyRecapDialog = dynamic(() => import('@/components/dashboard/MonthlyRecapDialog').then((module) => module.MonthlyRecapDialog));
 
 // 첫 화면에서 카드가 위에서부터 차례로 올라온다 (motion-safe에서만, 60ms 간격).
 function riseDelay(order: number): React.CSSProperties {
@@ -45,6 +48,7 @@ export function DashboardClient() {
   // 일정 줄과 달력 날짜 목록(#190)의 회사를 누르면 지원 보드와 같은 상세 패널을 연다 (#175). 삭제되면 패널도 함께 닫힌다.
   const { optimisticApplications, moveStage, moveError } = useStageMove(applications);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isRecapOpen, setIsRecapOpen] = useState(false);
   const selectedApplication = optimisticApplications.find((application) => application.id === selectedId);
 
   // ── 카드에 보여 줄 숫자 (utils/applicationStats.ts) ──
@@ -57,6 +61,8 @@ export function DashboardClient() {
       today,
       overview: getApplicationOverview(applications, today),
       stage: getStageSummary(applications),
+      funnel: getStageFunnel(applications),
+      durations: getStageDurations(applications),
       upcoming: getUpcomingEvents(applications, today),
       weekly: getWeeklyApplications(applications, today),
       platformCounts,
@@ -95,11 +101,12 @@ export function DashboardClient() {
         nextEvent={stats.upcoming[0]}
         platformCounts={stats.platformCounts}
         style={riseDelay(0)}
+        onOpenRecap={() => setIsRecapOpen(true)}
       />
 
       {/* ── 2줄: 전형 여정 | 지원 경로 ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <JourneyCard stage={stats.stage} style={riseDelay(1)} />
+        <JourneyCard stage={stats.stage} funnel={stats.funnel} durations={stats.durations} style={riseDelay(1)} />
         <RouteCard shares={stats.platformShares} total={stats.overview.total} style={riseDelay(2)} />
       </div>
 
@@ -111,6 +118,9 @@ export function DashboardClient() {
           <CalendarCard today={stats.today} applications={optimisticApplications} onSelect={setSelectedId} style={riseDelay(5)} />
         </div>
       </div>
+
+      {/* ── 이번 달 돌아보기 창 ── */}
+      {isRecapOpen && <MonthlyRecapDialog applications={applications} today={stats.today} onClose={() => setIsRecapOpen(false)} />}
 
       {/* ── 상세 패널(오른쪽) ── */}
       {selectedApplication && (
