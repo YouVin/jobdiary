@@ -6,8 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint && npm run check:ui",
+    "lint": "eslint && npm run check:ui && npm run check:layers",
     "check:ui": "node scripts/check-ui-style.mjs",
+    "check:layers": "node scripts/check-layers.mjs",
     "test": "node --test tests/*.test.mjs",
     "verify:ui": "node scripts/verify-ui-accessibility.mjs",
     "eval:posting": "node scripts/eval-posting-analysis.mjs"

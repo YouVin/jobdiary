@@ -6,12 +6,12 @@ import { BrandLogo } from '@/components/common/BrandMark';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { MAIN_CONTENT_ID } from '@/components/ui/SkipLink';
-import { consentMetadata } from '@/lib/legal';
-import { supabase } from '@/lib/supabase';
+import { saveConsent, signOut } from '@/lib/auth';
 import { captureApplicationSession } from '@/store/applicationStore';
 import { useAuthStore } from '@/store/authStore';
 
 const SAVE_FAILED = '동의를 저장하지 못했어요. 다시 시도해 주세요.';
+const ACCOUNT_CHANGED = '계정을 다시 확인해 주세요.';
 
 // 약관 동의 화면 (#205 새 디자인). Google 첫 로그인처럼 지금 약관 버전에 동의한 기록이 없을 때 AuthGuard가 보여준다.
 // 회색 바탕 위 흰 카드 하나: 로고 → 제목(포커스) → 설명 → 동의 체크 → 시작 버튼(주요) → 로그아웃(보조) → 문의.
@@ -33,14 +33,14 @@ export function ConsentGate() {
     setBusy(true);
     setError(null);
     try {
-      const { data: verified, error: verifyError } = await supabase.auth.getUser();
-      if (!context.isCurrent()) return;
-      if (verifyError || verified.user?.id !== context.userId) throw new Error('계정을 다시 확인해 주세요.');
-      const { data, error: saveError } = await supabase.auth.updateUser({ data: consentMetadata() });
-      if (!context.isCurrent()) return;
-      if (saveError || !data.user || data.user.id !== context.userId) throw new Error(SAVE_FAILED);
+      // 1) 계정을 다시 확인하고 동의 버전 저장 (lib/auth.ts)
+      const { user, error: saveError } = await saveConsent(context.userId, context.isCurrent);
+      if (!context.isCurrent() || saveError === 'stale') return;
+      if (saveError === 'account_changed') throw new Error(ACCOUNT_CHANGED);
+      if (saveError || !user) throw new Error(SAVE_FAILED);
+      // 2) 화면의 세션에도 동의 정보를 반영해 AuthGuard가 바로 다음 화면을 보여 주게 한다
       const session = useAuthStore.getState().session;
-      if (session?.user.id === context.userId) useAuthStore.getState().setSession({ ...session, user: data.user });
+      if (session?.user.id === context.userId) useAuthStore.getState().setSession({ ...session, user });
     } catch (cause) {
       if (context.isCurrent()) setError(cause instanceof Error ? cause.message : SAVE_FAILED);
     } finally {
@@ -51,7 +51,7 @@ export function ConsentGate() {
   const logout = async () => {
     setError(null);
     try {
-      const { error: signOutError } = await supabase.auth.signOut();
+      const { error: signOutError } = await signOut();
       if (signOutError) setError('로그아웃하지 못했어요. 다시 시도해 주세요.');
     } catch {
       setError('로그아웃하지 못했어요. 다시 시도해 주세요.');
