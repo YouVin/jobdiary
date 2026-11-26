@@ -6,6 +6,11 @@ export type ApplicationFormErrors = Partial<Record<ApplicationFormField, string>
 // 화면 순서대로 둔다. 제출 때 첫 오류 칸으로 포커스를 옮길 때 이 순서를 쓴다.
 export const APPLICATION_FORM_FIELDS: ApplicationFormField[] = ['company', 'appliedAt', 'deadlineAt', 'interviewDate'];
 
+// 칸 id. 제출 때 첫 오류 칸을 찾아 포커스한다 (`${idPrefix}-company`)
+export function fieldId(idPrefix: string, field: ApplicationFormField | 'position' | 'platform' | 'status'): string {
+  return `${idPrefix}-${field}`;
+}
+
 // 지원 추가·수정 칸별 오류 (#205). 오류는 그 칸 아래에 보여주고, 무엇을 고치면 되는지 해요체로 쓴다.
 export function getApplicationFormErrors(values: {
   company: string;

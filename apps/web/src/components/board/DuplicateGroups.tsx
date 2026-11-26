@@ -56,6 +56,7 @@ export function DuplicateGroups({ groups, totalCount, onOpen }: DuplicateGroupsP
 
   return (
     <>
+      {/* ── 숫자 3칸: 묶음·겹친 지원·실제 공고 ── */}
       <Card aria-label="중복 요약">
         <StatGroup label="중복 요약 숫자">
           <StatCell label="중복 묶음" value={groups.length} unit="개" />
@@ -64,6 +65,7 @@ export function DuplicateGroups({ groups, totalCount, onOpen }: DuplicateGroupsP
         </StatGroup>
       </Card>
 
+      {/* ── 묶음 목록: 회사·공고 → 사이트별 지원 줄 ── */}
       <Card aria-labelledby="duplicate-title" gap="none">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 pb-2">
           <CardHeader title="사이트 간 중복 지원" titleId="duplicate-title" />
@@ -99,6 +101,7 @@ export function DuplicateGroups({ groups, totalCount, onOpen }: DuplicateGroupsP
         )}
       </Card>
 
+      {/* ── 숫자 세는 방법 안내 ── */}
       <p className="px-2 text-label text-text-secondary">
         같은 공고를 여러 사이트에서 지원하면 통계에서는 각각 1건으로 세요. 위 &quot;실제 지원한 공고&quot;는 묶음을 1개로 센 숫자예요.
       </p>

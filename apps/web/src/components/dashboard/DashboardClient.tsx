@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
 import { ApplicationErrorNotice } from '@/components/dashboard/ApplicationNotices';
 import { CalendarCard } from '@/components/dashboard/CalendarCard';
@@ -8,8 +9,8 @@ import { RouteCard } from '@/components/dashboard/RouteCard';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
 import { UpcomingCard } from '@/components/dashboard/UpcomingCard';
 import { WeeklyCard } from '@/components/dashboard/WeeklyCard';
-import { ApplicationPanel } from '@/components/detail/ApplicationPanel';
 import { useApplicationsLoader } from '@/hooks/useApplicationsLoader';
+import { usePreloadOnIdle } from '@/hooks/usePreloadOnIdle';
 import { useStageMove } from '@/hooks/useStageMove';
 import { useApplicationStore } from '@/store/applicationStore';
 import type { Platform } from '@/types/application';
@@ -22,6 +23,10 @@ import {
   getWeeklyApplications,
 } from '@/utils/applicationStats';
 
+// 상세 패널(회사 정보·공고 이미지 처리 포함)은 회사를 누를 때만 필요하다. 첫 로드에서 빼고 한가할 때 미리 받는다 (#265).
+const loadApplicationPanel = () => import('@/components/detail/ApplicationPanel').then((module) => module.ApplicationPanel);
+const ApplicationPanel = dynamic(loadApplicationPanel);
+
 // 첫 화면에서 카드가 위에서부터 차례로 올라온다 (motion-safe에서만, 60ms 간격).
 function riseDelay(order: number): React.CSSProperties {
   return { animationDelay: `${order * 60}ms` };
@@ -31,7 +36,9 @@ function riseDelay(order: number): React.CSSProperties {
 // 1줄: 요약(문장 h1 + 숫자 4칸) / 2줄: 전형 여정 | 지원 경로 / 3줄: 다가오는 일정 | 주간 지원 | 지원 달력
 // 가져오기 버튼·?import=1 자동 가져오기는 헤더와 함께 쓰는 ExtensionImportProvider가 맡는다.
 export function DashboardClient() {
+  // ── 데이터 ──
   const isReady = useApplicationsLoader();
+  usePreloadOnIdle(loadApplicationPanel);
   const applications = useApplicationStore((state) => state.applications);
   const error = useApplicationStore((state) => state.error);
   // 일정 줄과 달력 날짜 목록(#190)의 회사를 누르면 지원 보드와 같은 상세 패널을 연다 (#175). 삭제되면 패널도 함께 닫힌다.
@@ -39,6 +46,7 @@ export function DashboardClient() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedApplication = optimisticApplications.find((application) => application.id === selectedId);
 
+  // ── 카드에 보여 줄 숫자 (utils/applicationStats.ts) ──
   const stats = useMemo(() => {
     const today = getTodayInKorea();
     const platformShares = getPlatformShares(applications);
@@ -55,6 +63,7 @@ export function DashboardClient() {
     };
   }, [applications]);
 
+  // ── 불러오는 중: 카드 자리 ──
   if (!isReady) {
     return (
       <div className="flex flex-col gap-4" role="status" aria-label="지원 현황을 불러오고 있어요">
@@ -69,8 +78,10 @@ export function DashboardClient() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* ── 오류 알림 ── */}
       <ApplicationErrorNotice error={error} />
 
+      {/* ── 1줄: 요약(문장 + 숫자 4칸) ── */}
       <SummaryCard
         today={stats.today}
         overview={stats.overview}
@@ -80,11 +91,13 @@ export function DashboardClient() {
         style={riseDelay(0)}
       />
 
+      {/* ── 2줄: 전형 여정 | 지원 경로 ── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <JourneyCard stage={stats.stage} style={riseDelay(1)} />
         <RouteCard shares={stats.platformShares} total={stats.overview.total} style={riseDelay(2)} />
       </div>
 
+      {/* ── 3줄: 다가오는 일정 | 주간 지원 | 지원 달력 ── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <UpcomingCard today={stats.today} events={stats.upcoming} onSelect={setSelectedId} style={riseDelay(3)} />
         <WeeklyCard weeks={stats.weekly} style={riseDelay(4)} />
@@ -93,6 +106,7 @@ export function DashboardClient() {
         </div>
       </div>
 
+      {/* ── 상세 패널(오른쪽) ── */}
       {selectedApplication && (
         <ApplicationPanel
           key={selectedApplication.id}

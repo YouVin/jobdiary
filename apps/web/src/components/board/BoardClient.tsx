@@ -1,17 +1,17 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { addTransitionType, startTransition, useMemo, useState, ViewTransition } from 'react';
 import { BoardFilters } from '@/components/board/BoardFilters';
 import { DuplicateGroups } from '@/components/board/DuplicateGroups';
-import { KanbanBoard } from '@/components/board/KanbanBoard';
 import { ResultRow, StagePills } from '@/components/board/StageSummary';
 import { WaitingList } from '@/components/board/WaitingList';
 import { WeekTimeline, weekTitle } from '@/components/board/WeekTimeline';
 import { ApplicationErrorNotice } from '@/components/dashboard/ApplicationNotices';
-import { ApplicationPanel } from '@/components/detail/ApplicationPanel';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Tabs } from '@/components/ui/Tabs';
 import { useApplicationsLoader } from '@/hooks/useApplicationsLoader';
+import { usePreloadOnIdle } from '@/hooks/usePreloadOnIdle';
 import { useStageMove } from '@/hooks/useStageMove';
 import { type BoardView, loadBoardView, saveBoardView } from '@/lib/storage';
 import { useApplicationStore } from '@/store/applicationStore';
@@ -21,6 +21,13 @@ import { DEFAULT_APPLICATION_FILTERS, filterApplications } from '@/utils/applica
 import { getDuplicateGroups } from '@/utils/duplicateDetection';
 import { getWaitingBoard } from '@/utils/waitingList';
 import { getWeekTimeline } from '@/utils/weekTimeline';
+
+// 상세 패널(회사 정보·공고 이미지 처리 포함)은 회사를 누를 때만 필요하다. 첫 로드에서 빼고 한가할 때 미리 받는다 (#265).
+const loadApplicationPanel = () => import('@/components/detail/ApplicationPanel').then((module) => module.ApplicationPanel);
+const ApplicationPanel = dynamic(loadApplicationPanel);
+// 칸반(끌기 라이브러리 dnd-kit 포함)은 '보드' 보기에서만 필요하다. 기본 보기는 주간이라 같은 방식으로 뺀다.
+const loadKanbanBoard = () => import('@/components/board/KanbanBoard').then((module) => module.KanbanBoard);
+const KanbanBoard = dynamic(loadKanbanBoard);
 
 // 머리말 한 줄 (#204): 지금 보기에서 가장 먼저 알아야 할 것. 숫자 부분만 진하게.
 function Lede({ view, offset, interviewCount, deadlineCount, groupCount }: {
@@ -50,7 +57,9 @@ function Lede({ view, offset, interviewCount, deadlineCount, groupCount }: {
 // - 중복: 숫자 3칸 → 묶음별 목록(#186)
 // 어느 보기든 지원을 누르면 오른쪽 상세 패널(#175). 보기 전환·주 이동·단계 필터는 transition으로 바꿔 <ViewTransition> 애니메이션을 켠다(#176).
 export function BoardClient() {
+  // ── 데이터 ──
   const isReady = useApplicationsLoader();
+  usePreloadOnIdle(loadApplicationPanel, loadKanbanBoard);
   const applications = useApplicationStore((state) => state.applications);
   const error = useApplicationStore((state) => state.error);
   const [view, setView] = useState<BoardView>(loadBoardView);
@@ -72,6 +81,7 @@ export function BoardClient() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedApplication = optimisticApplications.find((application) => application.id === selectedId);
 
+  // ── 처리 함수: 보기·주·단계 바꾸기 ──
   const changeView = (next: string) => {
     saveBoardView(next as BoardView);
     startTransition(() => setView(next as BoardView));
@@ -90,6 +100,7 @@ export function BoardClient() {
     startTransition(() => setStage(next));
   };
 
+  // ── 불러오는 중 ──
   if (!isReady) {
     return (
       <div className="flex flex-col gap-4" role="status" aria-label="지원 보드를 불러오고 있어요">
@@ -104,6 +115,7 @@ export function BoardClient() {
 
   return (
     <>
+      {/* ── 머리말: 제목·한 줄 설명·보기 탭 ── */}
       <div className="flex flex-wrap items-end justify-between gap-4 px-1 pb-2">
         <div className="flex flex-col gap-1">
           <h1 className="text-title-1-sm text-text-primary sm:text-title-1">지원 보드</h1>
@@ -128,6 +140,7 @@ export function BoardClient() {
           ]}
         />
       </div>
+      {/* ── 오류·빈 상태 ── */}
       <ApplicationErrorNotice error={error} />
 
       {isEmpty && (
@@ -138,10 +151,13 @@ export function BoardClient() {
         />
       )}
 
+      {/* ── 본문: 고른 보기 ── */}
       {/* 보기를 바꾸면 key가 바뀌어 이전·새 보기가 교차 페이드된다. */}
       <ViewTransition key={view} name="board-view" share="auto" enter="auto" default="none">
         <div className="flex flex-col gap-4">
+          {/* 중복: 묶음 목록 */}
           {view === 'duplicates' && <DuplicateGroups groups={duplicateGroups} totalCount={applications.length} onOpen={setSelectedId} />}
+          {/* 주간: 단계 숫자 → 주간 일정 → 기다리는 목록 → 결과 한 줄 */}
           {view === 'week' && (
             <>
               <StagePills counts={waiting.stageCounts} resultTotal={waiting.resultTotal} stage={stage} onStageChange={changeStage} />
@@ -158,6 +174,7 @@ export function BoardClient() {
               <ResultRow counts={waiting.resultCounts} total={waiting.resultTotal} onShowBoard={() => changeView('kanban')} />
             </>
           )}
+          {/* 보드: 검색·사이트 칩 → 칸반 */}
           {view === 'kanban' && (
             <>
               <BoardFilters applications={applications} filters={filters} onChange={setFilters} visibleCount={visibleApplications.length} />
@@ -167,6 +184,7 @@ export function BoardClient() {
         </div>
       </ViewTransition>
 
+      {/* ── 상세 패널(오른쪽) ── */}
       {selectedApplication && (
         <ApplicationPanel
           key={selectedApplication.id}

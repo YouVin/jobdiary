@@ -4,7 +4,7 @@ import { createSourceLoader } from './loadSource.mjs';
 
 const load = createSourceLoader();
 const {
-  trimPosting, verifyQuotes, estimateCostUsd, buildAnalysisRequest, ANALYSIS_SCHEMA, buildUserContent, HOMEPAGE_LIMIT_LEAN,
+  trimPosting, verifyQuotes, estimateCostUsd, buildAnalysisRequest, ANALYSIS_SCHEMA, IMAGE_ANALYSIS_SCHEMA, buildUserContent, HOMEPAGE_LIMIT_LEAN, keepKnownStrengths,
 } = load('../../supabase/functions/_shared/postingAnalysis/analysis.ts');
 const { STRENGTH_LABELS } = load('../../supabase/functions/_shared/postingAnalysis/strengths.ts');
 
@@ -40,7 +40,7 @@ test('공고 다듬기는 복리후생·전형 절차 칸만 빼고, 본문 줄�
 
 test('인용 검사는 공백·전각·따옴표 차이만 무시하고, 원문에 없는 인용은 잡아낸다', () => {
   const result = {
-    company: { about: '', products: [], website: '' }, hasTalentStatement: true, workplace: { location: '', workDays: '', workHours: '' },
+    company: { about: '', products: [], website: '' }, workplace: { location: '', workDays: '', workHours: '' },
     strengths: [
       { strength: '소통', quote: '“다양한 직군의 팀원들과  원활하게 소통하는 분”', wants: '', experiences: [] },
       { strength: '주도성', quote: '스스로 문제를 찾아 해결하는 분', wants: '', experiences: [] },
@@ -68,8 +68,29 @@ test('lean은 생각 깊이를 낮추고 입력을 다듬으며, 강점 이름�
   assert.equal(lean.output_config.effort, 'low');
   assert.ok(lean.messages[0].content.length < baseline.messages[0].content.length);
   assert.ok(!buildUserContent(input, 'lean').includes('가'.repeat(HOMEPAGE_LIMIT_LEAN + 1)));
-  assert.deepEqual(ANALYSIS_SCHEMA.properties.strengths.items.properties.strength.enum, STRENGTH_LABELS);
   assert.equal(STRENGTH_LABELS.length, 12);
+  // #260: 강점 이름 목록은 지시문에만 둔다(결과 형식에는 목록 제한 없음, 서버가 keepKnownStrengths로 검사)
+  assert.equal(ANALYSIS_SCHEMA.properties.strengths.items.properties.strength.enum, undefined);
+  for (const label of STRENGTH_LABELS) assert.ok(lean.system.includes(`- ${label}: `), `지시문에 ${label}`);
+});
+
+test('결과 형식은 필요한 칸만 둔다: 인재상 있음 값 없이 strengths가 비었는지로 판단한다 (#260)', () => {
+  assert.deepEqual(ANALYSIS_SCHEMA.required, ['company', 'strengths', 'workplace']);
+  assert.equal(ANALYSIS_SCHEMA.properties.hasTalentStatement, undefined);
+  assert.deepEqual(IMAGE_ANALYSIS_SCHEMA.required, ['transcript', 'company', 'strengths', 'workplace']);
+  assert.doesNotMatch(buildAnalysisRequest('claude-haiku-5-5', 'lean', { companyName: '가', postingText: POSTING }).system, /hasTalentStatement/);
+});
+
+test('강점 이름은 목록으로 맞추고(띄어쓰기 차이 고침), 목록 밖 이름은 버린다 (#260)', () => {
+  const item = (strength) => ({ strength, quote: 'q', wants: '', experiences: [] });
+  const result = {
+    company: { about: '', products: [], website: '' }, workplace: { location: '', workDays: '', workHours: '' },
+    strengths: [item('협동성'), item('소통능력'), item(' 문제 해결력 '), item('리더십'), item('주도성')],
+  };
+  const { result: kept, dropped } = keepKnownStrengths(result);
+  assert.deepEqual(kept.strengths.map((entry) => entry.strength), ['협동성', '소통 능력', '문제 해결력']);
+  assert.equal(dropped, 2);
+  assert.equal(result.strengths.length, 5, '원본은 바꾸지 않는다');
 });
 
 test('근무지·근무 조건 칸은 화면에 보여 주므로 공고 다듬기에서 빼지 않는다 (#235)', () => {

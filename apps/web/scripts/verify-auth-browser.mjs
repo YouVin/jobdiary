@@ -59,6 +59,8 @@ async function scenario(name, run) {
       assert.equal(url.searchParams.get('user_id'), `eq.${user.id}`);
       return send([]);
     }
+    // 동의한 사용자의 하루 방문 기록(#256). 이 검증의 대상은 아니라 받기만 한다.
+    if (url.pathname === '/rest/v1/rpc/record_daily_activity') return route.fulfill({ status: 204 });
     throw new Error(`예상하지 않은 요청: ${request.method()} ${url.pathname}`);
   });
   const page = await context.newPage();

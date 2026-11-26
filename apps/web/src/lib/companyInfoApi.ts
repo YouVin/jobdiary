@@ -43,7 +43,6 @@ export function parseCompanyInfo(result: unknown, createdAt: unknown): CompanyIn
     about: text(company.about) || text(raw.companySummary), // 예전 결과는 companySummary
     products: strings(company.products).slice(0, 3),
     website: text(company.website),
-    hasTalentStatement: raw.hasTalentStatement === true,
     strengths,
     location: text(workplace.location),
     workDays: text(workplace.workDays),

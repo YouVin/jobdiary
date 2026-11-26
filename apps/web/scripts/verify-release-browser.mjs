@@ -24,6 +24,7 @@ let consentFail = true;
 let delayed = null;
 let delayNextA = false;
 let failNextPatch = false;
+const activity = [];
 const errors = [];
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const context = await browser.newContext();
@@ -98,6 +99,13 @@ await context.route('https://*.supabase.co/**', async route => {
     assert(user, '회사 정보 조회 인증 필요');
     return send([]);
   }
+  // 사용량 지표(#256): 로그인·동의한 사용자의 하루 방문 기록. 보내는 값이 없어야 한다(서버가 사용자·날짜를 정함).
+  if (url.pathname === '/rest/v1/rpc/record_daily_activity') {
+    assert(user, '방문 기록 인증 필요');
+    assert.deepEqual(req.postDataJSON() ?? {}, {});
+    activity.push(user.id);
+    return route.fulfill({ status: 204 });
+  }
   throw new Error(`예상하지 않은 API: ${method} ${url.pathname}`);
 });
 // 화면 전환 애니메이션(#176)이 실제로 시작됐는지 센다. 지원하지 않는 브라우저 흉내는 아래 마지막 단계에서 한다.
@@ -151,12 +159,17 @@ try {
   await page.getByRole('button', { name: '동의하고 시작하기' }).click();
   await visible(page.getByText('동의를 저장하지 못했어요. 다시 시도해 주세요.', { exact: true }));
   assert.equal(await page.getByRole('button', { name: '지원 추가' }).count(), 0);
+  assert.equal(activity.length, 0, '동의 전에는 방문 기록 없음(#256)');
   consentFail = false;
   await page.getByRole('button', { name: '동의하고 시작하기' }).click();
   await visible(page.getByRole('button', { name: '지원 추가' }));
+  for (let tries = 0; tries < 50 && activity.length === 0; tries++) await page.waitForTimeout(100);
+  assert.equal(activity.length, 1, '동의 뒤 방문 기록 1번');
   await page.reload();
   await visible(page.getByRole('button', { name: '지원 추가' }));
-  console.log('PASS 신규 소셜 계정 동의·저장 실패·재시도·새로고침 유지');
+  await page.waitForTimeout(300);
+  assert.equal(activity.length, 1, '같은 날 새로고침은 다시 기록하지 않음');
+  console.log('PASS 신규 소셜 계정 동의·저장 실패·재시도·새로고침 유지·하루 한 번 방문 기록');
   await page.getByRole('button', { name: '내 계정', exact: true }).click();
   await page.getByRole('button', { name: '로그아웃', exact: true }).click();
   await login(page, 'a');

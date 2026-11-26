@@ -18,6 +18,7 @@ export function ChangeEmailSection() {
   const currentEmail = session?.user.email ?? '';
   const emailInput = useRef<HTMLInputElement>(null);
 
+  // ── 입력·상태 ──
   const [newEmail, setNewEmail] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,6 +27,7 @@ export function ChangeEmailSection() {
 
   const emailError = getEmailError(newEmail);
 
+  // ── 제출: 검사 → 변경 확인 메일 요청 ──
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
@@ -67,6 +69,7 @@ export function ChangeEmailSection() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+        {/* ── 새 이메일 칸 ── */}
         <TextField
           ref={emailInput}
           id="newEmail"
@@ -81,6 +84,7 @@ export function ChangeEmailSection() {
           readOnly={isSubmitting}
           error={emailTouched ? emailError : null}
         />
+        {/* ── 오류·안내·제출 버튼 ── */}
         <p role="alert" className={errorMessage ? 'text-label text-danger-text' : 'sr-only'}>
           {errorMessage}
         </p>

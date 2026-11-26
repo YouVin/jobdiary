@@ -20,6 +20,7 @@
 - `src/components/{dashboard,board,detail,auth,header,account,import,...}/` — 화면별 부품
 - `src/store/` Zustand 스토어 · `src/lib/` Supabase·API·브라우저 저장(`storage.ts`는 화면 기억값 같은 브라우저 전용 값만) · `src/utils/` 순수 함수 · `src/types/` 타입
 - 데이터 구조는 `src/types/application.ts`가 기준이다(여기에 베껴 두지 않는다).
+- 불러오는 방향은 화면 → hooks → store → lib → utils 한 방향, Supabase는 lib에서만 부른다(docs/CONVENTION.md "폴더 역할", `npm run check:layers`).
 
 ## 상태 흐름
 지원 완료(applied) → 서류 통과(screening) → 면접 예정(interview) → 면접 완료(interviewed) → 합격(offer) / 탈락(rejected)

@@ -1,13 +1,12 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { ApplicationFormFields, fieldId } from '@/components/modal/ApplicationFormFields';
+import { ApplicationFormFields } from '@/components/modal/ApplicationFormFields';
 import { Button } from '@/components/ui/Button';
 import { Dialog } from '@/components/ui/Overlay';
 import { useToast } from '@/components/ui/Toast';
+import { type ApplicationFormValues, useApplicationFormValues } from '@/hooks/useApplicationFormValues';
 import { useApplicationStore } from '@/store/applicationStore';
-import type { Platform, Status } from '@/types/application';
-import { type ApplicationFormErrors, firstErrorField, getApplicationFormErrors } from '@/utils/applicationFormValidation';
 
 interface AddApplicationModalProps {
   isOpen: boolean;
@@ -23,49 +22,33 @@ function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+// 새 지원의 처음 칸 값. 저장 뒤·닫을 때도 이 값으로 되돌린다.
+function emptyValues(): ApplicationFormValues {
+  return { company: '', position: '', platform: 'saramin', status: 'applied', appliedAt: getTodayDateString(), deadlineAt: '', interviewDate: '' };
+}
+
 // 지원 추가 (#205): 디자인 시스템 가운데 창(Dialog, 폭 520, 모바일 아래 시트).
 // - 저장 버튼은 늘 누를 수 있고, 빈 칸·잘못된 날짜는 칸 아래 오류 + 첫 오류 칸으로 포커스로 알린다.
 // - 저장하면 창을 닫고 토스트("지원을 추가했어요"), 서버 오류는 창 안 알림 영역에 남기고 창을 닫지 않는다.
+// 칸 값·검사는 수정 폼과 같은 useApplicationFormValues (#264). 면접일 칸은 수정에서만 보여 준다.
 export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProps) {
+  // ── 스토어·칸 값 ──
   const addApplication = useApplicationStore((state) => state.addApplication);
   const clearError = useApplicationStore((state) => state.clearError);
   const error = useApplicationStore((state) => state.error);
   const showToast = useToast();
   const idPrefix = useId();
   const formId = `${idPrefix}-form`;
-
-  const [company, setCompany] = useState('');
-  const [position, setPosition] = useState('');
-  const [platform, setPlatform] = useState<Platform>('saramin');
-  const [status, setStatus] = useState<Status>('applied');
-  const [appliedAt, setAppliedAt] = useState(getTodayDateString);
-  const [deadlineAt, setDeadlineAt] = useState('');
+  const form = useApplicationFormValues(emptyValues, idPrefix, false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<ApplicationFormErrors>({});
 
-  // 저장 후 다음 입력을 위해 폼 초기화
-  const resetForm = () => {
-    setCompany('');
-    setPosition('');
-    setPlatform('saramin');
-    setStatus('applied');
-    setAppliedAt(getTodayDateString());
-    setDeadlineAt('');
-    setErrors({});
-  };
-
+  // ── 저장: 칸 검사 → 추가 → 토스트·초기화·닫기 ──
   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
-    const nextErrors = getApplicationFormErrors({ company, appliedAt, deadlineAt });
-    setErrors(nextErrors);
-    const first = firstErrorField(nextErrors);
-    if (first) {
-      // 오류 문구가 칸에 연결된 뒤 포커스해 함께 읽히게 한다.
-      requestAnimationFrame(() => document.getElementById(fieldId(idPrefix, first))?.focus());
-      return;
-    }
+    if (!form.validate()) return;
 
+    const { company, position, platform, status, appliedAt, deadlineAt } = form.values;
     setIsSubmitting(true);
     try {
       const succeeded = await addApplication({
@@ -80,18 +63,18 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
       if (!succeeded) return;
 
       showToast({ message: `${company.trim()} 지원을 추가했어요` });
-      resetForm();
+      form.reset(emptyValues());
       onClose();
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // 취소/ESC/바깥 누름 등 저장 없이 닫히는 모든 경로에서도 폼과 에러를 초기화한다. 저장 중에는 닫지 않는다.
+  // ── 닫기: 취소/ESC/바깥 누름 등 저장 없이 닫히는 모든 경로에서도 폼과 에러를 초기화한다. 저장 중에는 닫지 않는다 ──
   const handleClose = () => {
     if (isSubmitting) return;
     clearError();
-    resetForm();
+    form.reset(emptyValues());
     onClose();
   };
 
@@ -104,6 +87,7 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
       closeDisabled={isSubmitting}
       footer={
         <>
+          {/* ── 아래 버튼: 취소·지원 추가 ── */}
           <Button variant="secondary" onClick={handleClose} disabled={isSubmitting}>
             취소
           </Button>
@@ -113,24 +97,9 @@ export function AddApplicationModal({ isOpen, onClose }: AddApplicationModalProp
         </>
       }
     >
+      {/* ── 칸: 회사·공고·경로·단계·지원일·마감일 → 저장 실패 알림 ── */}
       <form id={formId} onSubmit={handleSave} noValidate className="flex flex-col gap-4">
-        <ApplicationFormFields
-          idPrefix={idPrefix}
-          company={company}
-          onCompanyChange={setCompany}
-          position={position}
-          onPositionChange={setPosition}
-          platform={platform}
-          onPlatformChange={setPlatform}
-          status={status}
-          onStatusChange={setStatus}
-          appliedAt={appliedAt}
-          onAppliedAtChange={setAppliedAt}
-          deadlineAt={deadlineAt}
-          onDeadlineAtChange={setDeadlineAt}
-          errors={errors}
-          disabled={isSubmitting}
-        />
+        <ApplicationFormFields {...form.fieldProps} disabled={isSubmitting} />
         <p role="alert" className={error ? 'rounded-md bg-danger-tint px-4 py-2 text-label text-danger-text' : 'sr-only'}>
           {error}
         </p>

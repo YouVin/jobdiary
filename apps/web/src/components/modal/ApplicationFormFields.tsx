@@ -2,7 +2,7 @@ import { SelectField, TextField } from '@/components/ui/TextField';
 import { PLATFORM_INFO } from '@/constants/platform';
 import { STATUS_INFO, STATUS_ORDER } from '@/constants/status';
 import type { Platform, Status } from '@/types/application';
-import type { ApplicationFormErrors, ApplicationFormField } from '@/utils/applicationFormValidation';
+import { type ApplicationFormErrors, fieldId } from '@/utils/applicationFormValidation';
 
 const PLATFORM_OPTIONS = (Object.keys(PLATFORM_INFO) as Platform[]).map((platform) => ({
   value: platform,
@@ -32,10 +32,6 @@ interface ApplicationFormFieldsProps {
   onInterviewDateChange?: (value: string) => void;
   errors?: ApplicationFormErrors;
   disabled?: boolean;
-}
-
-export function fieldId(idPrefix: string, field: ApplicationFormField | 'position' | 'platform' | 'status'): string {
-  return `${idPrefix}-${field}`;
 }
 
 // 지원 추가·수정 칸 (#205): 디자인 시스템 입력칸·선택칸. 꼭 넣어야 하는 칸은 이름표에 "(필수)"를 글자로 적는다.

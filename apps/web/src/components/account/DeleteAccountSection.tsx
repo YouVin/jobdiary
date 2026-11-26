@@ -18,6 +18,7 @@ export function DeleteAccountSection() {
   const router = useRouter();
   const resetApplications = useApplicationStore((state) => state.resetApplications);
 
+  // ── 입력·상태 ──
   const [confirmText, setConfirmText] = useState('');
   const [isChecked, setIsChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,6 +26,7 @@ export function DeleteAccountSection() {
 
   const confirmError = confirmText === CONFIRM_PHRASE ? null : `"${CONFIRM_PHRASE}"를 그대로 입력해 주세요.`;
 
+  // ── 탈퇴: 확인 문구 검사 → 서버(Edge Function delete-account) → 로그아웃 ──
   const handleDelete = async () => {
     if (isSubmitting) return;
     setIsChecked(true);
@@ -73,6 +75,7 @@ export function DeleteAccountSection() {
         </h2>
         <p className="text-label text-text-secondary">탈퇴하면 계정과 모든 지원 기록이 지워지고 되돌릴 수 없어요.</p>
       </div>
+      {/* ── 확인 문구 칸 ── */}
       <TextField
         id="deleteConfirm"
         label={`계속하려면 "${CONFIRM_PHRASE}"를 입력하세요`}
@@ -83,6 +86,7 @@ export function DeleteAccountSection() {
         readOnly={isSubmitting}
         error={isChecked ? confirmError : null}
       />
+      {/* ── 오류·탈퇴 버튼 ── */}
       <p role="alert" className={errorMessage ? 'text-label text-danger-text' : 'sr-only'}>
         {errorMessage}
       </p>
