@@ -51,7 +51,8 @@ export function RouteCard({ shares, total, style }: RouteCardProps) {
       <CardHeader title="지원 경로" titleId="route-title" meta={`전체 ${total}건`} />
       <CardSummary>{hasData ? `${withRo(PLATFORM_INFO[top.platform].label)} 가장 많이 지원했어요` : '아직 지원 경로가 없어요'}</CardSummary>
       {/* ── 도넛 | 사이트별 건수·비율 목록(마우스를 올리면 서로 강조) ── */}
-      <div className="flex flex-wrap items-center gap-6">
+      {/* 옆 전형 여정 카드가 더 길어 같은 높이로 늘어나므로, 남는 세로 공간 가운데에 놓는다(#293) */}
+      <div className="flex flex-1 flex-wrap content-center items-center gap-6">
         <DonutChart segments={segments} activeKey={activeKey} onActiveChange={setActiveKey} label={chartLabel}>
           {hasData && (
             <>
