@@ -2,6 +2,7 @@
 
 import { clsx } from 'clsx';
 import { type ReactNode, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { IconButton } from '@/components/ui/IconButton';
 import { useDialogFocus } from '@/hooks/useDialogFocus';
 
@@ -9,6 +10,11 @@ import { useDialogFocus } from '@/hooks/useDialogFocus';
 // 키보드 기준은 useDialogFocus(#156)를 그대로 쓴다: 열 때 안으로 포커스, Tab 순환, Esc 닫기, 닫으면 연 자리로 돌아감.
 // - Dialog(가운데 창): 지원 추가·수정처럼 짧은 입력. 폭 520, 모서리 20. 모바일은 아래에서 올라오는 시트.
 // - SidePanel(오른쪽 패널): 회사 한 줄을 눌렀을 때 상세. 폭 440, 화면 높이 전체. 모바일은 아래 시트.
+// 둘 다 body에 그린다(#293). 연 자리(카드)가 움직임 등으로 transform을 가지면 fixed가 화면이 아니라 그 카드 기준이 되어
+// 막(scrim)이 카드 안에만 깔리고 헤더는 밝게 남았다. React 이벤트·context는 portal을 지나도 그대로 이어진다.
+function OverlayPortal({ children }: { children: ReactNode }) {
+  return typeof document === 'undefined' ? null : createPortal(children, document.body);
+}
 interface OverlayProps {
   isOpen: boolean;
   onClose: () => void;
@@ -61,6 +67,7 @@ export function Dialog({ isOpen, onClose, title, description, children, closeDis
   };
 
   return (
+    <OverlayPortal>
     <div className="fixed inset-0 z-modal flex items-end justify-center bg-scrim sm:items-center sm:px-4" onClick={requestClose}>
       <div
         ref={panelRef}
@@ -78,6 +85,7 @@ export function Dialog({ isOpen, onClose, title, description, children, closeDis
         {footer && <div className="flex justify-end gap-2">{footer}</div>}
       </div>
     </div>
+    </OverlayPortal>
   );
 }
 
@@ -94,6 +102,7 @@ export function SidePanel({ isOpen, onClose, title, description, children, close
   };
 
   return (
+    <OverlayPortal>
     <div className="fixed inset-0 z-panel">
       <div className="absolute inset-0 bg-scrim" onClick={requestClose} aria-hidden="true" />
       <div
@@ -115,5 +124,6 @@ export function SidePanel({ isOpen, onClose, title, description, children, close
         {footer && <div className="flex justify-end gap-2">{footer}</div>}
       </div>
     </div>
+    </OverlayPortal>
   );
 }
