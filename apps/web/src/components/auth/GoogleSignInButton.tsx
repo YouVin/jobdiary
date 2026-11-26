@@ -4,9 +4,8 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { signInWithGoogle } from '@/lib/auth';
+import { GOOGLE_FAILED_MESSAGE } from '@/utils/authErrorMessage';
 import { getGoogleRedirectUrl } from '@/utils/authRedirect';
-
-export const GOOGLE_FAILED_MESSAGE = '구글 로그인에 실패했어요. 다시 시도해 주세요.';
 
 interface GoogleSignInButtonProps {
   onStart: () => boolean;
