@@ -31,6 +31,8 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      # 서울 리전 Session pooler(IPv4). GitHub 실행기는 IPv6 직접 연결(db.<ref>.supabase.co)을 쓸 수 없다.
+      SUPABASE_POOLER_HOST: aws-1-ap-northeast-2.pooler.supabase.com
     steps:
       - uses: actions/checkout@v4
         with:
@@ -71,11 +73,15 @@ jobs:
       # DB를 먼저: 함수가 새 표·함수를 쓸 수 있다
       - name: Apply migrations
         if: steps.changes.outputs.migrations == 'true'
+        # supabase link는 프로젝트 설정 API(인증·Data API 설정 읽기)까지 불러 최소 권한 토큰으로는 403이 난다(첫 실행 2026-11-26).
+        # SQL 적용에는 DB 연결만 필요하므로 DB 비밀번호로 직접 연결한다. 비밀번호는 URL용으로 인코딩하고 출력하지 않는다.
         run: |
-          supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
-          supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD"
-          supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
-          supabase migration list --linked --password "$SUPABASE_DB_PASSWORD"
+          encoded=$(jq -rn --arg value "$SUPABASE_DB_PASSWORD" '$value|@uri')
+          echo "::add-mask::$encoded"
+          db_url="postgresql://postgres.${SUPABASE_PROJECT_ID}:${encoded}@${SUPABASE_POOLER_HOST}:5432/postgres"
+          supabase db push --db-url "$db_url" --dry-run
+          supabase db push --db-url "$db_url"
+          supabase migration list --db-url "$db_url"
 
       - name: Deploy functions
         if: steps.changes.outputs.functions != ''
