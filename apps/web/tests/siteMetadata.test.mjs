@@ -18,6 +18,10 @@ test('운영 공개 URL만 canonical/sitemap에 안내하고 개인 경로는 �
     const metadata = publicPageMetadata('로그인', '설명', '/login');
     assert.equal(metadata.alternates.canonical, `${SITE_URL}/login`);
     assert.equal(metadata.openGraph.url, `${SITE_URL}/login`);
+    // 링크 미리보기(#288): 페이지 openGraph가 루트 이미지를 덮어쓰므로 공개 페이지마다 직접 붙는다
+    assert.deepEqual(metadata.openGraph.images.map((image) => [image.url, image.width, image.height]), [['/opengraph-image', 1200, 630]]);
+    assert.equal(metadata.twitter.card, 'summary_large_image');
+    assert.equal(metadata.twitter.images[0].url, '/opengraph-image');
     assert.equal(metadata.robots.index, true);
     assert.equal(PRIVATE_ROBOTS.index, false);
     const urls = load('@/app/sitemap').default().map(item => item.url);
