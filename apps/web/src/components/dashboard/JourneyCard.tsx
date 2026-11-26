@@ -63,9 +63,8 @@ function FunnelSection({ funnel, durations }: { funnel: StageFunnel; durations: 
           );
         })}
       </ol>
-      <p className="text-label text-text-secondary tabular-nums">
-        {averages.length > 0 ? averages.join(' · ') : '단계를 옮긴 곳이 2곳 이상 쌓이면 걸린 날도 보여요'}
-      </p>
+      {/* 평균은 실제 이력이 2곳 이상일 때만. 없으면 안내 없이 비워 둔다(#293) */}
+      {averages.length > 0 && <p className="text-label text-text-secondary tabular-nums">{averages.join(' · ')}</p>}
     </section>
   );
 }
