@@ -37,6 +37,7 @@ export function SummaryCard({ today, overview, stage, nextEvent, platformCounts,
 
   return (
     <Card aria-labelledby="summary-title" gap="lg" className="motion-safe:animate-rise" style={style}>
+      {/* ── 위: 오늘 날짜 → 한 문장 요약(h1) → 다음 일정 ── */}
       <div className="flex flex-col gap-2">
         <p className="text-label text-text-secondary">
           <time dateTime={today}>{`${month}월 ${day}일 ${weekday}`}</time>
@@ -76,6 +77,7 @@ export function SummaryCard({ today, overview, stage, nextEvent, platformCounts,
         )}
       </div>
 
+      {/* ── 숫자 4칸 ── */}
       <StatGroup label="요약 숫자" className="border-t border-line-divider pt-5">
         <StatCell label="이번 주 새 지원" value={overview.thisWeekCount} unit="건" animate />
         <StatCell label="서류 통과율" value={passRate} unit={passRate === '-' ? undefined : '%'} animate />
@@ -83,6 +85,7 @@ export function SummaryCard({ today, overview, stage, nextEvent, platformCounts,
         <StatCell label="마감 자동 탈락" value={stage.autoRejected} unit="건" animate />
       </StatGroup>
 
+      {/* ── 아래: 마지막 가져오기·사이트별 저장 건수 ── */}
       {/* 사이트 이름은 그 사이트의 지원 현황 페이지로 가는 링크(새 탭)다 */}
       <p className="text-label text-text-secondary tabular-nums">
         {lastImportAt ? `마지막 가져오기 ${formatKoreanDateTime(lastImportAt)}` : '아직 가져온 기록이 없어요'}

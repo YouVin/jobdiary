@@ -53,11 +53,13 @@ export function WeeklyCard({ weeks, style }: WeeklyCardProps) {
 
   return (
     <Card aria-labelledby="weekly-title" className="h-full motion-safe:animate-rise" style={style}>
+      {/* ── 머리·요약 ── */}
       <CardHeader title="주간 지원" titleId="weekly-title" />
       <div className="flex flex-col gap-1">
         <CardSummary>{summary}</CardSummary>
         <p className="text-label text-text-secondary">{detail}</p>
       </div>
+      {/* ── 최근 주별 막대 ── */}
       <BarChart label={chartLabel} bars={bars} />
       <p className="mt-auto text-label text-text-secondary tabular-nums">
         8주 동안 {total}곳 · 주 평균 {average}곳

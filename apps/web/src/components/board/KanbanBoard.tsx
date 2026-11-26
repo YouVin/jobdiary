@@ -53,11 +53,13 @@ function stageLabel(id: unknown): string {
 }
 
 export function KanbanBoard({ applications, visibleApplications = applications, onOpen }: KanbanBoardProps) {
+  // ── 상태: 지금 끌고 있는 카드 ──
   const updateStatus = useApplicationStore((state) => state.updateStatus);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeWidth, setActiveWidth] = useState<number | undefined>(undefined);
   const today = getTodayInKorea();
 
+  // ── 끌기 설정: 입력 방식별 시작 조건과 스크린리더 안내 ──
   // 데스크톱: 8px 이상 움직여야 드래그 시작 (클릭과 공존)
   // 모바일: 250ms 이상 눌러야 드래그 시작 (짧은 탭/세로 스크롤과 공존)
   // 키보드: Space로 집고 화살표로 열을 옮긴다 (#204)
@@ -78,6 +80,7 @@ export function KanbanBoard({ applications, visibleApplications = applications, 
     onDragCancel: ({ active }) => `${companyOf(active.id)} 카드 옮기기를 취소했어요.`,
   };
 
+  // ── 처리 함수: 집기·놓기·취소 ──
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
     setActiveWidth(event.active.rect.current.initial?.width);
@@ -113,6 +116,7 @@ export function KanbanBoard({ applications, visibleApplications = applications, 
       onDragEnd={handleDragEnd}
       onDragCancel={resetActiveDrag}
     >
+      {/* ── 7단계 열 ── */}
       {/* 7단계 열. 좁은 화면에서는 열 폭(144px)을 지키고 가로로 넘긴다. 내용 폭 1200(안쪽 1120)에서 일곱 열이 모두 보이는 최소 폭이다.
           relative가 꼭 있어야 한다: 열 제목의 sr-only 건수(절대 위치)가 이 상자를 기준으로 잘려야
           화면 밖 열의 글자가 페이지 폭을 늘리지 않는다(768px에서 문서 폭 1132px로 늘던 문제, #204). */}
@@ -131,6 +135,7 @@ export function KanbanBoard({ applications, visibleApplications = applications, 
         </div>
       </div>
 
+      {/* ── 끄는 동안 손에 들린 카드 ── */}
       <DragOverlay>
         {activeApplication && (
           <div style={{ width: activeWidth }} className="flex rotate-2 cursor-grabbing flex-col gap-1 rounded-md bg-surface p-3 shadow-lg">

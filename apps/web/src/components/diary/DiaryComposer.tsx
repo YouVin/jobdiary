@@ -19,12 +19,14 @@ interface DiaryComposerProps {
 export function DiaryComposer({ application, onSavingChange }: DiaryComposerProps) {
   const updateApplication = useApplicationStore((state) => state.updateApplication);
   const clearError = useApplicationStore((state) => state.clearError);
+  // ── 입력·상태 ──
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
   const isEmpty = content.trim().length === 0;
 
+  // ── 저장: 기록을 지원의 일기 목록에 더함 ──
   const handleSave = async () => {
     if (isSaving) return;
     if (isEmpty) {
@@ -64,6 +66,7 @@ export function DiaryComposer({ application, onSavingChange }: DiaryComposerProp
         void handleSave();
       }}
     >
+      {/* ── 글 칸(단계별 질문, Ctrl/⌘+Enter로 저장) ── */}
       <TextAreaField
         label={DIARY_PROMPTS[application.status]}
         value={content}
@@ -86,6 +89,7 @@ export function DiaryComposer({ application, onSavingChange }: DiaryComposerProp
         error={error}
         readOnly={isSaving}
       />
+      {/* ── 글자 수·저장 알림 | 남기기 버튼 ── */}
       <div className="flex items-center justify-between gap-2">
         <span role="status" className={savedNotice ? 'text-label font-semibold text-success-text' : 'text-caption font-normal text-text-secondary tabular-nums'}>
           {savedNotice ? '기록을 남겼어요.' : <span aria-hidden="true">{content.length} / {DIARY_MAX_LENGTH}</span>}

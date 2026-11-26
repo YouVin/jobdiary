@@ -10,6 +10,7 @@ import { getEmailError } from '@/utils/authValidation';
 
 // /reset-password 폼 — 이메일을 받아 재설정 링크를 요청한다 (docs/AUTH.md §6.3.1, §6.3.4)
 export function ResetPasswordForm() {
+  // ── 입력·상태 ──
   const [email, setEmail] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,6 +25,7 @@ export function ResetPasswordForm() {
     if (isSubmitted) doneMessage.current?.focus();
   }, [isSubmitted]);
 
+  // ── 제출: 재설정 링크 메일 요청 ──
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
@@ -49,6 +51,7 @@ export function ResetPasswordForm() {
     }
   };
 
+  // ── 화면 2: 보냈어요 안내 ──
   if (isSubmitted) {
     return (
       <div className="flex flex-col gap-4">
@@ -63,6 +66,7 @@ export function ResetPasswordForm() {
     );
   }
 
+  // ── 화면 1: 이메일 입력 ──
   return (
     <form aria-label="비밀번호 재설정 링크 요청" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
       <TextField

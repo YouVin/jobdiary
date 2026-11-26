@@ -42,7 +42,9 @@ export function UpcomingCard({ today, events, onSelect, limit = 4, style }: Upco
 
   return (
     <Card aria-labelledby="upcoming-title" className="h-full motion-safe:animate-rise" style={style}>
+      {/* ── 머리 ── */}
       <CardHeader title="다가오는 일정" titleId="upcoming-title" meta={`${events.length}건`} />
+      {/* ── 기간별(오늘·이번 주·그 뒤) 일정 목록, 없으면 빈 상태 ── */}
       {events.length === 0 ? (
         <EmptyState title="다가오는 일정이 없어요" description="면접일이나 공고 마감일을 기록하면 여기에 보여드려요" />
       ) : (
@@ -72,6 +74,7 @@ export function UpcomingCard({ today, events, onSelect, limit = 4, style }: Upco
           ))}
         </div>
       )}
+      {/* ── 나머지 펼치기 ── */}
       {(hiddenCount > 0 || isExpanded) && events.length > limit && (
         <Button variant="text" size="sm" className="mt-auto self-start" aria-expanded={isExpanded} onClick={() => setIsExpanded((value) => !value)}>
           {isExpanded ? '접기' : `나머지 ${hiddenCount}건 보기`}

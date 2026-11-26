@@ -44,6 +44,7 @@ export function WeekTimeline({ timeline, today, offset, onOffsetChange, onSelect
 
   return (
     <Card aria-labelledby="week-title">
+      {/* ── 머리: 주 이름·날짜 범위 | 범례·주 이동 ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
           <h2 id="week-title" className="text-title-3 text-text-primary">
@@ -90,6 +91,7 @@ export function WeekTimeline({ timeline, today, offset, onOffsetChange, onSelect
         default="none"
       >
         <div className="flex flex-col gap-4">
+          {/* ── 요일 띠(장식, 스크린리더는 아래 목록을 읽음) ── */}
           <ol aria-hidden="true" className="grid grid-cols-7 gap-1">
             {timeline.days.map((day) => (
               <li
@@ -118,6 +120,7 @@ export function WeekTimeline({ timeline, today, offset, onOffsetChange, onSelect
             ))}
           </ol>
 
+          {/* ── 날짜별 일정 목록(없으면 빈 상태) ── */}
           {eventDays.length === 0 ? (
             <EmptyState
               title={`${weekTitle(offset)}에는 잡힌 일정이 없어요`}
@@ -152,6 +155,7 @@ export function WeekTimeline({ timeline, today, offset, onOffsetChange, onSelect
         </div>
       </ViewTransition>
 
+      {/* ── 이 주 뒤 일정 안내 ── */}
       {timeline.laterCount > 0 && (
         <p className="text-label text-text-secondary">
           이 주 뒤에도 일정이 {timeline.laterCount}건 더 있어요.{' '}

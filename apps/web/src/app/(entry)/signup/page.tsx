@@ -4,6 +4,7 @@ import { publicPageMetadata, SITE_DESCRIPTION } from '@/lib/siteMetadata';
 
 export const metadata = publicPageMetadata('회원가입', SITE_DESCRIPTION, '/signup');
 
+// 회원가입(/signup) · 로그인과 같은 틀·같은 폼(mode="signup")
 export default function SignupPage() {
   return (
     <>

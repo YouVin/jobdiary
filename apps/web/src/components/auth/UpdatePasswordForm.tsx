@@ -17,6 +17,7 @@ export function UpdatePasswordForm() {
   const status = useAuthStore((state) => state.status);
   const completeRecovery = useAuthStore((state) => state.completeRecovery);
 
+  // ── 입력·상태 ──
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordTouched, setPasswordTouched] = useState(false);
@@ -29,6 +30,7 @@ export function UpdatePasswordForm() {
   const passwordError = getPasswordError(password);
   const confirmPasswordError = getConfirmPasswordError(password, confirmPassword);
 
+  // ── 제출: 검사 → 새 비밀번호 저장 ──
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
@@ -65,6 +67,7 @@ export function UpdatePasswordForm() {
     }
   };
 
+  // ── 화면 1: 링크 확인 중 ──
   if (status === 'loading') {
     return (
       <p role="status" className="rounded-lg bg-subtle p-5 text-body text-text-secondary">
@@ -73,6 +76,7 @@ export function UpdatePasswordForm() {
     );
   }
 
+  // ── 화면 2: 링크 만료·잘못됨 ──
   // recovering이 아니면(authenticated/unauthenticated) 유효한 복구 세션이 없다는 뜻이다 —
   // 링크 만료·재사용, 직접 접근, 새로고침으로 인한 recovering 유실 등이 모두 여기로 모인다 (docs/AUTH.md §6.3.6).
   if (status !== 'recovering') {
@@ -89,6 +93,7 @@ export function UpdatePasswordForm() {
     );
   }
 
+  // ── 화면 3: 새 비밀번호 입력 ──
   return (
     <form aria-label="새 비밀번호 설정" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
       <fieldset disabled={isSubmitting} className="flex min-w-0 flex-col gap-4">
