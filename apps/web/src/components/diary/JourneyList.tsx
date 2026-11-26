@@ -4,6 +4,7 @@ import { STATUS_INFO } from '@/constants/status';
 import type { Application } from '@/types/application';
 import { getApplicationJourney, type JourneyItem } from '@/utils/applicationJourney';
 import { formatDateWithWeekday } from '@/utils/format';
+import { isInterviewReview } from '@/utils/interviewReview';
 
 const KIND_LABEL: Record<JourneyItem['kind'], string> = {
   applied: '지원했어요',
@@ -36,7 +37,7 @@ export function JourneyList({ application }: { application: Application }) {
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-label text-text-secondary tabular-nums">
               {formatDateWithWeekday(item.date)}
               <span className="font-semibold text-text-primary">
-                {KIND_LABEL[item.kind]}
+                {item.entry && isInterviewReview(item.entry) ? '면접 후기' : KIND_LABEL[item.kind]}
                 {item.entry?.status && ` · ${STATUS_INFO[item.entry.status].label} 때`}
               </span>
               {item.isUpcoming && <Badge tone="info">예정</Badge>}
