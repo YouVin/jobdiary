@@ -65,7 +65,8 @@ export function WeekTimeline({ timeline, today, offset, onOffsetChange, onSelect
               공고 마감
             </span>
           </span>
-          <div role="group" aria-label="주 이동" className="flex items-center gap-1 rounded-md bg-muted p-1">
+          {/* 흰 카드 위라 회색 판 대신 테두리로 묶는다(#293). 지금 주는 옅은 바탕으로 표시 */}
+          <div role="group" aria-label="주 이동" className="flex items-center gap-1 rounded-md border border-line-divider bg-surface p-1 shadow-sm">
             <IconButton label="이전 주" icon="chevron-left" size="sm" onClick={() => onOffsetChange(offset - 1)} />
             <button
               type="button"
@@ -73,7 +74,7 @@ export function WeekTimeline({ timeline, today, offset, onOffsetChange, onSelect
               aria-disabled={offset === 0 || undefined}
               className={clsx(
                 'h-9 rounded-sm px-3 text-label font-semibold transition-colors duration-fast focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
-                offset === 0 ? 'cursor-default bg-surface text-text-primary' : 'cursor-pointer text-text-secondary hover:bg-surface hover:text-text-primary',
+                offset === 0 ? 'cursor-default bg-subtle text-text-primary' : 'cursor-pointer text-text-secondary hover:bg-subtle hover:text-text-primary',
               )}
             >
               이번 주
