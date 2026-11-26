@@ -41,16 +41,9 @@ export function SummaryCard({ today, overview, stage, nextEvent, platformCounts,
     <Card aria-labelledby="summary-title" gap="lg" className="motion-safe:animate-rise" style={style}>
       {/* ── 위: 오늘 날짜 → 한 문장 요약(h1) → 다음 일정 ── */}
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-label text-text-secondary">
-            <time dateTime={today}>{`${month}월 ${day}일 ${weekday}`}</time>
-          </p>
-          {onOpenRecap && (
-            <Button variant="secondary" size="sm" icon="sparkle" onClick={onOpenRecap}>
-              {month}월 돌아보기
-            </Button>
-          )}
-        </div>
+        <p className="text-label text-text-secondary">
+          <time dateTime={today}>{`${month}월 ${day}일 ${weekday}`}</time>
+        </p>
         <h1 id="summary-title" className="text-title-1-sm text-balance break-keep text-text-primary sm:text-title-1">
           {overview.total === 0 ? (
             '아직 기록한 지원이 없어요'
@@ -94,8 +87,9 @@ export function SummaryCard({ today, overview, stage, nextEvent, platformCounts,
         <StatCell label="마감 자동 탈락" value={stage.autoRejected} unit="건" animate />
       </StatGroup>
 
-      {/* ── 아래: 마지막 가져오기·사이트별 저장 건수 ── */}
-      {/* 사이트 이름은 그 사이트의 지원 현황 페이지로 가는 링크(새 탭)다 */}
+      {/* ── 아래: 마지막 가져오기·사이트별 저장 건수 | 이번 달 돌아보기 ── */}
+      {/* 사이트 이름은 그 사이트의 지원 현황 페이지로 가는 링크(새 탭)다. 돌아보기 버튼은 헤더 메뉴가 펼쳐져도 가리지 않는 아래에 둔다 */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
       <p className="text-label text-text-secondary tabular-nums">
         {lastImportAt ? `마지막 가져오기 ${formatKoreanDateTime(lastImportAt)}` : '아직 가져온 기록이 없어요'}
         {SITES.map((platform) => {
@@ -112,6 +106,12 @@ export function SummaryCard({ today, overview, stage, nextEvent, platformCounts,
           );
         })}
       </p>
+      {onOpenRecap && (
+        <Button variant="secondary" size="sm" icon="sparkle" onClick={onOpenRecap}>
+          {month}월 돌아보기
+        </Button>
+      )}
+      </div>
     </Card>
   );
 }
