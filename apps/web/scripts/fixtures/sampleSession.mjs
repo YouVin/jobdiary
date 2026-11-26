@@ -51,6 +51,7 @@ for (const [copyIndex, sourceIndex, platform] of [[48, 0, 'saramin'], [49, 1, 'j
 // 공고 내용에 [한도초과]·[실패]를 넣으면 서버의 429·502 응답을 흉내 낸다.
 export const companyInfoStore = new Map();
 export const companyInfoRequests = [];
+export const feedbackRequests = [];
 export const SAMPLE_COMPANY_INFO = {
   // #235 형식: 회사 소개 → 강점별 추천 경험 → 근무 조건
   company: { about: '웹 서비스를 만드는 IT 회사예요.', products: ['루트노트'], website: 'www.rootlabs.example' },
@@ -122,6 +123,12 @@ export async function routeSupabase(context) {
     if (url.pathname === '/rest/v1/application_analyses' || url.pathname === '/functions/v1/company-info') return routeCompanyInfo(route, url, send);
     if (url.pathname === '/auth/v1/logout') return route.fulfill({ status: 204 });
     if (url.pathname === '/rest/v1/rpc/record_daily_activity') return route.fulfill({ status: 204 }); // 방문 기록(#256)
+    // 의견 보내기(#278): 글에 [한도]가 있으면 하루 한도에 걸린 것처럼 false
+    if (url.pathname === '/rest/v1/rpc/send_feedback') {
+      const { p_message: message, p_page: page } = route.request().postDataJSON();
+      feedbackRequests.push({ message, page });
+      return send(!message.includes('[한도]'));
+    }
     throw new Error(`예상하지 않은 요청: ${route.request().method()} ${url.pathname}`);
   });
 }

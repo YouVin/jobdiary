@@ -1,12 +1,16 @@
 'use client';
 
 import { clsx } from 'clsx';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { Icon } from '@/components/common/Icon';
 import { useExtensionImportState } from '@/components/import/ExtensionImportProvider';
 import { AddApplicationModal } from '@/components/modal/AddApplicationModal';
 import { Button } from '@/components/ui/Button';
 import { Menu } from '@/components/ui/Menu';
+
+// 의견 보내기 창은 메뉴에서 고를 때만 불러온다 (#278)
+const FeedbackDialog = dynamic(() => import('@/components/header/FeedbackDialog').then((module) => module.FeedbackDialog));
 import { signOut } from '@/lib/auth';
 import { captureApplicationSession, useApplicationStore } from '@/store/applicationStore';
 
@@ -17,6 +21,7 @@ const NO_EXTENSION_HINT = '크롬 익스텐션을 설치하면 세 사이트의 
 export function HeaderActions({ className }: { className?: string }) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const resetApplications = useApplicationStore((state) => state.resetApplications);
   const { requestImport, isRequesting, isExtensionAvailable } = useExtensionImportState();
 
@@ -56,13 +61,14 @@ export function HeaderActions({ className }: { className?: string }) {
       <Button icon="plus" onClick={() => setIsAddModalOpen(true)}>
         지원 추가
       </Button>
-      {/* ── 내 계정 메뉴: 계정 설정·로그아웃 ── */}
+      {/* ── 내 계정 메뉴: 계정 설정·의견 보내기·로그아웃 ── */}
       <Menu
         label="내 계정"
         trigger={<Icon name="user" className="h-5 w-5" />}
         triggerClassName="grid h-10 w-10 place-items-center rounded-full bg-selected text-text-brand-strong transition-colors duration-fast hover:bg-muted"
         items={[
           { label: '계정 설정', icon: 'settings', href: '/account' },
+          { label: '의견 보내기', icon: 'pencil', onSelect: () => setIsFeedbackOpen(true) },
           { label: '로그아웃', icon: 'logout', onSelect: handleLogout },
         ]}
       />
@@ -73,6 +79,7 @@ export function HeaderActions({ className }: { className?: string }) {
       </p>
 
       <AddApplicationModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+      {isFeedbackOpen && <FeedbackDialog onClose={() => setIsFeedbackOpen(false)} />}
     </div>
   );
 }
