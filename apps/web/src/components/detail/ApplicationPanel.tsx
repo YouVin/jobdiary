@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CompanyInfoSection } from '@/components/detail/CompanyInfoSection';
 import { DiaryComposer } from '@/components/diary/DiaryComposer';
+import { PastInterviewReviews } from '@/components/diary/PastInterviewReviews';
 import { JourneyList } from '@/components/diary/JourneyList';
 import { EditApplicationForm } from '@/components/modal/EditApplicationForm';
 import { Badge } from '@/components/ui/Badge';
@@ -149,7 +150,8 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
               stage={COMPANY_INFO_STATUSES.includes(application.status) ? 'ready' : application.status === 'applied' ? 'early' : 'closed'}
             />
 
-            {/* ── 상세 화면 4: 기록 남기기와 지금까지의 여정 ── */}
+            {/* ── 상세 화면 4: 같은 회사 지난 면접 후기 → 기록 남기기 → 지금까지의 여정 ── */}
+            <PastInterviewReviews application={application} />
             <DiaryComposer key={application.id} application={application} onSavingChange={setIsBusy} />
             <JourneyList application={application} />
           </>

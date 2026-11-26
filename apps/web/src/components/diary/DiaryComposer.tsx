@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { TextAreaField } from '@/components/ui/TextField';
 import { useApplicationStore } from '@/store/applicationStore';
 import type { Application } from '@/types/application';
 import { createDiaryEntry, DIARY_MAX_LENGTH, DIARY_PROMPTS } from '@/utils/applicationJourney';
+import { INTERVIEW_REVIEW_CURSOR, INTERVIEW_REVIEW_STATUSES, INTERVIEW_REVIEW_TEMPLATE } from '@/utils/interviewReview';
 
 interface DiaryComposerProps {
   application: Application;
@@ -25,6 +26,18 @@ export function DiaryComposer({ application, onSavingChange }: DiaryComposerProp
   const [error, setError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState(false);
   const isEmpty = content.trim().length === 0;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const canUseReviewTemplate = INTERVIEW_REVIEW_STATUSES.includes(application.status) && isEmpty;
+
+  // 면접 후기 틀 넣기 (#276): 빈 칸에 "받은 질문 / 내 답 / 아쉬운 점"을 넣고 첫 줄에 커서를 둔다
+  const insertReviewTemplate = () => {
+    setContent(INTERVIEW_REVIEW_TEMPLATE);
+    setError(null);
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+      textareaRef.current?.setSelectionRange(INTERVIEW_REVIEW_CURSOR, INTERVIEW_REVIEW_CURSOR);
+    });
+  };
 
   // ── 저장: 기록을 지원의 일기 목록에 더함 ──
   const handleSave = async () => {
@@ -68,6 +81,7 @@ export function DiaryComposer({ application, onSavingChange }: DiaryComposerProp
     >
       {/* ── 글 칸(단계별 질문, Ctrl/⌘+Enter로 저장) ── */}
       <TextAreaField
+        ref={textareaRef}
         label={DIARY_PROMPTS[application.status]}
         value={content}
         maxLength={DIARY_MAX_LENGTH}
@@ -83,20 +97,27 @@ export function DiaryComposer({ application, onSavingChange }: DiaryComposerProp
             void handleSave();
           }
         }}
-        rows={3}
+        rows={content.includes('\n') ? 8 : 3}
         placeholder="짧게 적어도 괜찮아요."
         hint="Ctrl(⌘) + Enter로 바로 남길 수 있어요"
         error={error}
         readOnly={isSaving}
       />
-      {/* ── 글자 수·저장 알림 | 남기기 버튼 ── */}
+      {/* ── 글자 수·저장 알림 | 면접 후기 틀·남기기 버튼 ── */}
       <div className="flex items-center justify-between gap-2">
         <span role="status" className={savedNotice ? 'text-label font-semibold text-success-text' : 'text-caption font-normal text-text-secondary tabular-nums'}>
           {savedNotice ? '기록을 남겼어요.' : <span aria-hidden="true">{content.length} / {DIARY_MAX_LENGTH}</span>}
         </span>
-        <Button type="submit" size="sm" isLoading={isSaving} loadingLabel="남기는 중">
-          기록 남기기
-        </Button>
+        <div className="flex gap-2">
+          {canUseReviewTemplate && (
+            <Button variant="secondary" size="sm" onClick={insertReviewTemplate}>
+              면접 후기 틀
+            </Button>
+          )}
+          <Button type="submit" size="sm" isLoading={isSaving} loadingLabel="남기는 중">
+            기록 남기기
+          </Button>
+        </div>
       </div>
     </form>
   );
