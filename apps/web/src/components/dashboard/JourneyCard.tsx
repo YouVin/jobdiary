@@ -5,9 +5,12 @@ import { Card, CardHeader, CardSummary } from '@/components/ui/Card';
 import { CountUp } from '@/components/ui/CountUp';
 import { textLinkClassName } from '@/components/ui/TextLink';
 import type { StageSummary } from '@/utils/applicationStats';
+import type { StageDurations, StageFunnel } from '@/utils/statusHistory';
 
 interface JourneyCardProps {
   stage: StageSummary;
+  funnel: StageFunnel; // 어디까지 갔는지로 센 단계 흐름 (#283)
+  durations: StageDurations;
   style?: React.CSSProperties;
 }
 
@@ -20,9 +23,56 @@ function journeySummary(applied: number, screening: number, interview: number, o
   return '진행 중인 지원이 없어요';
 }
 
-// 전형 여정 (#203): 한 줄 요약 → 비율 막대 → 단계별 숫자 → 끝난 지원 줄.
+// 위 단계 비율이 "지금" 어디에 있는지라면, 지나온 단계는 탈락한 곳도 어디까지 갔는지로 센다 (#283).
+// 각 단계 아래 %는 바로 앞 단계에서 넘어간 비율이다.
+function FunnelSection({ funnel, durations }: { funnel: StageFunnel; durations: StageDurations }) {
+  const steps = [
+    { key: 'applied', label: '지원', value: funnel.applied },
+    { key: 'screening', label: '서류 통과', value: funnel.screening },
+    { key: 'interview', label: '면접', value: funnel.interview },
+    { key: 'offer', label: '합격', value: funnel.offer },
+  ];
+  const averages = [
+    durations.toScreening && `서류 통과 연락까지 평균 ${durations.toScreening.days}일`,
+    durations.afterInterview && `면접 후 결과까지 평균 ${durations.afterInterview.days}일`,
+  ].filter(Boolean);
+
+  return (
+    <section aria-labelledby="funnel-title" className="flex flex-col gap-3 border-t border-line-divider pt-4">
+      <h3 id="funnel-title" className="text-label font-semibold text-text-secondary">
+        지금까지 지나온 단계
+      </h3>
+      <ol className="grid grid-cols-4 gap-2">
+        {steps.map((step, index) => {
+          const previous = index > 0 ? steps[index - 1].value : 0;
+          const rate = index > 0 && previous > 0 ? Math.round((step.value / previous) * 100) : null;
+          return (
+            <li key={step.key} className="flex min-w-0 flex-col gap-1">
+              <span className="truncate text-label text-text-secondary">{step.label}</span>
+              <span className={clsx('text-title-3 tabular-nums', step.value === 0 ? 'text-text-secondary' : 'text-text-primary')}>
+                {step.value}
+                <span className="sr-only">곳</span>
+              </span>
+              {rate !== null && (
+                <span className="text-caption font-normal text-text-secondary tabular-nums">
+                  <span className="sr-only">앞 단계의 </span>
+                  {rate}%
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      <p className="text-label text-text-secondary tabular-nums">
+        {averages.length > 0 ? averages.join(' · ') : '서류 통과나 면접 결과로 옮긴 곳이 2곳 이상 쌓이면 걸린 날을 보여 드려요'}
+      </p>
+    </section>
+  );
+}
+
+// 전형 여정 (#203): 한 줄 요약 → 비율 막대 → 단계별 숫자 → 지나온 단계(#283) → 끝난 지원 줄.
 // 단계 색은 stage 토큰(막대 조각과 숫자 앞 네모가 같은 색). 색만으로 구분하지 않게 이름을 함께 쓴다.
-export function JourneyCard({ stage, style }: JourneyCardProps) {
+export function JourneyCard({ stage, funnel, durations, style }: JourneyCardProps) {
   const { counts } = stage;
   const steps = [
     { key: 'applied', label: '지원 완료', value: counts.applied, colorClass: 'bg-stage-applied' },
@@ -53,6 +103,8 @@ export function JourneyCard({ stage, style }: JourneyCardProps) {
           </div>
         ))}
       </dl>
+      {/* ── 지나온 단계와 걸린 날 ── */}
+      <FunnelSection funnel={funnel} durations={durations} />
       {/* ── 아래: 끝난 지원 ── */}
       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md bg-subtle px-4 py-3">
         <span className="text-label text-text-secondary tabular-nums">
