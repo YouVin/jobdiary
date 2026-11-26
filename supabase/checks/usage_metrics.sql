@@ -51,3 +51,22 @@ select
 from cohort
 group by 1
 order by 1 desc;
+
+-- 4) 가입 경로 (#290): 홍보 링크(utm)·바깥 사이트에서 와서 가입한 사람. 2026-11-26 이후 가입자만 기록이 있다.
+--    경로가 없는 가입자는 바로 들어왔거나 다른 브라우저에서 가입한 사람이다.
+--    지원 1건 이상·1주 안에 다시 옴까지 함께 봐서 "들어와서 실제로 썼는지"를 본다.
+select
+  coalesce(q.source, q.referrer, '(경로 없음)')  as "출처",
+  coalesce(q.campaign, '-')                     as "캠페인",
+  count(*)                                      as "가입",
+  count(*) filter (where exists (select 1 from public.applications p where p.user_id = u.id)) as "지원 1건 이상",
+  count(*) filter (where exists (
+    select 1 from public.user_activity a
+    where a.user_id = u.id
+      and a.activity_date between (u.created_at at time zone 'Asia/Seoul')::date + 1 and (u.created_at at time zone 'Asia/Seoul')::date + 7
+  ))                                            as "1주 안에 다시 옴"
+from auth.users u
+left join public.user_acquisition q on q.user_id = u.id
+where u.created_at >= '2026-11-26'
+group by 1, 2
+order by 3 desc;
