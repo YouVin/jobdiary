@@ -33,6 +33,20 @@ export async function signInWithGoogle(redirectTo: string): Promise<{ error: Aut
   return { error };
 }
 
+// 약관 동의 저장 (ConsentGate). 서버에서 지금 계정을 다시 확인한 뒤 동의 버전을 사용자 메타데이터에 남긴다.
+// 확인한 계정이 화면이 기대한 계정과 다르거나, 확인하는 사이 화면의 계정이 바뀌면(isCurrent) 저장하지 않는다.
+export async function saveConsent(
+  expectedUserId: string,
+  isCurrent: () => boolean,
+): Promise<{ user: User | null; error: 'stale' | 'account_changed' | 'save_failed' | null }> {
+  const { data: verified, error: verifyError } = await supabase.auth.getUser();
+  if (!isCurrent()) return { user: null, error: 'stale' };
+  if (verifyError || verified.user?.id !== expectedUserId) return { user: null, error: 'account_changed' };
+  const { data, error: saveError } = await supabase.auth.updateUser({ data: consentMetadata() });
+  if (saveError || !data.user || data.user.id !== expectedUserId) return { user: null, error: 'save_failed' };
+  return { user: data.user, error: null };
+}
+
 // 로그아웃
 export async function signOut(): Promise<{ error: AuthError | null }> {
   const { error } = await supabase.auth.signOut();
