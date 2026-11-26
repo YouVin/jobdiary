@@ -49,6 +49,7 @@ function DayTooltip({ month, day }: { month: number; day: CalendarDay }) {
 // - 지원한 날은 버튼: 누르면 아래에 그날 회사 목록(#190)이 열리고, 회사를 누르면 상세 패널. 마우스를 올리면 회사 이름 말풍선(#184).
 // - 칸 이름은 "11월 18일 수요일, 오늘, 지원 3곳, 면접 1개"처럼 한 문장으로 읽는다.
 export function CalendarCard({ today, applications, onSelect, style }: CalendarCardProps) {
+  // ── 상태: 보는 달·고른 날짜 ──
   const currentMonth = today.slice(0, 7);
   const [month, setMonth] = useState(currentMonth);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -59,6 +60,7 @@ export function CalendarCard({ today, applications, onSelect, style }: CalendarC
   const isOtherYear = calendar.year !== Number(today.slice(0, 4));
   const monthName = isOtherYear ? `${calendar.year}년 ${calendar.month}월` : `${calendar.month}월`;
 
+  // ── 고른 날짜의 지원 목록 ──
   let selectedDay: CalendarDay | null = null;
   for (const week of calendar.weeks) {
     for (const day of week) {
@@ -71,6 +73,7 @@ export function CalendarCard({ today, applications, onSelect, style }: CalendarC
     if (application) selectedApplications.push(application);
   }
 
+  // ── 처리 함수 ──
   const moveMonth = (offset: number) => {
     setMonth((value) => shiftMonth(value, offset));
     setSelectedDate(null);
@@ -78,6 +81,7 @@ export function CalendarCard({ today, applications, onSelect, style }: CalendarC
 
   return (
     <Card aria-labelledby="calendar-title" className="h-full motion-safe:animate-rise" style={style}>
+      {/* ── 머리: 달 이동·제목 | 이번 달로·이번 달 건수 ── */}
       <div className="flex items-center justify-between gap-2">
         <div className="-ml-3 flex items-center gap-1">
           <IconButton label="지난달" icon="chevron-left" size="sm" onClick={() => moveMonth(-1)} />
@@ -103,6 +107,7 @@ export function CalendarCard({ today, applications, onSelect, style }: CalendarC
         </span>
       </div>
 
+      {/* ── 달력: 요일 머리 → 날짜 칸(지원 수·일정 점·말풍선) ── */}
       <div role="group" aria-label={`${calendar.year}년 ${calendar.month}월 날짜별 지원`} className="grid grid-cols-7 gap-1">
         {WEEKDAYS.map((weekday) => (
           <span key={weekday} aria-hidden="true" className="pb-1 text-center text-caption font-normal text-text-secondary">
@@ -135,6 +140,7 @@ export function CalendarCard({ today, applications, onSelect, style }: CalendarC
         )}
       </div>
 
+      {/* ── 고른 날짜의 회사 목록(누르면 상세 패널) ── */}
       {selectedDay && selectedApplications.length > 0 && (
         <div id={listId} role="region" aria-labelledby={`${listId}-title`} className="flex flex-col rounded-md bg-subtle px-4 pt-3 pb-1">
           <div className="flex items-center justify-between gap-2">
@@ -158,6 +164,7 @@ export function CalendarCard({ today, applications, onSelect, style }: CalendarC
         </div>
       )}
 
+      {/* ── 범례 ── */}
       <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-caption font-normal text-text-secondary" aria-hidden="true">
         <span>
           <b className="font-semibold text-text-brand-strong">2</b> 그날 지원한 곳

@@ -39,6 +39,7 @@ export function HeaderActions({ className }: { className?: string }) {
 
   return (
     <div className={clsx('relative flex items-center gap-2', className)}>
+      {/* ── 익스텐션에서 가져오기(좁은 화면은 아이콘만) ── */}
       <Button
         variant="secondary"
         icon="download"
@@ -51,9 +52,11 @@ export function HeaderActions({ className }: { className?: string }) {
       >
         <span className="max-sm:sr-only">익스텐션에서 가져오기</span>
       </Button>
+      {/* ── 지원 추가 ── */}
       <Button icon="plus" onClick={() => setIsAddModalOpen(true)}>
         지원 추가
       </Button>
+      {/* ── 내 계정 메뉴: 계정 설정·로그아웃 ── */}
       <Menu
         label="내 계정"
         trigger={<Icon name="user" className="h-5 w-5" />}
@@ -64,6 +67,7 @@ export function HeaderActions({ className }: { className?: string }) {
         ]}
       />
 
+      {/* ── 로그아웃 실패 알림·지원 추가 창 ── */}
       <p role="alert" className={logoutError ? 'absolute top-full right-0 mt-1 text-label whitespace-nowrap text-danger-text' : 'sr-only'}>
         {logoutError}
       </p>

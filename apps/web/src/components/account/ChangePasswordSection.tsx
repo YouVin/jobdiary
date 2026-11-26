@@ -25,6 +25,7 @@ export function ChangePasswordSection() {
   const newInput = useRef<HTMLInputElement>(null);
   const confirmInput = useRef<HTMLInputElement>(null);
 
+  // ── 입력·상태 ──
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -47,6 +48,7 @@ export function ChangePasswordSection() {
     );
   }
 
+  // ── 제출: 검사 → 현재 비밀번호 확인 → 변경 ──
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
@@ -97,6 +99,7 @@ export function ChangePasswordSection() {
   return (
     <Card aria-labelledby="change-password-title">
       <CardHeader title="비밀번호 변경" titleId="change-password-title" />
+      {/* ── 입력 칸: 현재 → 새 비밀번호(강도) → 확인 ── */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         <fieldset disabled={isSubmitting} className="flex min-w-0 flex-col gap-4">
           <legend className="sr-only">비밀번호 변경</legend>
@@ -137,6 +140,7 @@ export function ChangePasswordSection() {
             error={isChecked ? confirmNewPasswordError : null}
           />
         </fieldset>
+        {/* ── 오류·제출 버튼 ── */}
         <p role="alert" className={errorMessage ? 'text-label text-danger-text' : 'sr-only'}>
           {errorMessage}
         </p>

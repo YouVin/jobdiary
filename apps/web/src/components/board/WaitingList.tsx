@@ -43,6 +43,7 @@ function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: Waiti
 
   return (
     <li className={clsx('grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 border-t border-line-divider py-3 transition-colors duration-fast hover:bg-subtle', ROW_PADDING, ROW_GRID)}>
+      {/* ── 1칸: 회사(공고 링크)·직무·상세 버튼 ── */}
       {/* 회사 이름은 공고를 새 탭으로 연다(#185). 상세 패널(기록·정보 수정)은 오른쪽 연필 버튼으로 연다. */}
       <div className="flex min-w-0 items-center gap-3">
         <CompanyAvatar company={application.company} platform={application.platform} />
@@ -67,11 +68,13 @@ function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: Waiti
         <IconButton label={`${application.company} 상세 보기`} icon="pencil" size="sm" onClick={() => onOpen(application.id)} />
       </div>
 
+      {/* ── 2칸: 단계 트랙 ── */}
       <div className="col-span-2 row-start-2 lg:col-span-1 lg:col-start-2 lg:row-start-1">
         {/* 좁은 화면에는 열 머리가 없어 트랙 아래에 단계 이름을 둔다. */}
         <StageTrack company={application.company} stageIndex={stageIndex} onMove={(status) => onMove(application.id, status)} labelsClassName="lg:hidden" />
       </div>
 
+      {/* ── 3칸: 다음 일정 ── */}
       <p className={clsx('col-span-2 row-start-3 text-label text-text-secondary tabular-nums lg:col-span-1 lg:col-start-3 lg:row-start-1', !nextEvent && 'max-lg:hidden')}>
         {nextEvent ? (
           <>
@@ -85,6 +88,7 @@ function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: Waiti
         )}
       </p>
 
+      {/* ── 4칸: 지원 후 며칠째 ── */}
       <p className={clsx('col-start-2 row-start-1 text-right tabular-nums lg:col-start-4', isStale ? 'text-danger-text' : 'text-text-primary')}>
         <b className="block text-body font-semibold">{waitDays}일째</b>
         <span className={clsx('block text-caption font-normal', isStale ? 'text-danger-text' : 'text-text-secondary')}>{waitNote}</span>
@@ -102,6 +106,7 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
 
   return (
     <Card aria-labelledby="waiting-title" padding="flush" gap="none">
+      {/* ── 머리: 제목·건수·단계 필터 해제 ── */}
       <div className={clsx('flex flex-wrap items-baseline justify-between gap-2 pb-3', ROW_PADDING)}>
         <h2 id="waiting-title" className="flex items-baseline gap-2 text-title-3 text-text-primary">
           결과 기다리는 중
@@ -121,10 +126,12 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
         )}
       </div>
 
+      {/* ── 단계 변경 실패 알림 ── */}
       <p role="alert" className={moveError ? clsx('mb-3 rounded-md bg-danger-tint py-2 text-label text-danger-text', 'mx-5 px-4 sm:mx-6') : 'sr-only'}>
         {moveError}
       </p>
 
+      {/* ── 열 머리(넓은 화면만) ── */}
       <div aria-hidden="true" className={clsx('hidden border-t border-line-divider py-2 text-caption text-text-secondary lg:grid', ROW_PADDING, ROW_GRID)}>
         <span>회사</span>
         <span className="grid grid-cols-4 text-center">
@@ -136,6 +143,7 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
         <span className="text-right">지원 후</span>
       </div>
 
+      {/* ── 목록(없으면 빈 상태) ── */}
       {items.length ? (
         <ul>
           {visible.map((item) => (
@@ -151,6 +159,7 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
         </div>
       )}
 
+      {/* ── 아래: 나머지 펼치기·주간 일정에 있는 건수 ── */}
       {(hiddenCount > 0 || isExpanded) && items.length > limit && (
         <div className={clsx('border-t border-line-divider pt-3', ROW_PADDING)}>
           <Button variant="text" size="sm" className="-ml-2" aria-expanded={isExpanded} onClick={() => setIsExpanded((value) => !value)}>

@@ -33,6 +33,7 @@ function withRo(word: string): string {
 
 // 지원 경로 (#203): 한 줄 요약 → 도넛(가운데 1위 비율) + 사이트별 목록. 목록 줄에 마우스를 올리면 같은 조각을 강조한다.
 export function RouteCard({ shares, total, style }: RouteCardProps) {
+  // ── 상태·도넛 조각 ──
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const top = shares[0];
   const hasData = total > 0 && top && top.count > 0;
@@ -46,8 +47,10 @@ export function RouteCard({ shares, total, style }: RouteCardProps) {
 
   return (
     <Card aria-labelledby="route-title" className="h-full motion-safe:animate-rise" style={style}>
+      {/* ── 머리·한 줄 요약 ── */}
       <CardHeader title="지원 경로" titleId="route-title" meta={`전체 ${total}건`} />
       <CardSummary>{hasData ? `${withRo(PLATFORM_INFO[top.platform].label)} 가장 많이 지원했어요` : '아직 지원 경로가 없어요'}</CardSummary>
+      {/* ── 도넛 | 사이트별 건수·비율 목록(마우스를 올리면 서로 강조) ── */}
       <div className="flex flex-wrap items-center gap-6">
         <DonutChart segments={segments} activeKey={activeKey} onActiveChange={setActiveKey} label={chartLabel}>
           {hasData && (

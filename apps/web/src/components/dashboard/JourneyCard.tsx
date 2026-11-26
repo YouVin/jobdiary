@@ -35,8 +35,10 @@ export function JourneyCard({ stage, style }: JourneyCardProps) {
 
   return (
     <Card aria-labelledby="journey-title" className="h-full motion-safe:animate-rise" style={style}>
+      {/* ── 머리·한 줄 요약 ── */}
       <CardHeader title="전형 여정" titleId="journey-title" meta={`진행 중 ${stage.inProgress}건`} />
       <CardSummary>{journeySummary(applied, screening, interview, offer)}</CardSummary>
+      {/* ── 단계 비율 막대와 단계별 숫자 ── */}
       <RatioBar label={barLabel} segments={steps.map(({ key, value, colorClass }) => ({ key, value, colorClass }))} />
       <dl className="grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-4">
         {steps.map((step) => (
@@ -51,6 +53,7 @@ export function JourneyCard({ stage, style }: JourneyCardProps) {
           </div>
         ))}
       </dl>
+      {/* ── 아래: 끝난 지원 ── */}
       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md bg-subtle px-4 py-3">
         <span className="text-label text-text-secondary tabular-nums">
           끝난 지원 {stage.closed}건{stage.autoRejected > 0 && ` · 마감 자동 탈락 ${stage.autoRejected}건 포함`}

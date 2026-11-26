@@ -37,6 +37,7 @@ const RESULT_TONE: Partial<Record<Status, 'success' | 'danger' | 'default'>> = {
 // 데스크톱은 오른쪽 440, 모바일은 아래 시트. 키보드 기준은 공통 창과 같다(useDialogFocus: 포커스 가두기·Esc·되돌리기).
 // 지원이 삭제되거나 계정이 바뀌어 목록에서 사라지면 부모가 패널을 그리지 않으므로 함께 닫힌다.
 export function ApplicationPanel({ application, onClose, onMove, moveError }: ApplicationPanelProps) {
+  // ── 상태 ──
   const clearError = useApplicationStore((state) => state.clearError);
   const [mode, setMode] = useState<'detail' | 'edit'>('detail');
   const [isBusy, setIsBusy] = useState(false); // 수정·삭제·기록 저장 중에는 닫지 않는다
@@ -48,6 +49,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
   const postingUrl = getPostingUrl(application.url);
   const resultTone = RESULT_TONE[application.status];
 
+  // ── 처리 함수: 닫기·상세 ↔ 수정 화면 바꾸기 ──
   const handleClose = useCallback(() => {
     if (isBusy) return;
     clearError();
@@ -75,6 +77,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
   return (
     <SidePanel isOpen onClose={handleClose} title={application.company} description={application.position || '공고명 없음'} closeDisabled={isBusy}>
       <div ref={bodyRef} className="flex flex-col gap-6">
+        {/* ── 수정 화면 ── */}
         {mode === 'edit' ? (
           <section aria-labelledby="panel-edit-title" className="flex flex-col gap-3">
             <h3 id="panel-edit-title" className="text-label font-semibold text-text-secondary">
@@ -90,6 +93,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
           </section>
         ) : (
           <>
+            {/* ── 상세 화면 1: 단계(진행 점 트랙) ── */}
             <section aria-labelledby="panel-stage-title" className="flex flex-col gap-2">
               <h3 id="panel-stage-title" className="flex items-center gap-2 text-label font-semibold text-text-secondary">
                 단계
@@ -106,6 +110,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
               </p>
             </section>
 
+            {/* ── 상세 화면 2: 정보(경로·날짜)와 정보 수정·공고 열기 ── */}
             <section aria-labelledby="panel-info-title" className="flex flex-col gap-3">
               <h3 id="panel-info-title" className="text-label font-semibold text-text-secondary">
                 정보
@@ -136,6 +141,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
               </div>
             </section>
 
+            {/* ── 상세 화면 3: 회사 정보(AI, 서류 통과부터) ── */}
             <CompanyInfoSection
               key={`company-${application.id}`}
               applicationId={application.id}
@@ -143,6 +149,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
               stage={COMPANY_INFO_STATUSES.includes(application.status) ? 'ready' : application.status === 'applied' ? 'early' : 'closed'}
             />
 
+            {/* ── 상세 화면 4: 기록 남기기와 지금까지의 여정 ── */}
             <DiaryComposer key={application.id} application={application} onSavingChange={setIsBusy} />
             <JourneyList application={application} />
           </>

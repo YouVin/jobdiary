@@ -33,6 +33,7 @@ const PROGRESS_TEXT: Record<Exclude<Phase, 'idle'>, string> = {
 // #242: 캡처·글 붙여넣기는 없앴다. 공고 페이지에서 가져오기가 근무지까지 정확하고 손이 덜 가서(사용자 결정) 입력을 하나로 줄였다.
 // 부모가 지원마다 key를 바꿔 다시 그리므로 처음 상태는 항상 "불러오는 중"이다.
 export function CompanyInfoSection({ applicationId, postingUrl, stage }: CompanyInfoSectionProps) {
+  // ── 상태 ──
   const pageReference = getPostingReference(postingUrl);
   const [info, setInfo] = useState<CompanyInfo | null>(null);
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'failed'>('loading');
@@ -42,6 +43,7 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
   const [notice, setNotice] = useState<string | null>(null);
   const isBusy = phase !== 'idle';
 
+  // ── 저장된 회사 정보 불러오기(패널을 열 때 한 번) ──
   useEffect(() => {
     let isCurrent = true;
     void fetchCompanyInfo(applicationId).then((loaded) => {
@@ -54,6 +56,7 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
     };
   }, [applicationId]);
 
+  // ── 처리 함수 ──
   // 공고 페이지에서 가져오기(#238): 익스텐션이 공고 페이지를 읽고 → 본문 이미지를 받아 나누고 → 회사 정보를 만든다.
   const handleFromPage = async () => {
     if (isBusy || !pageReference) return;
@@ -80,6 +83,7 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
     }
   };
 
+  // ── 보여 줄 것 정하기 ──
   const canCreate = stage === 'ready';
   const showForm = canCreate && loadState === 'ready' && (info === null || isEditing);
   // 탈락·취소한 지원에 결과가 없으면 구역 자체를 숨긴다
@@ -91,9 +95,11 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
         회사 정보
       </h3>
 
+      {/* ── 불러오는 중·실패 ── */}
       {loadState === 'loading' && <p className="text-label text-text-secondary">회사 정보를 불러오는 중이에요.</p>}
       {loadState === 'failed' && <p className="text-label text-text-secondary">회사 정보를 불러오지 못했어요. 패널을 닫았다가 다시 열어 주세요.</p>}
 
+      {/* ── 결과 카드 ── */}
       {loadState === 'ready' && info && !isEditing && (
         <CompanyInfoResult
           info={info}
@@ -106,10 +112,12 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
         />
       )}
 
+      {/* ── 서류 통과 전 안내 ── */}
       {stage === 'early' && loadState === 'ready' && !info && (
         <p className="break-keep text-label text-text-secondary">서류 통과로 바꾸면 이 회사가 하는 일과 공고가 원하는 강점을 정리해 드려요.</p>
       )}
 
+      {/* ── 만들기: 안내 문구 → 버튼 → 진행·오류 ── */}
       {showForm && (
         <div role="group" aria-label={info ? '회사 정보 다시 만들기' : '회사 정보 만들기'} className="flex flex-col gap-3 rounded-lg bg-subtle p-4">
           {pageReference ? (
@@ -156,6 +164,7 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
         </div>
       )}
 
+      {/* ── 완료 알림 ── */}
       <p role="status" className={notice ? 'text-label font-semibold text-success-text' : 'sr-only'}>
         {notice}
       </p>
@@ -176,6 +185,7 @@ function CompanyInfoResult({ info, canRegenerate, onRegenerate }: { info: Compan
 
   return (
     <div className="flex flex-col gap-5 rounded-lg p-4 ring-1 ring-inset ring-line-divider">
+      {/* ── 1. 이 회사는: 소개·대표 서비스·대표 사이트 ── */}
       <div className="flex flex-col gap-2">
         <h4 className="text-label font-semibold text-text-primary">이 회사는</h4>
         {info.about ? <p className="text-body text-text-primary">{info.about}</p> : <p className="text-label text-text-secondary">공고에서 회사 소개를 찾지 못했어요.</p>}
@@ -194,6 +204,7 @@ function CompanyInfoResult({ info, canRegenerate, onRegenerate }: { info: Compan
         )}
       </div>
 
+      {/* ── 2. 원하는 강점: 강점 → 원하는 모습 → 넣으면 좋은 경험 → 공고 근거(접힘) ── */}
       <div className="flex flex-col gap-2">
         <h4 className="text-label font-semibold text-text-primary">이 공고가 원하는 강점</h4>
         {info.strengths.length === 0 ? (
@@ -233,6 +244,7 @@ function CompanyInfoResult({ info, canRegenerate, onRegenerate }: { info: Compan
         )}
       </div>
 
+      {/* ── 3. 근무 조건: 근무지(지도 링크)·근무일·근무 시간 ── */}
       {hasWorkplace && (
         <div className="flex flex-col gap-2">
           <h4 className="text-label font-semibold text-text-primary">근무 조건</h4>
@@ -268,6 +280,7 @@ function CompanyInfoResult({ info, canRegenerate, onRegenerate }: { info: Compan
         </div>
       )}
 
+      {/* ── 아래: 기준 시각·AI 안내·다시 만들기 ── */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-caption font-normal text-text-secondary">
           {formatKoreanDateTime(info.createdAt)} 기준{info.fromImage ? ' · 이미지에서 읽은 내용' : ''} · AI가 정리한 내용이라 틀릴 수 있어요.
