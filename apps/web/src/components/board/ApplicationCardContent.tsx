@@ -3,6 +3,7 @@ import { clsx } from 'clsx';
 import { Badge } from '@/components/ui/Badge';
 import type { Application, Platform } from '@/types/application';
 import { daysBetween, toDateOnly } from '@/utils/applicationStats';
+import { getRejectedAfterLabel } from '@/utils/statusHistory';
 
 interface ApplicationCardContentProps {
   application: Application;
@@ -37,13 +38,14 @@ function nextTag(application: Application, today: string): { label: string; isTo
 }
 
 // 칸반 카드 내용 (#204, 캔버스 보드 시안): 회사 · 직무 · (사이트 아이콘, 지원일) · 일정 한 줄.
-// 표시는 한 개만: 중복 지원(지원일 줄 오른쪽 빨간 뱃지) > 가까운 면접·마감 D-day > 마감 자동 탈락.
+// 표시는 한 개만: 중복 지원(지원일 줄 오른쪽 빨간 뱃지) > 가까운 면접·마감 D-day > 어디서 탈락했는지(#283) > 마감 자동 탈락.
 // D-day와 자동 탈락은 뱃지 대신 지원일 아래 왼쪽 정렬 글자 한 줄로 둔다(#215). 칸반 열이 좁아(카드 안쪽 약 120px)
 // '마감 D-37' 뱃지가 지원일 줄에 들어가지 못하고 혼자 다음 줄 오른쪽으로 떨어져 보였기 때문이다. D-DAY만 주황 글자로 강조한다.
 export function ApplicationCardContent({ application, isDuplicate = false, today }: ApplicationCardContentProps) {
   const { company, position, platform, appliedAt, statusSource, status } = application;
   const isClosed = status === 'offer' || status === 'rejected' || status === 'canceled';
   const tag = isClosed ? null : nextTag(application, today);
+  const closedNote = getRejectedAfterLabel(application) ?? (statusSource === 'deadline' ? '자동 탈락' : null);
 
   return (
     <>
@@ -61,7 +63,7 @@ export function ApplicationCardContent({ application, isDuplicate = false, today
       {!isDuplicate && tag && (
         <p className={clsx('truncate text-caption tabular-nums', tag.isToday ? 'text-today-text' : 'text-text-secondary')}>{tag.label}</p>
       )}
-      {!isDuplicate && !tag && statusSource === 'deadline' && <p className="truncate text-caption font-normal text-text-secondary">자동 탈락</p>}
+      {!isDuplicate && !tag && closedNote && <p className="truncate text-caption font-normal text-text-secondary">{closedNote}</p>}
     </>
   );
 }

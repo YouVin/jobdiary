@@ -1,10 +1,10 @@
 import type { Application, Platform, Status } from '@/types/application';
 import { getTodayInKorea, isValidDateOnly } from '@/utils/applicationDeadline';
+import { hasPassedScreening } from '@/utils/statusHistory';
 
 // 홈 대시보드 카드가 쓰는 통계. 검색·필터와 무관하게 항상 전체 지원 내역을 기준으로 계산한다.
 
 const IN_PROGRESS_STATUSES: Status[] = ['applied', 'screening', 'interview', 'interviewed'];
-const PASSED_SCREENING_STATUSES: Status[] = ['screening', 'interview', 'interviewed', 'offer'];
 const CLOSED_STATUSES: Status[] = ['offer', 'rejected', 'canceled'];
 const PLATFORM_ORDER: Platform[] = ['saramin', 'jobkorea', 'wanted', 'manual'];
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -19,7 +19,7 @@ export interface ApplicationOverview {
 export interface StageSummary {
   counts: Record<Status, number>;
   inProgress: number; // 지원완료·서류통과·면접예정·면접완료
-  passedScreening: number; // 서류 단계를 넘긴 건수 (서류통과 이후 + 합격)
+  passedScreening: number; // 서류를 통과한 적 있는 건수. 지금 단계가 아니라 탈락 전 단계까지 본다 (#283)
   closed: number; // 합격·탈락·지원취소
   screeningPassRate: number | null; // 0~1. 지원취소를 뺀 건수가 0이면 null
   screeningBase: number; // 통과율 분모 (전체 - 지원취소)
@@ -89,14 +89,15 @@ export function getStageSummary(applications: Application[]): StageSummary {
     applied: 0, screening: 0, interview: 0, interviewed: 0, offer: 0, rejected: 0, canceled: 0,
   };
   let autoRejected = 0;
+  let passedScreening = 0;
 
   for (const application of applications) {
     counts[application.status] += 1;
+    if (application.status !== 'canceled' && hasPassedScreening(application)) passedScreening += 1;
     if (application.status === 'rejected' && application.statusSource === 'deadline') autoRejected += 1;
   }
 
   const sum = (statuses: Status[]) => statuses.reduce((total, status) => total + counts[status], 0);
-  const passedScreening = sum(PASSED_SCREENING_STATUSES);
   const screeningBase = applications.length - counts.canceled;
 
   return {

@@ -51,3 +51,21 @@ test('새 기록은 앞뒤 공백을 지우고 길이를 제한하며 지금 단
   assert.equal(createDiaryEntry('가'.repeat(DIARY_MAX_LENGTH + 10), 'applied', now, 'id-2').content.length, DIARY_MAX_LENGTH);
   assert.equal(Object.keys(DIARY_PROMPTS).length, 7);
 });
+
+test('단계가 바뀐 날을 지나온 기록에 넣는다: 같은 날 기록 아래, 일정 위 (#283)', () => {
+  const application = {
+    ...base,
+    interviewDate: '2026-11-18T00:00:00.000Z',
+    statusHistory: [
+      { from: null, to: 'applied', source: 'extension', at: '2026-11-02T01:00:00.000Z' },
+      { from: 'applied', to: 'screening', source: 'manual', at: '2026-11-10T01:00:00.000Z' },
+      { from: 'screening', to: 'interview', source: 'manual', at: '2026-11-18T01:00:00.000Z' },
+    ],
+    diary: [{ id: 'n1', content: '면접 준비', createdAt: '2026-11-18T05:00:00.000Z', status: 'interview' }],
+  };
+  const items = getApplicationJourney(application, TODAY);
+  assert.deepEqual(items.map((item) => [item.kind, item.date]), [
+    ['note', '2026-11-18'], ['status', '2026-11-18'], ['interview', '2026-11-18'], ['status', '2026-11-10'], ['applied', '2026-11-02'],
+  ]);
+  assert.equal(items[1].step.status, 'interview');
+});

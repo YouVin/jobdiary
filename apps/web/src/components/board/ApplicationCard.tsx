@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import { ApplicationCardContent } from '@/components/board/ApplicationCardContent';
 import { STATUS_INFO } from '@/constants/status';
 import type { Application } from '@/types/application';
+import { getRejectedAfterLabel } from '@/utils/statusHistory';
 
 interface ApplicationCardProps {
   application: Application;
@@ -27,7 +28,7 @@ export function ApplicationCard({ application, isDuplicate = false, today, onOpe
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      aria-label={`${application.company}, ${application.position}, ${STATUS_INFO[application.status].label}`}
+      aria-label={`${application.company}, ${application.position}, ${getRejectedAfterLabel(application) ?? STATUS_INFO[application.status].label}`}
       onClick={() => onOpen(application.id)}
       onKeyDown={(event) => {
         // Space는 집기(센서), Enter는 상세 열기. 집은 동안의 Enter는 "놓기"라 열지 않는다.

@@ -1,17 +1,16 @@
 import { PLATFORM_INFO } from '@/constants/platform';
-import type { Application, Platform, Status } from '@/types/application';
+import type { Application, Platform } from '@/types/application';
 import { getTodayInKorea } from '@/utils/applicationDeadline';
 import { toDateOnly } from '@/utils/applicationStats';
+import { hasPassedScreening } from '@/utils/statusHistory';
 
 // 이번 달 돌아보기 (#275). 이미지로 저장해 밖에 올리는 카드라 회사 이름은 넣지 않고 숫자만 모은다.
-
-const PASSED: Status[] = ['screening', 'interview', 'interviewed', 'offer'];
 
 export interface MonthlyRecap {
   month: string; // YYYY-MM
   monthNumber: number; // 11
   appliedCount: number; // 이번 달 지원한 곳
-  passedCount: number; // 그중 지금 서류 통과 이상인 곳
+  passedCount: number; // 그중 서류를 통과한 적 있는 곳 (면접 후 탈락 포함, #283)
   interviewCount: number; // 이번 달 면접일이 있는 지원
   offerCount: number; // 그중 합격
   diaryCount: number; // 이번 달 남긴 기록
@@ -44,7 +43,7 @@ export function getMonthlyRecap(applications: Application[], today = getTodayInK
     const appliedDate = toDateOnly(application.appliedAt);
     if (inMonth(appliedDate) && appliedDate) {
       appliedCount += 1;
-      if (PASSED.includes(application.status)) passedCount += 1;
+      if (hasPassedScreening(application)) passedCount += 1;
       if (application.status === 'offer') offerCount += 1;
       byPlatform.set(application.platform, (byPlatform.get(application.platform) ?? 0) + 1);
       byDay.set(appliedDate, (byDay.get(appliedDate) ?? 0) + 1);
