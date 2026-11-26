@@ -2,6 +2,7 @@
 
 import { useExtensionImportState } from '@/components/import/ExtensionImportProvider';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { StatCell, StatGroup } from '@/components/ui/StatCell';
 import { textLinkClassName } from '@/components/ui/TextLink';
@@ -17,6 +18,7 @@ interface SummaryCardProps {
   nextEvent: UpcomingEvent | undefined;
   platformCounts: Record<Platform, number>;
   style?: React.CSSProperties; // 첫 화면 카드가 차례로 올라오는 지연
+  onOpenRecap?: () => void; // 이번 달 돌아보기 열기 (#275)
 }
 
 const WEEKDAYS = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
@@ -29,7 +31,7 @@ function Num({ children }: { children: React.ReactNode }) {
 
 // 메인 맨 위 요약 (#203, 캔버스 메인 시안). 날짜 → 한 문장(h1) → 다음 일정 → 숫자 4칸 → 마지막 가져오기 줄.
 // 페이지 제목(h1)을 문장으로 써서 처음 듣는 사람도 지금 상황부터 알 수 있게 한다.
-export function SummaryCard({ today, overview, stage, nextEvent, platformCounts, style }: SummaryCardProps) {
+export function SummaryCard({ today, overview, stage, nextEvent, platformCounts, style, onOpenRecap }: SummaryCardProps) {
   const { lastImportAt } = useExtensionImportState();
   const [, month, day] = today.split('-').map(Number);
   const weekday = WEEKDAYS[new Date(`${today}T00:00:00.000Z`).getUTCDay()];
@@ -39,9 +41,16 @@ export function SummaryCard({ today, overview, stage, nextEvent, platformCounts,
     <Card aria-labelledby="summary-title" gap="lg" className="motion-safe:animate-rise" style={style}>
       {/* ── 위: 오늘 날짜 → 한 문장 요약(h1) → 다음 일정 ── */}
       <div className="flex flex-col gap-2">
-        <p className="text-label text-text-secondary">
-          <time dateTime={today}>{`${month}월 ${day}일 ${weekday}`}</time>
-        </p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-label text-text-secondary">
+            <time dateTime={today}>{`${month}월 ${day}일 ${weekday}`}</time>
+          </p>
+          {onOpenRecap && (
+            <Button variant="secondary" size="sm" icon="sparkle" onClick={onOpenRecap}>
+              {month}월 돌아보기
+            </Button>
+          )}
+        </div>
         <h1 id="summary-title" className="text-title-1-sm text-balance break-keep text-text-primary sm:text-title-1">
           {overview.total === 0 ? (
             '아직 기록한 지원이 없어요'
