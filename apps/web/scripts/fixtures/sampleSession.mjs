@@ -73,6 +73,11 @@ export const companyInfoStore = new Map();
 export const companyInfoRequests = [];
 export const feedbackRequests = [];
 export const acquisitionRequests = []; // 가입 경로(#290)
+export const processRequests = []; // 전형 절차 AI(#295)
+// 공고 이미지만 있는 공고에 서버가 돌려줄 절차(실제 AI 대신)
+export const SAMPLE_PROCESS = [
+  { name: '서류 전형', kind: 'document' }, { name: '과제 전형', kind: 'test' }, { name: '임원 인터뷰', kind: 'interview' }, { name: '처우 협의', kind: 'final' },
+];
 export const SAMPLE_COMPANY_INFO = {
   // #235 형식: 회사 소개 → 강점별 추천 경험 → 근무 조건
   company: { about: '웹 서비스를 만드는 IT 회사예요.', products: ['루트노트'], website: 'www.rootlabs.example' },
@@ -155,6 +160,12 @@ export async function routeSupabase(context) {
       const { p_message: message, p_page: page } = route.request().postDataJSON();
       feedbackRequests.push({ message, page });
       return send(!message.includes('[한도]'));
+    }
+    // 전형 절차(#295): 공고 이미지만 있는 공고를 AI 대신 예시 절차로 답한다
+    if (url.pathname === '/functions/v1/hiring-process') {
+      if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' } });
+      processRequests.push(route.request().postDataJSON());
+      return send({ steps: SAMPLE_PROCESS, cached: false });
     }
     // 가입 경로(#290): 예시 계정은 새 가입자처럼 받는다
     if (url.pathname === '/rest/v1/rpc/record_acquisition') {

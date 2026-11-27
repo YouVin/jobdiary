@@ -82,3 +82,9 @@ body {
     animation-delay: 0s !important;
   }
 }
+
+/* 날짜 칸 (#293): 브라우저 기본 달력 버튼은 숨기고 디자인 시스템 달력(components/ui/DateField.tsx)을 쓴다.
+   칸에 직접 치는 것은 그대로이고, 휴대폰은 칸을 누르면 OS 날짜 선택기가 열린다. */
+input[data-date-field]::-webkit-calendar-picker-indicator {
+  display: none;
+}

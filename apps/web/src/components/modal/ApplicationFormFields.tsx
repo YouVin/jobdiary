@@ -1,3 +1,4 @@
+import { DateField } from '@/components/ui/DateField';
 import { SelectField, TextField } from '@/components/ui/TextField';
 import { PLATFORM_INFO } from '@/constants/platform';
 import { STATUS_INFO, STATUS_ORDER } from '@/constants/status';
@@ -90,31 +91,30 @@ export function ApplicationFormFields({
           options={STATUS_OPTIONS}
         />
       </div>
-      <TextField
+      <DateField
         id={fieldId(idPrefix, 'appliedAt')}
         label="지원일 (필수)"
-        type="date"
         value={appliedAt}
-        onChange={(event) => onAppliedAtChange(event.target.value)}
-        aria-required="true"
+        onValueChange={onAppliedAtChange}
+        required
         error={errors.appliedAt}
       />
-      <TextField
+      <DateField
         id={fieldId(idPrefix, 'deadlineAt')}
         label="공고 마감일"
-        type="date"
         value={deadlineAt}
-        onChange={(event) => onDeadlineAtChange(event.target.value)}
+        onValueChange={onDeadlineAtChange}
+        clearable
         hint="상시 채용이면 비워 두세요. 마감 다음 날에도 지원 완료면 자동으로 탈락 처리돼요."
         error={errors.deadlineAt}
       />
       {onInterviewDateChange && (
-        <TextField
+        <DateField
           id={fieldId(idPrefix, 'interviewDate')}
           label="면접일"
-          type="date"
           value={interviewDate ?? ''}
-          onChange={(event) => onInterviewDateChange(event.target.value)}
+          onValueChange={onInterviewDateChange}
+          clearable
           error={errors.interviewDate}
         />
       )}

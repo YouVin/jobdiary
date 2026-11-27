@@ -60,7 +60,8 @@ export function WeeklyCard({ weeks, style }: WeeklyCardProps) {
         <p className="text-label text-text-secondary">{detail}</p>
       </div>
       {/* ── 최근 주별 막대 ── */}
-      <BarChart label={chartLabel} bars={bars} />
+      {/* 옆 카드와 같은 높이로 늘어나므로 막대 영역이 남는 세로 공간을 채운다(최소 160, #293) */}
+      <BarChart label={chartLabel} bars={bars} className="flex-1" heightClass="min-h-40 flex-1" />
       <p className="mt-auto text-label text-text-secondary tabular-nums">
         8주 동안 {total}곳 · 주 평균 {average}곳
       </p>

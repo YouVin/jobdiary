@@ -44,7 +44,7 @@ function editor(initial = snapshot) {
   const props = { application: initial, isSubmitting: false, onClose: () => { closes++; }, onSubmittingChange: (value) => busy.push(value) };
   const form = createFormHarness('EditApplicationForm', props, state);
   return {
-    form, state, props, busy,
+    form, state, props, busy, api,
     getRow: () => row,
     getWrites: () => writes,
     getCloses: () => closes,
@@ -101,4 +101,18 @@ test('사용자가 직접 지원완료로 복원하면 지난 마감일이 있�
   assert.equal(e.getWrites(), 1);
   assert.equal(e.getRow().status, 'applied');
   assert.equal(e.getRow().status_source, 'manual');
+});
+
+test('배경에서 전형 절차를 채워도 열어 둔 수정 창은 그대로 저장된다 (#297)', async () => {
+  const e = editor({ ...snapshot, deadlineAt: undefined });
+  // 수정 창이 열린 뒤 배경 채우기가 같은 지원의 절차를 저장한다(기준 updated_at 없이)
+  const process = { steps: [{ name: '서류', kind: 'document' }, { name: '면접', kind: 'interview' }], source: 'text', checkedAt: '2026-11-27T00:00:00Z' };
+  const filled = await e.api.updateApplication(snapshot.id, { hiringProcess: process }, { userId: 'user-1', isCurrent: () => true });
+  assert.equal(filled.error, null);
+  assert.equal(e.getRow().updated_at, snapshot.updatedAt, '절차만 바꾸면 updated_at은 그대로');
+  assert.deepEqual(e.getRow().hiring_process, process);
+  await e.form.save();
+  assert.equal(e.getWrites(), 2);
+  assert.equal(e.getCloses(), 1);
+  assert.equal(e.state.error, null);
 });

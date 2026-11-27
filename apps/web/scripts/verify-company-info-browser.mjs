@@ -17,6 +17,8 @@ const pageErrors = [];
 const raisedRows = rows.filter((row) => row.status === 'applied');
 for (const row of raisedRows) row.status = 'screening';
 for (const row of rows) row.url = 'https://www.jobkorea.co.kr/Recruit/GI_Read/50303737';
+// 전형 절차 자동 채우기(#295)는 따로 검사한다(verify-hiring-process-browser). 여기서는 이미 읽은 것으로 두어 공고 읽기가 섞이지 않게 한다
+for (const row of rows) row.hiring_process = { steps: [], source: 'none', checkedAt: '2026-11-27T00:00:00.000Z' };
 // 가짜 익스텐션: 공고 읽기 요청에만 답한다(다른 요청은 모르는 것처럼). window.__noExtension이면 설치 안 된 것처럼.
 const PAGE_POSTING = {
   platform: 'jobkorea', postingId: '50303737', url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/50303737', title: '파이프라인 엔지니어', company: '엔코어스튜디오',
