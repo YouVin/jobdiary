@@ -72,6 +72,7 @@ export interface PostingPageInput {
 export async function preparePostingPage(posting: PostingContent, maxSlices: number): Promise<PostingPageInput> {
   const images: PostingImagePayload[] = [];
   for (const url of posting.imageUrls) {
+    if (images.length >= maxSlices) break; // 보낼 장수를 채웠으면 남은 이미지는 받지 않는다(#299)
     try {
       images.push(...(await slicePostingImage(await loadPostingImage(url))));
     } catch {

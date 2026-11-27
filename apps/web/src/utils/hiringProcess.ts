@@ -126,8 +126,66 @@ export function getCurrentStepIndex(application: Application, steps: ProcessStep
   return 0;
 }
 
-// 공고에서 읽을 지원: 익스텐션이 읽을 수 있는 공고 주소(사람인·잡코리아·원티드)가 있고, 아직 안 읽었고, 진행 중인 지원.
-// 끝난 지원은 비용을 쓰지 않는다.
-export function needsProcess(application: Pick<Application, 'url' | 'status' | 'hiringProcess'>): boolean {
-  return getPostingReference(application.url) !== null && application.hiringProcess == null && !['offer', 'rejected', 'canceled'].includes(application.status);
+// 못 찾은 절차(none)를 다시 읽는 간격. 익스텐션은 네트워크 오류·시간 초과도 "못 읽음"으로 돌려주므로 영구로 두지 않는다(#297).
+// 같은 공고를 다시 읽으면 서버가 저장한 결과를 돌려줘 AI 비용은 들지 않는다.
+export const PROCESS_RECHECK_DAYS = 3;
+
+// 공고에서 읽을 지원: 익스텐션이 읽을 수 있는 공고 주소(사람인·잡코리아·원티드)가 있고, 진행 중이고,
+// 아직 안 읽었거나 못 찾은 지 PROCESS_RECHECK_DAYS가 지난 지원. 끝난 지원은 비용을 쓰지 않는다.
+export function needsProcess(application: Pick<Application, 'url' | 'status' | 'hiringProcess'>, now = Date.now()): boolean {
+  if (getPostingReference(application.url) === null || ['offer', 'rejected', 'canceled'].includes(application.status)) return false;
+  return !isProcessSettled(application.hiringProcess, now);
+}
+
+// 읽은 결과가 아직 유효한지: 찾은·직접 고친 절차는 계속, 못 찾음(none)은 PROCESS_RECHECK_DAYS 동안만
+function isProcessSettled(process: HiringProcess | null | undefined, now: number): boolean {
+  if (process == null) return false;
+  if (process.source !== 'none') return true;
+  const checkedAt = Date.parse(process.checkedAt ?? '');
+  return !Number.isNaN(checkedAt) && now - checkedAt < PROCESS_RECHECK_DAYS * 24 * 60 * 60 * 1000;
+}
+
+// ── 같은 공고(다시 지원) 처리 (#299) ──
+// 공고 주소는 getPostingReference로 하나로 맞춘다(사람인 모바일·PC 주소, 끝 / 차이 등).
+export function postingKeyOf(application: Pick<Application, 'url'>): string | null {
+  return getPostingReference(application.url)?.url ?? null;
+}
+
+// 같은 공고의 다른 지원들
+export function findSamePostingApplications(applications: Application[], target: Pick<Application, 'id' | 'url'>): Application[] {
+  const key = postingKeyOf(target);
+  if (!key) return [];
+  return applications.filter((application) => application.id !== target.id && postingKeyOf(application) === key);
+}
+
+// 같은 공고를 이미 읽은 지원이 있으면 그 결과(지금 단계 번호는 지원마다 다르므로 뺀다). 공고를 다시 읽지 않는다.
+export function findSiblingProcess(applications: Application[], target: Pick<Application, 'id' | 'url'>, now = Date.now()): HiringProcess | null {
+  for (const sibling of findSamePostingApplications(applications, target)) {
+    const process = sibling.hiringProcess;
+    if (process && isProcessSettled(process, now)) return { steps: process.steps, source: process.source, checkedAt: process.checkedAt };
+  }
+  return null;
+}
+
+// ── 읽는 순서 (#299) ──
+// 상세 패널에서 연 지원이 먼저, 그다음 지금 챙길 단계(면접 예정 → 서류 통과 → 면접 완료 → 지원 완료), 같은 단계는 최근 지원 먼저.
+const FILL_ORDER: Partial<Record<Status, number>> = { interview: 0, screening: 1, interviewed: 2, applied: 3 };
+
+export function pickNextProcessTarget(
+  applications: Application[],
+  options: { priorityId?: string | null; skip?: (application: Application) => boolean; now?: number } = {},
+): Application | null {
+  const now = options.now ?? Date.now();
+  let best: Application | null = null;
+  for (const application of applications) {
+    if (!needsProcess(application, now) || options.skip?.(application)) continue;
+    if (application.id === options.priorityId) return application;
+    if (!best) {
+      best = application;
+      continue;
+    }
+    const order = (FILL_ORDER[application.status] ?? 9) - (FILL_ORDER[best.status] ?? 9);
+    if (order < 0 || (order === 0 && application.appliedAt > best.appliedAt)) best = application;
+  }
+  return best;
 }

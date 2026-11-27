@@ -146,6 +146,9 @@ function changesToUpdateRow(changes: ApplicationChanges) {
     row.hiring_process = changes.hiringProcess ?? null;
   }
 
+  // 전형 절차만 바꾸면 updated_at은 그대로 둔다(#297). 배경 채우기가 수정 창·주소 복구의 충돌 기준을 바꾸지 않게.
+  if (Object.keys(row).length === 2 && 'hiring_process' in row) delete row.updated_at;
+
   return row;
 }
 
