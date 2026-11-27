@@ -4,17 +4,16 @@ import { clsx } from 'clsx';
 import { useState, ViewTransition } from 'react';
 import { StaleCleanup } from '@/components/board/StaleCleanup';
 import { Icon } from '@/components/common/Icon';
+import { ApplicationProcessTrack } from '@/components/process/ProcessTrack';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CompanyAvatar } from '@/components/ui/CompanyRow';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { IconButton } from '@/components/ui/IconButton';
-import { StageTrack } from '@/components/ui/StageTrack';
 import { STATUS_INFO } from '@/constants/status';
 import type { Status } from '@/types/application';
 import { getPostingUrl } from '@/utils/postingUrl';
 import type { WaitingItem } from '@/utils/waitingList';
-import { ACTIVE_STATUSES } from '@/utils/weekTimeline';
 
 interface WaitingListProps {
   items: WaitingItem[];
@@ -27,7 +26,7 @@ interface WaitingListProps {
   limit?: number;
 }
 
-// 넓은 화면 열: 회사 | 단계 트랙 | 다음 일정 | 지원 후
+// 넓은 화면 열: 회사 | 전형 단계 | 다음 일정 | 지원 후
 const ROW_GRID = 'lg:grid-cols-[minmax(0,3fr)_minmax(0,4fr)_7.5rem_5.5rem] lg:gap-x-6';
 const ROW_PADDING = 'px-5 sm:px-6';
 
@@ -36,7 +35,7 @@ function shortDate(date: string): string {
 }
 
 function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: WaitingListProps['onMove']; onOpen: WaitingListProps['onOpen'] }) {
-  const { application, stageIndex, waitDays, isStale, nextEvent } = item;
+  const { application, waitDays, isStale, nextEvent } = item;
   const postingUrl = getPostingUrl(application.url);
   let waitNote = '지원 후';
   if (isStale) waitNote = '소식 없음';
@@ -69,10 +68,9 @@ function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: Waiti
         <IconButton label={`${application.company} 상세 보기`} icon="pencil" size="sm" onClick={() => onOpen(application.id)} />
       </div>
 
-      {/* ── 2칸: 단계 트랙 ── */}
+      {/* ── 2칸: 전형 단계 (#303). 지원마다 자기 절차(단계 수·이름)를, 없으면 기본 4단계를 이름과 함께 ── */}
       <div className="col-span-2 row-start-2 lg:col-span-1 lg:col-start-2 lg:row-start-1">
-        {/* 좁은 화면에는 열 머리가 없어 트랙 아래에 단계 이름을 둔다. */}
-        <StageTrack company={application.company} stageIndex={stageIndex} onMove={(status) => onMove(application.id, status)} labelsClassName="lg:hidden" />
+        <ApplicationProcessTrack application={application} onMove={onMove} />
       </div>
 
       {/* ── 3칸: 다음 일정 ── */}
@@ -99,6 +97,7 @@ function WaitingRow({ item, onMove, onOpen }: { item: WaitingItem; onMove: Waiti
 }
 
 // 결과 기다리는 중 (#204): 진행 중이지만 이번 주 일정이 없는 지원. 오래 기다린 순이며, 트랙 점으로 단계를 바로 바꾼다.
+// 트랙은 지원마다 공고의 전형 절차를 따른다(#303). 머리줄에 공통 단계 이름을 두지 않고 트랙 아래에 이름을 둔다.
 // 처음에는 limit건만 보여주고 "나머지 N건 보기"로 그 자리에서 펼친다.
 export function WaitingList({ items, scheduledCount, stage, moveError, onClearStage, onMove, onOpen, limit = 8 }: WaitingListProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -138,11 +137,7 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
       {/* ── 열 머리(넓은 화면만) ── */}
       <div aria-hidden="true" className={clsx('hidden border-t border-line-divider py-2 text-caption text-text-secondary lg:grid', ROW_PADDING, ROW_GRID)}>
         <span>회사</span>
-        <span className="grid grid-cols-4 text-center">
-          {ACTIVE_STATUSES.map((status) => (
-            <span key={status}>{STATUS_INFO[status].label}</span>
-          ))}
-        </span>
+        <span>전형 단계</span>
         <span>다음 일정</span>
         <span className="text-right">지원 후</span>
       </div>
