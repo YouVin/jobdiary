@@ -16,6 +16,12 @@ Object.assign(imageRow, { url: URL_OF(7002), status: 'screening' });
 Object.assign(closedRow, { url: URL_OF(7003), status: 'applied' });
 const duplicateRow = rows[12]; // 이미지 공고와 같은 공고에 한 번 더 지원
 Object.assign(duplicateRow, { url: URL_OF(7002), status: 'applied' });
+// 지난 방문에 직접 고친 공고(7004)에 다시 지원한 지원: 공고를 읽지 않고 그 절차를 복사한다(#299)
+const [earlierRow, againRow] = [rows[16], rows[20]];
+const EARLIER_STEPS = [{ name: '서류', kind: 'document' }, { name: '라이브 코딩', kind: 'test' }, { name: '임원 면접', kind: 'interview' }];
+Object.assign(earlierRow, { url: URL_OF(7004), status: 'applied', hiring_process: { steps: EARLIER_STEPS, source: 'manual', checkedAt: '2026-11-20T00:00:00Z' } });
+Object.assign(againRow, { url: 'https://jobkorea.co.kr/Recruit/GI_Read/7004/', status: 'applied', hiring_process: null });
+const postingReads = [];
 const POSTINGS = {
   7001: { text: '[자격요건]\n- React 경험\n전형절차\n· 서류전형 > 코딩테스트 > 1차면접 > 최종합격\n· 면접일정은 추후 통보됩니다.', imageUrls: [] },
   7002: { text: '공고 본문은 이미지로 확인해 주세요.', imageUrls: ['https://file2.jobkorea.co.kr/Net/Recruit/process.png'] },
@@ -38,11 +44,13 @@ const waitFor = async (check, label) => {
 };
 try {
   const context = await browser.newContext({ locale: 'ko-KR', timezoneId: 'Asia/Seoul', viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  await context.exposeFunction('__recordPostingRead', (url) => postingReads.push(url));
   // 가짜 익스텐션: 공고 주소의 번호로 공고를 돌려준다. 7003은 마감돼 못 읽는 공고
   await context.addInitScript((postings) => {
     const runtime = { lastError: undefined, sendMessage(_id, message, callback) {
       setTimeout(() => {
         if (message?.type !== 'JOBDIARY_POSTING_READ') { runtime.lastError = { message: 'no receiver' }; callback(undefined); runtime.lastError = undefined; return; }
+        window.__recordPostingRead?.(String(message.url));
         const id = String(message.url).split('/').pop();
         const posting = postings[id];
         if (!posting) { callback({ ok: false }); return; }
@@ -65,7 +73,12 @@ try {
 
   // ── 1) 로그인하면 배경에서 채운다: 글은 규칙(서버 요청 없음), 이미지는 서버 한 번, 못 읽은 공고는 "못 찾음" ──
   await signIn(page, origin, '/board');
-  await waitFor(() => textRow.hiring_process && imageRow.hiring_process && closedRow.hiring_process && duplicateRow.hiring_process, '네 지원 모두 채워짐');
+  await waitFor(() => textRow.hiring_process && imageRow.hiring_process && closedRow.hiring_process && duplicateRow.hiring_process && againRow.hiring_process, '다섯 지원 모두 채워짐');
+  // 다시 지원한 공고는 저장된 절차를 복사하고 공고를 읽지 않는다(주소 모양이 달라도 같은 공고)
+  assert.deepEqual([againRow.hiring_process.source, againRow.hiring_process.steps], ['manual', EARLIER_STEPS]);
+  assert.ok(!postingReads.some((url) => url.includes('7004')), '7004 공고는 읽지 않음');
+  // 서류 통과(이미지 공고)가 지원 완료보다 먼저 읽힌다
+  assert.ok(postingReads.findIndex((url) => url.endsWith('7002')) < postingReads.findIndex((url) => url.endsWith('7001')), '진행이 앞선 지원 먼저');
   // 같은 공고는 한 번만 읽는다(이미지 받기·서버 요청 1번)
   assert.deepEqual(duplicateRow.hiring_process.steps, imageRow.hiring_process.steps);
   assert.equal(imageRequests, 1);
