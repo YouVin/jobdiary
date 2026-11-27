@@ -438,3 +438,10 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/posting-image/deno.json"
 entrypoint = "./functions/posting-image/index.ts"
+
+# 공고 전형 절차 읽기 (#295). 이미지뿐인 공고만 AI로 읽는다(_shared/hiringProcess). 로그인 토큰이 없으면 함수 코드에 닿지 않는다.
+[functions.hiring-process]
+enabled = true
+verify_jwt = true
+import_map = "./functions/hiring-process/deno.json"
+entrypoint = "./functions/hiring-process/index.ts"
