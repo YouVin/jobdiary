@@ -11,8 +11,9 @@ const URL_OF = (id) => `https://www.jobkorea.co.kr/Recruit/GI_Read/${id}`;
 // ── 예시 지원 3건만 공고 주소를 둔다: 글로 적힌 절차 / 이미지뿐인 공고 / 마감돼 못 읽는 공고 ──
 for (const row of rows) row.url = null;
 const [textRow, imageRow, closedRow] = [rows[0], rows[4], rows[8]];
-Object.assign(textRow, { url: URL_OF(7001), status: 'applied' });
-Object.assign(imageRow, { url: URL_OF(7002), status: 'screening' });
+// 이번 주 일정이 없어야 주간 보기의 "결과 기다리는 중"에 들어간다(#303 확인용)
+Object.assign(textRow, { url: URL_OF(7001), status: 'applied', interview_date: null, deadline_at: null });
+Object.assign(imageRow, { url: URL_OF(7002), status: 'screening', interview_date: null, deadline_at: null });
 Object.assign(closedRow, { url: URL_OF(7003), status: 'applied' });
 const duplicateRow = rows[12]; // 이미지 공고와 같은 공고에 한 번 더 지원
 Object.assign(duplicateRow, { url: URL_OF(7002), status: 'applied' });
@@ -132,9 +133,54 @@ try {
   panel = page.getByRole('dialog', { name: closedRow.company });
   await panel.getByRole('group', { name: `${closedRow.company} 단계` }).waitFor();
   await panel.getByRole('button', { name: '절차 넣기' }).waitFor();
+  await page.keyboard.press('Escape');
+  await panel.waitFor({ state: 'detached' });
+
+  // ── 5) 칸반 카드: 작은 점 + 지금 단계 한 줄, 열을 옮기면 바로 따라 바뀐다(#303) ──
+  // 열마다 처음 몇 장만 보여 '더 보기'를 모두 펼친다(누를 때마다 버튼이 바뀌어 하나씩)
+  const expandColumns = async () => {
+    const more = page.getByRole('button', { name: /건 더 보기/ });
+    for (let guard = 0; guard < 10 && (await more.count()) > 0; guard += 1) await more.first().click();
+  };
+  await expandColumns();
+  // 예시 데이터에 같은 회사·직무(중복 지원) 카드가 있어 지금 단계 글자로 카드를 찾고, 그 카드의 이름을 확인한다
+  const cardWith = (text) => page.locator('[aria-roledescription="옮길 수 있는 카드"]').filter({ hasText: text });
+  const expectCard = async (text, row, stage) => {
+    await cardWith(text).waitFor({ timeout: 2000 });
+    assert.equal(await cardWith(text).getAttribute('aria-label'), `${row.company}, ${row.position}, ${stage}`);
+  };
+  await expectCard(/임원 인터뷰\s*3\/4/, imageRow, '면접 예정');
+  await expectCard(/서류\s*1\/5/, textRow, '지원 완료');
+  await scan(page, '칸반 카드 전형 절차');
+  await cardWith(/서류\s*1\/5/).focus();
+  await page.keyboard.press('Space');
+  await page.waitForTimeout(200);
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(200);
+  await page.keyboard.press('Space');
+  await expandColumns();
+  await expectCard(/인적성\s*2\/5/, textRow, '서류 통과');
+  await waitFor(() => textRow.status === 'screening', '서류 통과로 저장');
+
+  // ── 6) 주간 "결과 기다리는 중": 줄마다 자기 절차, 같은 지원 단계 안에서 옮겨도 바로 보인다(#303) ──
+  await page.getByRole('group', { name: '보기 선택' }).getByRole('button', { name: '주간', exact: true }).click();
+  const waiting = page.locator('[aria-labelledby="waiting-title"]');
+  await waiting.getByText('전형 단계', { exact: true }).waitFor();
+  const showRest = waiting.getByRole('button', { name: /나머지 \d+건 보기/ });
+  if (await showRest.count()) await showRest.click();
+  const waitingTrack = waiting.getByRole('group', { name: `${textRow.company} 전형 절차` });
+  await waitingTrack.getByRole('button', { name: '인적성 (현재 단계)' }).waitFor();
+  await waiting.getByText('전형 단계', { exact: true }).waitFor();
+  await scan(page, '결과 기다리는 중 전형 절차');
+  await waitingTrack.getByRole('button', { name: '1차 면접으로 옮기기' }).click();
+  await waitingTrack.getByRole('button', { name: '1차 면접 (현재 단계)' }).waitFor({ timeout: 1000 });
+  await waitFor(() => textRow.status === 'interview' && textRow.hiring_process.step === 2, '면접 예정·1차 면접 저장');
+  await waitingTrack.getByRole('button', { name: '2차 면접으로 옮기기' }).click();
+  await waitingTrack.getByRole('button', { name: '2차 면접 (현재 단계)' }).waitFor({ timeout: 1000 });
+  await waitFor(() => textRow.hiring_process.step === 3, '같은 면접 예정 안에서 2차 면접 저장');
 
   assert.deepEqual(errors, []);
-  console.log('PASS 전형 절차: 배경 채우기(글 규칙·이미지 AI 1번·같은 공고 재사용·못 읽은 공고 저장, 다시 안 읽음), 서류 통과 → 첫 테스트 단계, 점 누르면 면접 예정·고른 단계 저장, 절차 고치기(두 단계 미만 안내·저장), 못 찾으면 기본 트랙, axe, 브라우저 예외 0건');
+  console.log('PASS 전형 절차: 배경 채우기(글 규칙·이미지 AI 1번·같은 공고 재사용·못 읽은 공고 저장, 다시 안 읽음), 서류 통과 → 첫 테스트 단계, 점 누르면 면접 예정·고른 단계 저장, 절차 고치기(두 단계 미만 안내·저장), 못 찾으면 기본 트랙, 칸반 카드 점·지금 단계(열 옮기면 바로 바뀜), 결과 기다리는 중 지원별 트랙(같은 단계 안 이동도 바로), axe, 브라우저 예외 0건');
 } finally {
   await browser.close();
 }

@@ -107,6 +107,12 @@ function lastIndexOf(steps: ProcessStep[], predicate: (step: ProcessStep) => boo
   return -1;
 }
 
+// 트랙으로 보여줄 절차(두 단계 이상). 없거나 못 찾았으면 null → 기본 4단계 트랙
+export function getProcessSteps(application: Pick<Application, 'hiringProcess'>): ProcessStep[] | null {
+  const steps = application.hiringProcess?.steps;
+  return steps && steps.length >= 2 ? steps : null;
+}
+
 // 지금 단계 번호. 트랙에서 고른 번호가 지금 지원 단계와 맞으면 그대로(1차·2차 면접 구분),
 // 보드 끌기·익스텐션 동기화로 지원 단계만 바뀌었으면 지원 단계로 다시 찾는다. 끝난 지원은 탈락 전 단계로.
 export function getCurrentStepIndex(application: Application, steps: ProcessStep[]): number {
