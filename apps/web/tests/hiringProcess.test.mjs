@@ -5,7 +5,7 @@ import { createSourceLoader } from './loadSource.mjs';
 
 // 공고 전형 절차 (#295): 글 규칙 읽기, 종류, 지원 단계 잇기, 서버 처리 순서.
 const load = createSourceLoader();
-const { extractProcessFromText, kindOfStep, parseProcessInput, formatProcessInput, statusForStep, getCurrentStepIndex, needsProcess } = load('@/utils/hiringProcess');
+const { extractProcessFromText, kindOfStep, parseProcessInput, formatProcessInput, statusForStep, getCurrentStepIndex, needsProcess, findSiblingProcess, findSamePostingApplications, pickNextProcessTarget } = load('@/utils/hiringProcess');
 const shared = load('../../supabase/functions/_shared/hiringProcess/process.ts');
 const { handleHiringProcess, PROCESS_DAILY_LIMIT } = load('../../supabase/functions/_shared/hiringProcess/handler.ts');
 
@@ -144,4 +144,39 @@ test('DB: 공고별 결과·횟수는 브라우저가 못 읽고, 지원 칸은 
   assert.match(sql, /grant execute on function public\.consume_process_quota\(uuid, integer\), public\.release_process_quota\(uuid\) to service_role/);
   assert.doesNotMatch(sql, /to authenticated/);
   assert.match(sql, /where usage\.count < p_limit/);
+});
+
+test('같은 공고(다시 지원): 주소 모양이 달라도 같은 공고로 보고, 읽은 결과를 복사한다 (#299)', () => {
+  const now = Date.parse('2026-11-27T12:00:00Z');
+  const steps = [{ name: '서류', kind: 'document' }, { name: '면접', kind: 'interview' }];
+  const base = { status: 'applied', appliedAt: '2026-11-01T00:00:00Z' };
+  const apps = [
+    { ...base, id: 'a', url: 'https://m.saramin.co.kr/job-search/view?rec_idx=123', hiringProcess: { steps, source: 'ai', step: 1, checkedAt: '2026-11-20T00:00:00Z' } },
+    { ...base, id: 'b', url: 'https://www.saramin.co.kr/zf_user/jobs/relay/view/?rec_idx=123', hiringProcess: null },
+    { ...base, id: 'c', url: 'https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=999', hiringProcess: null },
+  ];
+  assert.deepEqual(findSamePostingApplications(apps, apps[1]).map((app) => app.id), ['a']);
+  // 지금 단계 번호는 지원마다 달라 복사하지 않는다
+  assert.deepEqual(findSiblingProcess(apps, apps[1], now), { steps, source: 'ai', checkedAt: '2026-11-20T00:00:00Z' });
+  assert.equal(findSiblingProcess(apps, apps[2], now), null);
+  // 못 찾음(none)은 다시 읽을 때가 지나지 않았을 때만 복사(같이 다시 읽는다)
+  apps[0].hiringProcess = { steps: [], source: 'none', checkedAt: '2026-11-26T12:00:00Z' };
+  assert.equal(findSiblingProcess(apps, apps[1], now).source, 'none');
+  apps[0].hiringProcess.checkedAt = '2026-11-20T00:00:00Z';
+  assert.equal(findSiblingProcess(apps, apps[1], now), null);
+});
+
+test('읽는 순서: 연 지원 → 면접 예정 → 서류 통과 → 면접 완료 → 지원 완료, 같은 단계는 최근 지원 먼저 (#299)', () => {
+  const url = (id) => 'https://www.jobkorea.co.kr/Recruit/GI_Read/' + id;
+  const app = (id, status, appliedAt) => ({ id, status, appliedAt, url: url(id), hiringProcess: null });
+  const apps = [app('1', 'applied', '2026-11-01'), app('2', 'applied', '2026-11-10'), app('3', 'interviewed', '2026-10-01'), app('4', 'screening', '2026-10-01'), app('5', 'interview', '2026-09-01'), app('6', 'rejected', '2026-11-20')];
+  const order = [];
+  const done = new Set();
+  for (let next = pickNextProcessTarget(apps, { skip: (a) => done.has(a.id) }); next; next = pickNextProcessTarget(apps, { skip: (a) => done.has(a.id) })) {
+    order.push(next.id);
+    done.add(next.id);
+  }
+  assert.deepEqual(order, ['5', '4', '3', '2', '1'], '끝난 지원(6)은 읽지 않는다');
+  assert.equal(pickNextProcessTarget(apps, { priorityId: '1' }).id, '1');
+  assert.equal(pickNextProcessTarget(apps, { priorityId: '6' }).id, '5', '끝난 지원은 열어도 읽지 않는다');
 });
