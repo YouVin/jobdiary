@@ -44,7 +44,7 @@ test('직접 고친 한 줄을 단계로', () => {
 test('단계 ↔ 지원 단계: 고른 단계가 맞으면 그대로(1차·2차 면접 구분), 바뀌었으면 다시 찾는다', () => {
   const steps = parseProcessInput('서류 접수 > 코딩테스트 > 1차 면접 > 2차 면접 > 처우 협의 > 최종 합격');
   assert.deepEqual(steps.map(statusForStep), ['applied', 'screening', 'interview', 'interview', 'interviewed', 'offer']);
-  const app = (status, step, extra = {}) => ({ id: 'a', status, url: 'https://x', hiringProcess: { steps, source: 'text', step, checkedAt: '' }, statusHistory: [], ...extra });
+  const app = (status, step, extra = {}) => ({ id: 'a', status, url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/123', hiringProcess: { steps, source: 'text', step, checkedAt: '' }, statusHistory: [], ...extra });
   assert.equal(getCurrentStepIndex(app('interview', 3), steps), 3, '2차 면접을 고른 그대로');
   assert.equal(getCurrentStepIndex(app('interview', 1), steps), 2, '보드에서 면접으로 옮겼으면 첫 면접');
   assert.equal(getCurrentStepIndex(app('applied'), steps), 0);
@@ -58,11 +58,12 @@ test('단계 ↔ 지원 단계: 고른 단계가 맞으면 그대로(1차·2차 
 });
 
 test('읽을 지원: 공고 주소가 있고 아직 안 읽은 진행 중 지원만', () => {
-  assert.equal(needsProcess({ status: 'applied', url: 'https://x', hiringProcess: null }), true);
-  assert.equal(needsProcess({ status: 'applied', url: 'https://x' }), true);
+  assert.equal(needsProcess({ status: 'applied', url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/123', hiringProcess: null }), true);
+  assert.equal(needsProcess({ status: 'applied', url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/123' }), true);
   assert.equal(needsProcess({ status: 'applied', url: '', hiringProcess: null }), false);
-  assert.equal(needsProcess({ status: 'rejected', url: 'https://x', hiringProcess: null }), false);
-  assert.equal(needsProcess({ status: 'applied', url: 'https://x', hiringProcess: { steps: [], source: 'none' } }), false);
+  assert.equal(needsProcess({ status: 'applied', url: 'https://careers.example.com/jobs/1', hiringProcess: null }), false, '익스텐션이 읽지 못하는 사이트');
+  assert.equal(needsProcess({ status: 'rejected', url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/123', hiringProcess: null }), false);
+  assert.equal(needsProcess({ status: 'applied', url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/123', hiringProcess: { steps: [], source: 'none' } }), false);
 });
 
 test('AI 결과 정리: 번호·기호 빼기, 모르는 종류·빈 이름 버리기, 연달아 같은 이름은 하나로, 10개까지', () => {

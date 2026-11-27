@@ -1,3 +1,4 @@
+import { getPostingReference } from '@jobdiary/shared';
 import type { Application, HiringProcess, ProcessStep, Status, StepKind } from '@/types/application';
 import { getReachedStatus } from '@/utils/statusHistory';
 
@@ -125,7 +126,8 @@ export function getCurrentStepIndex(application: Application, steps: ProcessStep
   return 0;
 }
 
-// 공고에서 읽을 지원: 공고 주소가 있고, 아직 안 읽었고, 진행 중인 지원(끝난 지원은 비용을 쓰지 않는다)
-export function needsProcess(application: Application): boolean {
-  return !!application.url && application.hiringProcess == null && !['offer', 'rejected', 'canceled'].includes(application.status);
+// 공고에서 읽을 지원: 익스텐션이 읽을 수 있는 공고 주소(사람인·잡코리아·원티드)가 있고, 아직 안 읽었고, 진행 중인 지원.
+// 끝난 지원은 비용을 쓰지 않는다.
+export function needsProcess(application: Pick<Application, 'url' | 'status' | 'hiringProcess'>): boolean {
+  return getPostingReference(application.url) !== null && application.hiringProcess == null && !['offer', 'rejected', 'canceled'].includes(application.status);
 }
