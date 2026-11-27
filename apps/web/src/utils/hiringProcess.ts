@@ -126,8 +126,17 @@ export function getCurrentStepIndex(application: Application, steps: ProcessStep
   return 0;
 }
 
-// 공고에서 읽을 지원: 익스텐션이 읽을 수 있는 공고 주소(사람인·잡코리아·원티드)가 있고, 아직 안 읽었고, 진행 중인 지원.
-// 끝난 지원은 비용을 쓰지 않는다.
-export function needsProcess(application: Pick<Application, 'url' | 'status' | 'hiringProcess'>): boolean {
-  return getPostingReference(application.url) !== null && application.hiringProcess == null && !['offer', 'rejected', 'canceled'].includes(application.status);
+// 못 찾은 절차(none)를 다시 읽는 간격. 익스텐션은 네트워크 오류·시간 초과도 "못 읽음"으로 돌려주므로 영구로 두지 않는다(#297).
+// 같은 공고를 다시 읽으면 서버가 저장한 결과를 돌려줘 AI 비용은 들지 않는다.
+export const PROCESS_RECHECK_DAYS = 3;
+
+// 공고에서 읽을 지원: 익스텐션이 읽을 수 있는 공고 주소(사람인·잡코리아·원티드)가 있고, 진행 중이고,
+// 아직 안 읽었거나 못 찾은 지 PROCESS_RECHECK_DAYS가 지난 지원. 끝난 지원은 비용을 쓰지 않는다.
+export function needsProcess(application: Pick<Application, 'url' | 'status' | 'hiringProcess'>, now = Date.now()): boolean {
+  if (getPostingReference(application.url) === null || ['offer', 'rejected', 'canceled'].includes(application.status)) return false;
+  const process = application.hiringProcess;
+  if (process == null) return true;
+  if (process.source !== 'none') return false;
+  const checkedAt = Date.parse(process.checkedAt ?? '');
+  return Number.isNaN(checkedAt) || now - checkedAt >= PROCESS_RECHECK_DAYS * 24 * 60 * 60 * 1000;
 }

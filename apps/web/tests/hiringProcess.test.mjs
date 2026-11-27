@@ -63,7 +63,16 @@ test('읽을 지원: 공고 주소가 있고 아직 안 읽은 진행 중 지원
   assert.equal(needsProcess({ status: 'applied', url: '', hiringProcess: null }), false);
   assert.equal(needsProcess({ status: 'applied', url: 'https://careers.example.com/jobs/1', hiringProcess: null }), false, '익스텐션이 읽지 못하는 사이트');
   assert.equal(needsProcess({ status: 'rejected', url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/123', hiringProcess: null }), false);
-  assert.equal(needsProcess({ status: 'applied', url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/123', hiringProcess: { steps: [], source: 'none' } }), false);
+  // 못 찾은 공고는 3일 뒤 다시 읽는다(익스텐션의 일시 오류도 "못 읽음"이라, #297). 찾은 절차·직접 고친 절차는 다시 읽지 않는다
+  const now = Date.parse('2026-11-27T12:00:00Z');
+  const none = (checkedAt) => ({ status: 'applied', url: 'https://www.jobkorea.co.kr/Recruit/GI_Read/123', hiringProcess: { steps: [], source: 'none', checkedAt } });
+  assert.equal(needsProcess(none('2026-11-26T12:00:00Z'), now), false);
+  assert.equal(needsProcess(none('2026-11-24T12:00:00Z'), now), true);
+  assert.equal(needsProcess(none(undefined), now), true);
+  assert.equal(needsProcess({ ...none('2026-11-01T00:00:00Z'), status: 'rejected' }, now), false);
+  for (const source of ['text', 'ai', 'manual']) {
+    assert.equal(needsProcess({ ...none('2026-11-01T00:00:00Z'), hiringProcess: { steps: [{ name: '서류', kind: 'document' }, { name: '면접', kind: 'interview' }], source, checkedAt: '2026-11-01T00:00:00Z' } }, now), false);
+  }
 });
 
 test('AI 결과 정리: 번호·기호 빼기, 모르는 종류·빈 이름 버리기, 연달아 같은 이름은 하나로, 10개까지', () => {
