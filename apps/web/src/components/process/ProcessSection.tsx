@@ -5,9 +5,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { StageTrack, withDirection } from '@/components/ui/StageTrack';
 import { TextField } from '@/components/ui/TextField';
+import { useHiringProcessPriority } from '@/hooks/useHiringProcessFill';
 import { useApplicationStore } from '@/store/applicationStore';
 import type { Application, ProcessStep, Status } from '@/types/application';
-import { createHiringProcess, formatProcessInput, getCurrentStepIndex, parseProcessInput, statusForStep } from '@/utils/hiringProcess';
+import { createHiringProcess, findSamePostingApplications, formatProcessInput, getCurrentStepIndex, parseProcessInput, statusForStep } from '@/utils/hiringProcess';
 import { ACTIVE_STATUSES } from '@/utils/weekTimeline';
 
 interface ProcessSectionProps {
@@ -85,6 +86,8 @@ export function ProcessSection({ application, onMove }: ProcessSectionProps) {
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  // 아직 안 읽은 지원이면 다음 차례로 올린다(#299)
+  const isReading = useHiringProcessPriority(application);
 
   // ── 점 누르기: 지원 단계가 바뀌면 옮기고(보드·통계), 같은 지원 단계 안(1차 → 2차 면접)이면 고른 단계만 저장 ──
   const selectStep = (index: number) => {
@@ -108,12 +111,19 @@ export function ProcessSection({ application, onMove }: ProcessSectionProps) {
       return;
     }
     setIsSaving(true);
-    const saved = await saveHiringProcess(application.id, createHiringProcess(parsed, 'manual'));
-    setIsSaving(false);
+    const manual = createHiringProcess(parsed, 'manual');
+    const saved = await saveHiringProcess(application.id, manual);
     if (!saved) {
+      setIsSaving(false);
       setError('전형 절차를 저장하지 못했어요. 잠시 후 다시 해 주세요.');
       return;
     }
+    // 같은 공고에 다시 지원한 지원도 같은 절차다. 직접 고치지 않은 것만 맞춘다(#299)
+    const siblings = findSamePostingApplications(useApplicationStore.getState().applications, application);
+    for (const sibling of siblings) {
+      if (sibling.hiringProcess?.source !== 'manual') await saveHiringProcess(sibling.id, manual);
+    }
+    setIsSaving(false);
     setIsEditing(false);
   };
 
@@ -156,7 +166,7 @@ export function ProcessSection({ application, onMove }: ProcessSectionProps) {
       )}
       {isClosed && <p className="text-label text-text-secondary">끝난 지원이에요. 점을 누르면 진행 중으로 되돌릴 수 있어요.</p>}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-label text-text-secondary">{steps && process ? SOURCE_NOTE[process.source] : '공고에 전형 절차가 있으면 지원마다 단계가 맞춰져요.'}</p>
+        <p className="text-label text-text-secondary">{steps && process ? SOURCE_NOTE[process.source] : isReading ? '공고에서 전형 절차를 읽고 있어요.' : '공고에 전형 절차가 있으면 지원마다 단계가 맞춰져요.'}</p>
         <Button variant="text" size="sm" onClick={startEdit}>
           {steps ? '절차 고치기' : '절차 넣기'}
         </Button>
