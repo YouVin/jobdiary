@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { clsx } from 'clsx';
-import { ProcessDots } from '@/components/process/ProcessTrack';
 import { Badge } from '@/components/ui/Badge';
+import { StepDots } from '@/components/ui/StepTrack';
 import { STATUS_INFO } from '@/constants/status';
 import type { Application, Platform } from '@/types/application';
 import { getTodayInKorea } from '@/utils/applicationDeadline';
@@ -34,7 +34,7 @@ function ProcessLine({ application }: { application: Application }) {
   const order = `${index + 1}/${steps.length}`;
   return (
     <div className="mt-2 flex min-w-0 flex-col gap-1">
-      <ProcessDots total={steps.length} currentIndex={index} />
+      <StepDots total={steps.length} currentIndex={index} />
       <p className="flex min-w-0 items-baseline gap-1 text-caption tabular-nums">
         {name !== STATUS_INFO[application.status].label && <span className="truncate font-semibold text-text-brand-strong">{name}</span>}
         <span className="shrink-0 font-normal text-text-secondary">{order}</span>
