@@ -18,6 +18,21 @@ export interface StatusChange {
   at: string; // 바뀐 시각 (ISO)
 }
 
+// 공고 전형 절차 (#295). 단계 이름은 공고 그대로, 종류로 지원 단계(Status)와 통계에 이어진다.
+export type StepKind = 'document' | 'test' | 'interview' | 'final';
+
+export interface ProcessStep {
+  name: string; // 예: 임원 인터뷰(오프라인)
+  kind: StepKind;
+}
+
+export interface HiringProcess {
+  steps: ProcessStep[]; // 비어 있으면 공고에서 찾지 못한 것(기본 트랙을 쓴다)
+  source: 'text' | 'ai' | 'manual' | 'none'; // 글 규칙·AI·직접 고침·못 찾음
+  step?: number; // 트랙에서 고른 지금 단계(같은 지원 단계 안의 1차·2차 면접 구분). 없으면 지원 단계로 계산
+  checkedAt: string;
+}
+
 export interface Application {
   id: string;
   company: string; // 회사명
@@ -33,5 +48,6 @@ export interface Application {
   interviewDate?: string;
   url?: string;
   externalId?: string; // 각 사이트의 지원건 고유 ID (중복 판별용, 원티드는 없어서 optional)
+  hiringProcess?: HiringProcess | null; // null이면 아직 공고를 읽지 않은 지원 (#295)
   statusHistory?: StatusChange[]; // 단계 변경 이력, 오래된 것부터 (#283). 2026-11-26 전 지원은 그 뒤 변경부터 있다
 }

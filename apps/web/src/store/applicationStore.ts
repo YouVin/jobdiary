@@ -11,7 +11,7 @@ import {
   updateApplication as apiUpdateApplication,
 } from '@/lib/applicationsApi';
 import { saveApplications } from '@/lib/storage';
-import { Application, Status } from '@/types/application';
+import { Application, HiringProcess, Status } from '@/types/application';
 import { buildApplicationUrlRepairs } from '@/utils/applicationUrlRepairs';
 import { buildExtensionImportPlan } from '@/utils/extensionImportPlan';
 
@@ -35,6 +35,7 @@ interface ApplicationState {
   addApplicationsFromExtension: (apps: Omit<Application, 'id' | 'updatedAt'>[]) => Promise<ImportSummary>;
   updateApplication: (id: string, updates: ApplicationChanges, expectedUpdatedAt?: string) => Promise<boolean>;
   updateStatus: (id: string, status: Status) => Promise<boolean>;
+  saveHiringProcess: (id: string, process: HiringProcess) => Promise<boolean>;
   removeApplication: (id: string) => Promise<boolean>;
   resetApplications: () => void;
   clearError: () => void;
@@ -179,6 +180,14 @@ export const useApplicationStore = create<ApplicationState>((set, get) => ({
       set({ error: (error as Error).message ?? '지원 내역을 고치지 못했어요. 잠시 뒤 다시 시도해 주세요.' });
       return false;
     }
+  }, false),
+
+  // 공고 전형 절차 저장 (#295). 가져온 뒤 배경에서 채우므로 실패해도 화면 오류(error)로 알리지 않는다(다음에 다시 채운다).
+  saveHiringProcess: (id, process) => withApplicationSession(async (context) => {
+    const { application, error } = await apiUpdateApplication(id, { hiringProcess: process }, context);
+    if (!context.isCurrent() || error || !application) return false;
+    set({ applications: get().applications.map((item) => (item.id === id ? application : item)) });
+    return true;
   }, false),
 
   // 상태만 변경 (드래그용) — updateApplication과 같은 API를 재사용

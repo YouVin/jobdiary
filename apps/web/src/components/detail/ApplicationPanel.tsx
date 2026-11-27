@@ -6,10 +6,10 @@ import { DiaryComposer } from '@/components/diary/DiaryComposer';
 import { PastInterviewReviews } from '@/components/diary/PastInterviewReviews';
 import { JourneyList } from '@/components/diary/JourneyList';
 import { EditApplicationForm } from '@/components/modal/EditApplicationForm';
+import { ProcessSection } from '@/components/process/ProcessSection';
 import { Badge } from '@/components/ui/Badge';
 import { Button, buttonClassName } from '@/components/ui/Button';
 import { SidePanel } from '@/components/ui/Overlay';
-import { StageTrack } from '@/components/ui/StageTrack';
 import { PLATFORM_INFO } from '@/constants/platform';
 import { COMPANY_INFO_STATUSES, STATUS_INFO } from '@/constants/status';
 import { useApplicationStore } from '@/store/applicationStore';
@@ -17,7 +17,6 @@ import type { Application, Status } from '@/types/application';
 import { toDateOnly } from '@/utils/applicationStats';
 import { formatDateWithWeekday } from '@/utils/format';
 import { getPostingUrl } from '@/utils/postingUrl';
-import { ACTIVE_STATUSES } from '@/utils/weekTimeline';
 
 interface ApplicationPanelProps {
   application: Application;
@@ -46,7 +45,6 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const hasSwitchedMode = useRef(false);
-  const stageIndex = ACTIVE_STATUSES.indexOf(application.status);
   const postingUrl = getPostingUrl(application.url);
   const resultTone = RESULT_TONE[application.status];
 
@@ -104,8 +102,8 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
                   <span className="text-text-primary">{STATUS_INFO[application.status].label}</span>
                 )}
               </h3>
-              <StageTrack company={application.company} stageIndex={stageIndex} onMove={(status) => onMove(application.id, status)} labelsClassName="" />
-              {stageIndex < 0 && <p className="text-label text-text-secondary">끝난 지원이에요. 점을 누르면 진행 중으로 되돌릴 수 있어요.</p>}
+              {/* 공고 전형 절차가 있으면 지원별 트랙, 없으면 기본 4단계(#295) */}
+              <ProcessSection application={application} onMove={onMove} />
               <p role="alert" className={moveError ? 'text-label text-danger-text' : 'sr-only'}>
                 {moveError}
               </p>

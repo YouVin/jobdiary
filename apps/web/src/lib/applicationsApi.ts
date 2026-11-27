@@ -23,7 +23,7 @@ export interface DeleteResult {
 // update 시 필드별 의미: undefined = 변경 안 함(요청에서 제외), null = 명시적으로 비움(DB에 null 저장).
 // company/position 등 필수 필드는 애초에 비울 수 없으므로 null을 허용하지 않는다.
 export type ApplicationChanges = Partial<
-  Omit<Application, 'id' | 'updatedAt' | 'memo' | 'diary' | 'interviewDate' | 'deadlineAt' | 'url' | 'externalId' | 'statusHistory'>
+  Omit<Application, 'id' | 'updatedAt' | 'memo' | 'diary' | 'interviewDate' | 'deadlineAt' | 'url' | 'externalId' | 'statusHistory' | 'hiringProcess'>
 > & {
   memo?: string | null;
   diary?: Application['diary'] | null;
@@ -31,6 +31,7 @@ export type ApplicationChanges = Partial<
   deadlineAt?: string | null;
   url?: string | null;
   externalId?: string | null;
+  hiringProcess?: Application['hiringProcess']; // 공고 전형 절차 (#295)
 };
 
 const TABLE_NAME = 'applications';
@@ -54,6 +55,7 @@ interface ApplicationRow {
   url: string | null;
   external_id: string | null;
   status_history?: Application['statusHistory'] | null; // DB 트리거만 쓴다 (#283). 보내지 않는다
+  hiring_process?: Application['hiringProcess'] | null;
 }
 
 // DB 행(snake_case) → 앱에서 쓰는 Application(camelCase)
@@ -74,6 +76,7 @@ function rowToApplication(row: ApplicationRow): Application {
     url: row.url ?? undefined,
     externalId: row.external_id ?? undefined,
     statusHistory: Array.isArray(row.status_history) ? row.status_history : [],
+    hiringProcess: row.hiring_process ?? null,
   };
 }
 
@@ -138,6 +141,9 @@ function changesToUpdateRow(changes: ApplicationChanges) {
   }
   if (changes.externalId !== undefined) {
     row.external_id = changes.externalId ?? null;
+  }
+  if (changes.hiringProcess !== undefined) {
+    row.hiring_process = changes.hiringProcess ?? null;
   }
 
   return row;
