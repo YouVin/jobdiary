@@ -3,6 +3,7 @@ import { AuthGuard } from '@/components/auth/AuthGuard';
 import { ImportErrorNotice } from '@/components/dashboard/ApplicationNotices';
 import { Header } from '@/components/header/Header';
 import { ExtensionImportProvider } from '@/components/import/ExtensionImportProvider';
+import { HiringProcessFiller } from '@/components/process/HiringProcessFiller';
 import { MAIN_CONTENT_ID } from '@/components/ui/SkipLink';
 import { ToastProvider } from '@/components/ui/Toast';
 import { PRIVATE_ROBOTS } from '@/lib/siteMetadata';
@@ -16,6 +17,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
     <AuthGuard>
       <ToastProvider>
         <ExtensionImportProvider>
+          {/* 가져온 지원의 공고 전형 절차를 배경에서 채운다(#295) */}
+          <HiringProcessFiller />
           <div className="flex min-h-full flex-1 flex-col bg-page">
             {/* ── 머리: 로고·메뉴 | 가져오기·지원 추가·내 계정 ── */}
             <Header />
