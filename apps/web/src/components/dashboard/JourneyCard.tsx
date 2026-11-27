@@ -24,7 +24,8 @@ function journeySummary(applied: number, screening: number, interview: number, o
 }
 
 // 위 단계 비율이 "지금" 어디에 있는지라면, 지나온 단계는 탈락한 곳도 어디까지 갔는지로 센다 (#283).
-// 각 단계 아래 %는 바로 앞 단계에서 넘어간 비율이다.
+// 각 단계 아래 %는 바로 앞 단계에서 넘어간 비율이고, 기준을 글자로 보인다("서류 통과의 100%").
+// 기준 없이 %만 두면 1곳 중 1곳이 전체 대비 100%처럼 읽혔다(#293).
 function FunnelSection({ funnel, durations }: { funnel: StageFunnel; durations: StageDurations }) {
   const steps = [
     { key: 'applied', label: '지원', value: funnel.applied },
@@ -42,7 +43,8 @@ function FunnelSection({ funnel, durations }: { funnel: StageFunnel; durations: 
       <h3 id="funnel-title" className="text-label font-semibold text-text-secondary">
         지금까지 지나온 단계
       </h3>
-      <ol className="grid grid-cols-4 gap-2">
+      {/* 위 단계 숫자처럼 좁은 화면은 2칸씩. "서류 통과의 75%"가 꺾이지 않게 */}
+      <ol className="grid grid-cols-2 gap-x-2 gap-y-4 sm:grid-cols-4">
         {steps.map((step, index) => {
           const previous = index > 0 ? steps[index - 1].value : 0;
           const rate = index > 0 && previous > 0 ? Math.round((step.value / previous) * 100) : null;
@@ -54,18 +56,16 @@ function FunnelSection({ funnel, durations }: { funnel: StageFunnel; durations: 
                 <span className="sr-only">곳</span>
               </span>
               {rate !== null && (
-                <span className="text-caption font-normal text-text-secondary tabular-nums">
-                  <span className="sr-only">앞 단계의 </span>
-                  {rate}%
+                <span className="text-caption font-normal break-keep text-text-secondary tabular-nums">
+                  {steps[index - 1].label}의 {rate}%
                 </span>
               )}
             </li>
           );
         })}
       </ol>
-      <p className="text-label text-text-secondary tabular-nums">
-        {averages.length > 0 ? averages.join(' · ') : '서류 통과나 면접 결과로 옮긴 곳이 2곳 이상 쌓이면 걸린 날을 보여 드려요'}
-      </p>
+      {/* 평균은 실제 이력이 2곳 이상일 때만. 없으면 안내 없이 비워 둔다(#293) */}
+      {averages.length > 0 && <p className="text-label text-text-secondary tabular-nums">{averages.join(' · ')}</p>}
     </section>
   );
 }

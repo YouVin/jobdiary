@@ -105,7 +105,7 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
                 )}
               </h3>
               <StageTrack company={application.company} stageIndex={stageIndex} onMove={(status) => onMove(application.id, status)} labelsClassName="" />
-              {stageIndex < 0 && <p className="text-label text-text-secondary">결과가 나온 지원이에요. 점을 누르면 진행 단계로 되돌릴 수 있어요.</p>}
+              {stageIndex < 0 && <p className="text-label text-text-secondary">끝난 지원이에요. 점을 누르면 진행 중으로 되돌릴 수 있어요.</p>}
               <p role="alert" className={moveError ? 'text-label text-danger-text' : 'sr-only'}>
                 {moveError}
               </p>

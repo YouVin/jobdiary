@@ -36,7 +36,9 @@ try {
   const steps = await funnel.getByRole('listitem').allInnerTexts();
   const numbers = steps.map((text) => Number(text.match(/\n(\d+)/)[1]));
   assert.deepEqual(numbers, [live.length, passed.length, interviewed.length, offers.length]);
-  assert.match(steps[1], new RegExp(`앞 단계의\\s*${Math.round((passed.length / live.length) * 100)}%`));
+  // 비율은 기준을 글자로 보인다(#293): 서류 통과 아래 "지원의 44%", 면접 아래 "서류 통과의 N%"
+  assert.match(steps[1], new RegExp(`지원의 ${Math.round((passed.length / live.length) * 100)}%`));
+  assert.match(steps[2], new RegExp(`서류 통과의 ${Math.round((interviewed.length / passed.length) * 100)}%`));
   await funnel.getByText(/서류 통과 연락까지 평균 \d+일 · 면접 후 결과까지 평균 \d+일/).waitFor();
   await scan(page, '홈·지나온 단계');
 

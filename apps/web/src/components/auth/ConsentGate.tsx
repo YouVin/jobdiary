@@ -72,7 +72,8 @@ export function ConsentGate() {
             id="consent-title"
             ref={heading}
             tabIndex={-1}
-            className="rounded-xs text-title-1-sm text-text-primary focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring sm:text-title-1"
+            // 화면을 열 때 읽기 프로그램이 제목부터 읽도록 포커스만 옮긴다. 누르는 요소가 아니라 테두리는 그리지 않는다(#293)
+            className="text-title-1-sm text-text-primary focus:outline-none sm:text-title-1"
           >
             서비스 이용 안내
           </h1>
