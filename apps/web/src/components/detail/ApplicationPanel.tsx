@@ -7,6 +7,7 @@ import { PastInterviewReviews } from '@/components/diary/PastInterviewReviews';
 import { JourneyList } from '@/components/diary/JourneyList';
 import { EditApplicationForm } from '@/components/modal/EditApplicationForm';
 import { ProcessSection } from '@/components/process/ProcessSection';
+import { ApplicationProcessTrack } from '@/components/process/ProcessTrack';
 import { Badge } from '@/components/ui/Badge';
 import { Button, buttonClassName } from '@/components/ui/Button';
 import { SidePanel } from '@/components/ui/Overlay';
@@ -103,7 +104,8 @@ export function ApplicationPanel({ application, onClose, onMove, moveError }: Ap
                 )}
               </h3>
               {/* 공고 전형 절차가 있으면 지원별 트랙, 없으면 기본 4단계(#295) */}
-              <ProcessSection application={application} onMove={onMove} />
+              {/* 트랙을 여기서 만들어 넘긴다: onMove가 ProcessSection을 거치지 않고 트랙으로 바로 간다(#312) */}
+              <ProcessSection application={application} track={<ApplicationProcessTrack application={application} onMove={onMove} />} />
               <p role="alert" className={moveError ? 'text-label text-danger-text' : 'sr-only'}>
                 {moveError}
               </p>

@@ -1,17 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { ApplicationProcessTrack } from '@/components/process/ProcessTrack';
+import { type ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import { useHiringProcessPriority } from '@/hooks/useHiringProcessFill';
 import { useApplicationStore } from '@/store/applicationStore';
-import type { Application, Status } from '@/types/application';
+import type { Application } from '@/types/application';
 import { createHiringProcess, findSamePostingApplications, formatProcessInput, getProcessSteps, parseProcessInput } from '@/utils/hiringProcess';
 
 interface ProcessSectionProps {
   application: Application;
-  onMove: (applicationId: string, status: Status) => void;
+  // 단계 트랙은 부모(상세 패널)가 만들어 넘긴다(#312). 이 구역은 단계 옮기기(onMove)를 몰라도 된다.
+  track: ReactNode;
 }
 
 const SOURCE_NOTE: Record<string, string> = {
@@ -22,7 +22,7 @@ const SOURCE_NOTE: Record<string, string> = {
 const EXAMPLE = '서류 > 코딩테스트 > 1차 면접 > 최종 합격';
 
 // 상세 패널 "단계" 안: 전형 절차가 있으면 지원별 트랙, 없으면 기본 4단계 트랙. 아래에 절차 고치기.
-export function ProcessSection({ application, onMove }: ProcessSectionProps) {
+export function ProcessSection({ application, track }: ProcessSectionProps) {
   const saveHiringProcess = useApplicationStore((state) => state.saveHiringProcess);
   const process = application.hiringProcess;
   const steps = getProcessSteps(application);
@@ -95,7 +95,7 @@ export function ProcessSection({ application, onMove }: ProcessSectionProps) {
   const isClosed = ['offer', 'rejected', 'canceled'].includes(application.status);
   return (
     <div className="flex flex-col gap-2">
-      <ApplicationProcessTrack application={application} onMove={onMove} />
+      {track}
       {isClosed && <p className="text-label text-text-secondary">끝난 지원이에요. 점을 누르면 진행 중으로 되돌릴 수 있어요.</p>}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-label text-text-secondary">{steps && process ? SOURCE_NOTE[process.source] : isReading ? '공고에서 전형 절차를 읽고 있어요.' : '공고에 전형 절차가 있으면 지원마다 단계가 맞춰져요.'}</p>
