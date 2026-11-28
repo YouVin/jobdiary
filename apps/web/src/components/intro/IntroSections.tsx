@@ -64,8 +64,19 @@ export function IntroFeatureRow({ feature, reverse }: { feature: IntroFeature; r
           height={feature.image.height}
           alt={feature.image.alt}
           sizes={isTall ? '320px' : '(min-width: 1024px) 680px, 100vw'}
-          className={clsx('h-auto rounded-md border border-line-divider', isTall ? 'w-full max-w-80' : 'w-full')}
+          className={clsx('h-auto rounded-md border border-line-divider', isTall ? 'w-full max-w-80' : 'w-full', feature.mobileImage && 'max-lg:hidden')}
         />
+        {/* 휴대폰에서는 휴대폰 화면 사진(#310). 숨긴 쪽은 늦게 불러오기라 받지 않는다 */}
+        {feature.mobileImage && (
+          <Image
+            src={feature.mobileImage.src}
+            width={feature.mobileImage.width}
+            height={feature.mobileImage.height}
+            alt={feature.mobileImage.alt}
+            sizes="(min-width: 640px) 360px, 100vw"
+            className="h-auto w-full max-w-90 rounded-md border border-line-divider lg:hidden"
+          />
+        )}
       </div>
     </article>
   );
