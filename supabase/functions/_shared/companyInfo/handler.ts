@@ -1,6 +1,7 @@
 import {
   buildAnalysisRequest,
   estimateCostUsd,
+  keepExplainedStrengths,
   keepKnownStrengths,
   verifyQuotes,
   type AnalysisModel,
@@ -307,7 +308,9 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
   }
   // 강점 이름은 고정 목록만 남긴다(#260: 결과 형식에서 목록 제한을 빼고 서버가 검사)
   const known = keepKnownStrengths(outcome.result);
-  const verified = keepVerifiedWebsite(keepVerifiedStrengths(known.result, quoteSource), quoteSource);
+  // 설명(원하는 모습·경험)이 모두 빈 강점은 버린다(#322)
+  const explained = keepExplainedStrengths(known.result);
+  const verified = keepVerifiedWebsite(keepVerifiedStrengths(explained.result, quoteSource), quoteSource);
   const result = source.kind === 'page' ? preferPageFacts(verified, source.facts) : verified;
 
   // 진단(#237): 강점이 비었을 때 "AI가 못 찾았나, 인용 검사에서 버렸나, 글을 덜 읽었나"를 숫자로 가린다. 내용은 남기지 않는다.
@@ -317,12 +320,16 @@ export async function handleCompanyInfo(deps: CompanyInfoDeps, rawBody: unknown)
     readChars: quoteSource.length,
     strengthsReturned: outcome.result.strengths.length,
     strengthsUnknownLabel: known.dropped,
+    strengthsUnexplained: explained.dropped,
     strengthsKept: result.strengths.length,
   };
   if (known.dropped > 0) {
     deps.logError('[company-info] 목록에 없는 강점 이름을 버림', diagnostics);
   }
-  if (result.strengths.length < known.result.strengths.length) {
+  if (explained.dropped > 0) {
+    deps.logError('[company-info] 설명이 빈 강점을 버림', diagnostics);
+  }
+  if (result.strengths.length < explained.result.strengths.length) {
     deps.logError('[company-info] 인용 검사로 강점을 버림', diagnostics);
   }
 

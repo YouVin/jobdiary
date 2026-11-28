@@ -220,17 +220,40 @@ test('인용 검사는 가운뎃점·글머리표·줄바꿈 차이를 무시하
       result: {
         transcript, company: { about: '', products: [], website: '' }, workplace: { location: '', workDays: '', workHours: '' },
         strengths: [
-          { strength: '자기주도성', quote: '새로운 기술을 직접 시도하고 만들어 가는 분', wants: '', experiences: [] },
-          { strength: '협동성', quote: '다양한 팀과 협업해 본 경험', wants: '', experiences: [] },
-          { strength: '도전 정신', quote: '세계 최고를 꿈꾸는 분', wants: '', experiences: [] },
+          { strength: '자기주도성', quote: '새로운 기술을 직접 시도하고 만들어 가는 분', wants: '원하는 모습', experiences: [] },
+          { strength: '협동성', quote: '다양한 팀과 협업해 본 경험', wants: '', experiences: ['경험'] },
+          { strength: '도전 정신', quote: '세계 최고를 꿈꾸는 분', wants: '원하는 모습', experiences: ['경험'] },
         ],
       },
     }),
   });
   const response = await handleCompanyInfo(deps, imageBody([IMAGE]));
   assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['자기주도성', '협동성']);
-  assert.deepEqual(calls.saved[0].usage.diagnostics, { source: 'image', imageCount: 1, readChars: transcript.length, strengthsReturned: 3, strengthsUnknownLabel: 0, strengthsKept: 2 });
+  assert.deepEqual(calls.saved[0].usage.diagnostics, { source: 'image', imageCount: 1, readChars: transcript.length, strengthsReturned: 3, strengthsUnknownLabel: 0, strengthsUnexplained: 0, strengthsKept: 2 });
   assert.equal(calls.errors.length, 1, '버린 강점이 있으면 로그(숫자만)');
+});
+
+// ── #322 설명이 빈 강점 ──
+test('원하는 모습·경험이 모두 빈 강점은 서버가 버리고 진단에 숫자로 남긴다 (#322)', async () => {
+  const transcript = ['자격 요건', '- 새로운 기술을 직접 시도하고 만들어 가는 분', '- 다양한 팀과 협업해 본 경험', '- 꼼꼼하게 끝까지 해내는 분'].join('\n');
+  const { deps, calls } = fakeDeps({
+    analyze: async () => ({
+      stopReason: 'end_turn', model: COMPANY_INFO_MODEL, usage: { input_tokens: 10, output_tokens: 10 },
+      result: {
+        transcript, company: { about: '', products: [], website: '' }, workplace: { location: '', workDays: '', workHours: '' },
+        strengths: [
+          { strength: '자기주도성', quote: '새로운 기술을 직접 시도하고 만들어 가는 분', wants: '', experiences: [] },
+          { strength: '협동성', quote: '다양한 팀과 협업해 본 경험', wants: '  ', experiences: [''] },
+          { strength: '책임감', quote: '꼼꼼하게 끝까지 해내는 분', wants: '맡은 일을 끝까지 해내는 사람', experiences: [] },
+        ],
+      },
+    }),
+  });
+  const response = await handleCompanyInfo(deps, imageBody([IMAGE]));
+  assert.deepEqual(response.body.companyInfo.result.strengths.map((item) => item.strength), ['책임감']);
+  assert.equal(calls.saved[0].usage.diagnostics.strengthsUnexplained, 2);
+  assert.equal(calls.saved[0].usage.diagnostics.strengthsKept, 1);
+  assert.ok(calls.errors.includes('[company-info] 설명이 빈 강점을 버림'));
 });
 
 test('지시문은 인재상 칸이 없어도 업무·자격에서 강점을 찾게 한다', () => {
