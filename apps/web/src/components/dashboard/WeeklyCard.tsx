@@ -25,7 +25,7 @@ export function WeeklyCard({ weeks, style }: WeeklyCardProps) {
   let detail: string;
   if (total === 0) {
     summary = '최근 8주 동안 지원이 없어요';
-    detail = '지원을 기록하면 주마다 몇 곳에 지원했는지 보여드려요';
+    detail = '지원을 기록하면 주마다 몇 곳에 지원했는지 보여요';
   } else if (thisWeek.count > 0) {
     summary = (
       <>
@@ -65,7 +65,7 @@ export function WeeklyCard({ weeks, style }: WeeklyCardProps) {
       <div className="my-auto flex flex-col gap-3">
         <BarChart label={chartLabel} bars={bars} heightClass="h-40 md:h-56" />
         <p className="text-label text-text-secondary tabular-nums">
-          8주 동안 {total}곳 · 주 평균 {average}곳
+          8주 동안 {total}곳, 주 평균 {average}곳
         </p>
       </div>
     </Card>

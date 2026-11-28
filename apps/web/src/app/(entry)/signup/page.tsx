@@ -8,7 +8,7 @@ export const metadata = publicPageMetadata('회원가입', SITE_DESCRIPTION, '/s
 export default function SignupPage() {
   return (
     <>
-      <AuthHeading title="환영해요" description="지원 여정을 함께 기록해 봐요" />
+      <AuthHeading title="환영해요" description="지원한 곳을 한곳에 모아 기록해요" />
       <LoginForm mode="signup" />
     </>
   );
