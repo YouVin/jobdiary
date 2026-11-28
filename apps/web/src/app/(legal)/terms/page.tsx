@@ -7,7 +7,7 @@ export default function TermsPage() {
   return (
     <>
       <h1 className="text-title-1-sm text-text-primary sm:text-title-1">취준일기 이용약관</h1>
-      <p>시행일: 2026년 10월 17일 · 운영자: 황유빈 · 문의: <a className="text-text-brand underline underline-offset-2" href="mailto:dbqls1210@gmail.com">dbqls1210@gmail.com</a></p>
+      <p>시행일: 2026년 10월 17일 · 운영자: 황유빈 · 문의: <a className="text-text-brand underline underline-offset-2" href="mailto:jobdiary.team@gmail.com">jobdiary.team@gmail.com</a></p>
       <section className="space-y-2">
         <h2 className="text-title-3 text-text-primary">1. 서비스와 이용계약</h2>
         <p>취준일기는 채용 지원 내역, 일정, 메모와 일기를 개인이 관리하는 무료 서비스입니다. 이용자는 안내된 약관을 확인하고 동의하여 이용합니다. 만 14세 미만의 가입은 지원하지 않습니다. 본인 계정을 사용하고 인증 정보를 안전하게 관리해주세요.</p>

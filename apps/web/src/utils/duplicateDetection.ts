@@ -17,12 +17,12 @@ function normalizeText(value: string): string {
 
 // ── 사이트 간 중복 판별 기준 (#220) ──
 // 같은 공고라도 사이트마다 공고명이 다르게 들어온다. 사람인은 모집 부문(rec_division, 예: "프론트엔드"),
-// 잡코리아는 공고 제목 전체(gititle, 예: "[IT/통신] STAGE FIVE 프론트엔드 개발자 채용")를 가져온다.
+// 잡코리아는 공고 제목 전체(gititle, 예: "[IT/통신] ROOT LABS 프론트엔드 개발자 채용")를 가져온다.
 // 그래서 글자 그대로 비교하지 않고, 회사는 법인 표기·공백·기호를 뺀 이름으로, 공고는 핵심 단어로 비교한다.
 const LEGAL_ENTITY = /\((주|유|재|사|합)\)|주식회사|유한책임회사|유한회사|재단법인|사단법인|합자회사|합명회사|\b(co|corp|inc|ltd)\b\.?/g;
 const NOT_LETTER = /[^\p{L}\p{N}]+/gu;
 
-// 회사 비교용 이름: "㈜스테이지파이브"·"(주) 스테이지파이브"·"주식회사 스테이지파이브" → "스테이지파이브"
+// 회사 비교용 이름: "㈜루트랩스"·"(주) 루트랩스"·"주식회사 루트랩스" → "루트랩스"
 export function companyKey(company: string): string {
   return company.normalize('NFKC').toLowerCase().replace(LEGAL_ENTITY, '').replace(NOT_LETTER, '');
 }
@@ -56,7 +56,7 @@ export function positionTokens(position: string): string[] {
 }
 
 // 한쪽 핵심 단어가 모두 다른 쪽 공고명 안에 들어 있으면 같은 공고다.
-// "프론트엔드" ⊂ "it 통신 stage five 프론트엔드 개발자" → 같음, "프론트엔드" vs "백엔드" → 다름.
+// "프론트엔드" ⊂ "it 통신 root labs 프론트엔드 개발자" → 같음, "프론트엔드" vs "백엔드" → 다름.
 // 한쪽이 흔한 말뿐이라(예: "신입 채용") 핵심 단어가 없으면 회사만 같아도 같은 공고로 본다.
 interface PostingKey {
   company: string;

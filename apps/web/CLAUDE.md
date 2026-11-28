@@ -30,7 +30,7 @@
 ## 코딩 규칙
 - named export 사용 (page.tsx, layout.tsx 제외), 함수형 컴포넌트 + hooks
 - 변수명은 직관적인 영문 (company, appliedAt, isLoading), 단계별 주석은 한국어로
-- for 루프 선호, 명시적 조건문 (유빈 스타일)
+- for 루프 선호, 명시적 조건문
 - 클라이언트 상태는 Zustand, 조건부 클래스는 clsx, 공유 상태는 상위에서 관리해 props로 전달
 - Server(표시)/Client(상태·이벤트) 분리
 

@@ -101,7 +101,7 @@ Vercel은 루트 vercel.json으로 새 빌드·출력 경로를 적용해 프로
 
 2026-11-04: 실제 Chromium MV3 확장과 고정 HTTP 표본을 이용한 8개 시나리오가 통과했다.
 content script·service worker·실제 storage·외부 메시지와 웹앱 수신 검증/가져오기 계획을 확인했다.
-이후 사용자 Chrome에서 잡코리아 지원 10건 수집·마감일 8건 확인과 팝업 표시를 확인했다.
+이후 개발자 Chrome에서 잡코리아 지원 수집·마감일 확인과 팝업 표시를 확인했다.
 사람인 모바일 보충, 원티드 실제 상태 수집과 웹앱 UI/DB 저장 확인은 남아 있다.
 재실행 방법·검증 범위·직접 확인 순서는 [DEADLINE_VALIDATION.md](DEADLINE_VALIDATION.md)에 기록했다.
 
