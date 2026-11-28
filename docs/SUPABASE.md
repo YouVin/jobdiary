@@ -158,6 +158,7 @@ Supabase는 원격 DB라 모든 호출이 네트워크 I/O — 동기 함수가 
   - `select` / `update` / `delete`: `using (auth.uid() = user_id)` — 본인 행만 대상이 되도록.
   - `insert`: `with check (auth.uid() = user_id)` — 본인이 아닌 `user_id`로 끼워 넣는 것도 막는다 (이게 없으면 로그인한 유저가 임의의 `user_id`를 넣어 다른 사람 행세를 할 수 있다).
 - **체크리스트**: 테이블을 만들면 RLS는 기본적으로 **비활성 상태**다. `ALTER TABLE applications ENABLE ROW LEVEL SECURITY`를 명시적으로 켜지 않으면 정책을 아무리 작성해도 적용되지 않고 테이블이 그대로 열려있는 상태가 되므로, S-5에서 "정책 작성"과 "RLS 활성화"를 별개 체크 항목으로 둔다.
+- **이번 달 한 줄 `monthly_notes` (#316)**: `(user_id, month)` 기본 키, `month`는 `YYYY-MM`, `note`는 1~100자. 지원 표와 같은 정책 4개(본인 행만), 익명은 권한 없음, 탈퇴 시 `auth.users`와 함께 삭제(`on delete cascade`). 마이그레이션 `20261128120000_monthly_notes.sql`.
 - **적용 완료**: 위 정책 4개(select/insert/update/delete)를 Supabase SQL Editor에서 실제로 적용했다. SQL 원문은 [supabase/policies.sql](../supabase/policies.sql)에 기록해뒀다(기록/재현용 — 이 파일을 실행해서 적용한 것은 아님).
 
 ---
