@@ -2,11 +2,11 @@
 // 사용: apps/web에서 `npx next start -p 3100` 뒤 `node scripts/capture-intro-screens.mjs`
 // 결과: public/intro/*-{EDITION}.png 와 각 크기(constants/intro.ts의 src·width·height에 맞춘다)
 //  - hero-desktop·hero-mobile: 첫 화면 맥북·아이폰 속 실제 홈
-//  - home·board·detail·recap: 할 수 있는 것 4줄(PC), home-mobile·board-mobile: 휴대폰에서 보여줄 사진
+//  - home·board·detail·recap: 할 수 있는 것 4줄(PC), home-mobile·board-mobile·recap-mobile: 휴대폰에서 보여줄 사진
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from '../node_modules/.release-tools/node_modules/playwright/index.mjs';
-import { companyInfoStore, routeSupabase, rows, SAMPLE_COMPANY_INFO, signIn, user } from './fixtures/sampleSession.mjs';
+import { companyInfoStore, monthlyNotes, routeSupabase, rows, SAMPLE_COMPANY_INFO, signIn, todayKst, user } from './fixtures/sampleSession.mjs';
 
 const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
 const outDir = process.env.OUT_DIR || path.resolve('public/intro');
@@ -14,7 +14,7 @@ fs.mkdirSync(outDir, { recursive: true });
 const DAY = 24 * 60 * 60 * 1000;
 // 사진 이름 끝에 붙는 판. 다시 찍으면 올린다(같은 이름이면 next/image·Vercel 이미지 캐시가 옛 사진을 보여준다).
 // constants/intro.ts의 src도 같은 이름으로 바꾼다.
-const EDITION = 'v2';
+const EDITION = 'v3'; // v3: #325 문구 정리, #326 돌아보기를 앱 안 월간 화면으로
 
 // PNG 머리(IHDR)에서 가로·세로를 읽는다
 function pngSize(file) {
@@ -56,6 +56,9 @@ rows.filter((row) => row !== target && row.status !== 'canceled').slice(0, recor
   const at = Math.min(monthStart + recordDays[index] * DAY + 10 * 60 * 60 * 1000, Date.now() - 60 * 60 * 1000);
   row.diary = [...(row.diary ?? []), { id: `intro-month-${index}`, content: '오늘 지원한 이유를 짧게 남겼다.', createdAt: new Date(at).toISOString(), status: row.status }];
 });
+
+// 돌아보기 사진의 이번 달 한 줄(#316)
+monthlyNotes.set(todayKst.slice(0, 7), '서류 통과가 처음으로 여덟 곳, 면접 준비에 집중한 달');
 
 const browser = await chromium.launch({ ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : { channel: 'msedge' }), headless: true });
 async function newPage(viewport, deviceScaleFactor) {
@@ -109,6 +112,16 @@ try {
     await page.setViewportSize({ width: 390, height: Math.ceil(fourth.y + fourth.height + 40) });
     await page.waitForTimeout(300);
     await shot(page, 'board-mobile', { x: 0, y: waitingBox.y - 8, width: 390, height: fourth.y + fourth.height - waitingBox.y + 16 });
+    // 휴대폰용 돌아보기(#326): 창 위쪽 요약부터 지난달과 비교한 숫자 칸까지
+    await page.setViewportSize({ width: 390, height: 2400 });
+    await page.goto(`${origin}/`);
+    await page.getByRole('button', { name: /월 돌아보기$/ }).click();
+    const recapSheet = page.getByRole('dialog');
+    await recapSheet.waitFor();
+    await page.waitForTimeout(800);
+    const sheetBox = await recapSheet.boundingBox();
+    const statsBox = await recapSheet.locator('dl').first().boundingBox();
+    await shot(page, 'recap-mobile', { x: 0, y: sheetBox.y, width: 390, height: statsBox.y + statsBox.height - sheetBox.y + 24 });
     await context.close();
   }
 
@@ -123,15 +136,12 @@ try {
     const journeyCard = await page.locator('[aria-labelledby="journey-title"]').first().boundingBox();
     await shot(page, 'home', { x: top.x, y: top.y, width: top.width, height: journeyCard.y + journeyCard.height - top.y + 8 });
 
-    // 이번 달 돌아보기: 만들어진 이미지 그대로
+    // 이번 달 돌아보기(#326): 앱 안 월간 화면(창) 그대로. 예전에는 공유 이미지를 저장했다(#317 전)
     await page.getByRole('button', { name: /월 돌아보기$/ }).click();
-    const preview = page.getByRole('dialog').getByRole('img').first();
-    await preview.waitFor();
-    const dataUrl = await preview.evaluate(async (image) => {
-      const blob = await (await fetch(image.src)).blob();
-      return await new Promise((resolve) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.readAsDataURL(blob); });
-    });
-    fs.writeFileSync(fileOf('recap'), Buffer.from(dataUrl.split(',')[1], 'base64'));
+    const recapDialog = page.getByRole('dialog');
+    await recapDialog.waitFor();
+    await page.waitForTimeout(800);
+    await recapDialog.screenshot({ path: fileOf('recap') });
     await page.keyboard.press('Escape');
 
     // 지원 보드: 칸반 보기 위쪽(카드마다 회사별 지금 단계)
@@ -154,7 +164,7 @@ try {
     await context.close();
   }
 
-  for (const name of ['hero-desktop', 'hero-mobile', 'home', 'home-mobile', 'board', 'board-mobile', 'detail', 'recap']) console.log(`${name}-${EDITION}`, JSON.stringify(pngSize(fileOf(name))));
+  for (const name of ['hero-desktop', 'hero-mobile', 'home', 'home-mobile', 'board', 'board-mobile', 'detail', 'recap', 'recap-mobile']) console.log(`${name}-${EDITION}`, JSON.stringify(pngSize(fileOf(name))));
 } finally {
   await browser.close();
 }
