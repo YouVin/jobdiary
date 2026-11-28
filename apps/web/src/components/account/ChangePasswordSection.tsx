@@ -35,7 +35,8 @@ export function ChangePasswordSection() {
   // 현재 비밀번호는 "일치하는지"가 아니라 "입력했는지"만 클라이언트에서 확인한다 —
   // 실제 일치 여부는 아래 signIn 재확인이 서버에서 검증한다.
   const currentPasswordError = currentPassword ? null : '지금 비밀번호를 입력해 주세요.';
-  const newPasswordError = getPasswordError(newPassword);
+  // 지금 비밀번호와 같으면 바꿀 것이 없다(Supabase도 거절한다, #314)
+  const newPasswordError = getPasswordError(newPassword) ?? (newPassword && newPassword === currentPassword ? '지금 비밀번호와 다른 비밀번호를 입력해 주세요.' : null);
   const confirmNewPasswordError = getConfirmPasswordError(newPassword, confirmNewPassword);
 
   if (!canChangePassword) {
@@ -46,6 +47,15 @@ export function ChangePasswordSection() {
       </Card>
     );
   }
+
+  // 칸을 고치기 시작하면 지난 결과(오류·완료)는 지운다. 칸 아래 안내가 보이는 동안에는 아래 오류를 숨겨 한 번에 하나만 보인다(#314)
+  const edit = (setter: (value: string) => void, value: string) => {
+    setter(value);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
+  const hasFieldError = isChecked && Boolean(currentPasswordError || newPasswordError || confirmNewPasswordError);
+  const formError = hasFieldError ? null : errorMessage;
 
   // ── 제출: 검사 → 현재 비밀번호 확인 → 변경 ──
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -79,7 +89,8 @@ export function ChangePasswordSection() {
       if (!context.isCurrent()) return;
       if (updateError) {
         console.error('[change-password] 변경 실패:', updateError);
-        setErrorMessage(FAILED_MESSAGE);
+        const isSame = updateError.code === 'same_password' || /different from the old/i.test(updateError.message ?? '');
+        setErrorMessage(isSame ? '지금 비밀번호와 같은 비밀번호예요. 다른 비밀번호를 입력해 주세요.' : FAILED_MESSAGE);
         return;
       }
 
@@ -109,7 +120,7 @@ export function ChangePasswordSection() {
             id="currentPassword"
             label="지금 비밀번호"
             value={currentPassword}
-            onChange={(event) => setCurrentPassword(event.target.value)}
+            onChange={(event) => edit(setCurrentPassword, event.target.value)}
             autoComplete="current-password"
             aria-required="true"
             error={isChecked ? currentPasswordError : null}
@@ -120,7 +131,7 @@ export function ChangePasswordSection() {
               id="newPassword"
               label="새 비밀번호"
               value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
+              onChange={(event) => edit(setNewPassword, event.target.value)}
               placeholder={`${MIN_PASSWORD_LENGTH}자 이상`}
               autoComplete="new-password"
               aria-required="true"
@@ -134,7 +145,7 @@ export function ChangePasswordSection() {
             id="confirmNewPassword"
             label="새 비밀번호 확인"
             value={confirmNewPassword}
-            onChange={(event) => setConfirmNewPassword(event.target.value)}
+            onChange={(event) => edit(setConfirmNewPassword, event.target.value)}
             placeholder="비밀번호를 한 번 더 입력해 주세요"
             autoComplete="new-password"
             aria-required="true"
@@ -142,10 +153,10 @@ export function ChangePasswordSection() {
           />
         </fieldset>
         {/* ── 오류·제출 버튼 ── */}
-        <p role="alert" className={errorMessage ? 'text-label text-danger-text' : 'sr-only'}>
-          {errorMessage}
+        <p role="alert" className={formError ? 'text-label text-danger-text' : 'sr-only'}>
+          {formError}
         </p>
-        <p role="status" className={successMessage ? 'rounded-md bg-selected px-4 py-3 text-label text-text-brand-strong' : 'sr-only'}>
+        <p role="status" className={successMessage ? 'flex min-h-12 items-center rounded-md bg-selected px-4 py-3 text-label break-keep text-text-brand-strong' : 'sr-only'}>
           {successMessage}
         </p>
         <Button type="submit" isLoading={isSubmitting} loadingLabel="바꾸는 중" className="self-start">
