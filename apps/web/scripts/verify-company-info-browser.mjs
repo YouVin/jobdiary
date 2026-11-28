@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { chromium } from '../node_modules/.release-tools/node_modules/playwright/index.mjs';
-import { companyInfoRequests, routeSupabase, rows, scan as scanPage, signIn } from './fixtures/sampleSession.mjs';
+import { companyInfoRequests, companyInfoStore, routeSupabase, rows, scan as scanPage, signIn } from './fixtures/sampleSession.mjs';
 
 const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
 const shotDir = process.env.SHOT_DIR;
@@ -154,6 +154,19 @@ try {
   await section.getByText('웹 서비스를 만드는 IT 회사예요.').waitFor();
   assert.equal(companyInfoRequests.length, before);
   console.log('PASS 다시 열면 저장된 결과 불러오기(만들기 요청 0건)');
+
+  // 5-1) 설명(원하는 모습·경험)이 빈 예전 결과: 접힌 버튼만 남지 않게 근거를 펼쳐 보여 준다(#322)
+  for (const stored of companyInfoStore.values()) {
+    stored.result = { ...stored.result, strengths: [{ strength: '책임감', quote: '맡은 기능을 끝까지 책임지는 분', wants: '', experiences: [] }, ...stored.result.strengths.slice(0, 1)] };
+  }
+  await panel.getByRole('button', { name: '닫기', exact: true }).click();
+  await panel.waitFor({ state: 'detached' });
+  panel = await openPanel();
+  section = panel.getByRole('region', { name: '회사 정보' });
+  await section.getByText('맡은 기능을 끝까지 책임지는 분').waitFor();
+  assert.equal(await section.getByText('공고 근거 보기').count(), 1, '설명이 있는 강점만 근거를 접는다');
+  await scan('회사 정보·설명 없는 예전 결과');
+  console.log('PASS 설명이 빈 예전 강점은 근거를 펼쳐 보여 주기');
 
   // 6) 공고 주소가 없으면 가져오기 버튼 대신 주소를 넣으라고 안내한다(취소로 결과에 돌아갈 수 있다)
   for (const row of rows) row.url = null;
