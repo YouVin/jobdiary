@@ -51,7 +51,7 @@ export async function drawRecapImage(recap: MonthlyRecap, colors: RecapColors, f
 
   // ── 숫자 4칸 ──
   const tiles: Array<[string, string]> = [
-    ['서류 통과 이상', `${recap.passedCount}곳`],
+    ['서류 통과', `${recap.passedCount}곳`],
     ['면접', `${recap.interviewCount}번`],
     ['합격', `${recap.offerCount}곳`],
     ['남긴 기록', `${recap.diaryCount}개`],
@@ -67,8 +67,8 @@ export async function drawRecapImage(recap: MonthlyRecap, colors: RecapColors, f
 
   // ── 한 줄씩: 가장 많이 지원한 곳·가장 바빴던 날 ──
   const lines: string[] = [];
-  if (recap.topPlatform) lines.push(`가장 많이 지원한 곳 · ${recap.topPlatform}`);
-  if (recap.busiestDay) lines.push(`가장 바빴던 날 · ${recap.monthNumber}월 ${recap.busiestDay.day}일 ${recap.busiestDay.count}곳`);
+  if (recap.topPlatform) lines.push(`가장 많이 지원한 곳은 ${recap.topPlatform}`);
+  if (recap.busiestDay) lines.push(`가장 바빴던 날은 ${recap.monthNumber}월 ${recap.busiestDay.day}일, ${recap.busiestDay.count}곳`);
   lines.forEach((line, index) => text(line, left, 1096 + index * 50, 32, 500, colors.secondary));
 
   // ── 아래: 주소 ──
