@@ -358,7 +358,7 @@ try {
     assert.equal(await tip.isVisible(), false);
     await cell.hover();
     await visible(tip);
-    assert.match(await tip.innerText(), new RegExp(`${month}월 ${day}일 · 지원 1곳\\s+달력 회사`));
+    assert.match(await tip.innerText(), new RegExp(`${month}월 ${day}일 지원 1곳\\s+달력 회사`));
     const [tipBox, cardBox] = [await tip.boundingBox(), await calendar.boundingBox()];
     assert(tipBox.x >= cardBox.x && tipBox.x + tipBox.width <= cardBox.x + cardBox.width, `${width}px 말풍선이 카드 안에 있음`);
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${width}px 가로 넘침`);
@@ -392,7 +392,7 @@ try {
   await page.getByRole('group', { name: '보기 선택' }).getByRole('button', { name: /^중복/ }).click();
   await visible(page.getByText('같은 공고를 여러 사이트에서 지원한 묶음이 1개 있어요'));
   const group = page.getByRole('article', { name: 'B 회사' });
-  await visible(group.getByText('2개 사이트 · 2건'));
+  await visible(group.getByText('2개 사이트에서 2건'));
   assert.equal(await group.getByRole('listitem').count(), 2);
   assert.equal(await group.getByRole('link', { name: 'B 회사 사람인 공고 열기 (새 탭에서 열림)' }).getAttribute('href'), 'https://jobs.example.test/b-saramin');
   assert.equal(await page.getByRole('article').count(), 1, '중복이 아닌 지원은 묶지 않는다');
@@ -407,18 +407,18 @@ try {
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto(origin + '/');
   const dayButton = page.getByRole('button', { name: new RegExp(`^${month}월 ${day}일 .요일, 오늘, 지원 1곳$`) });
-  const dayList = page.getByRole('region', { name: `${month}월 ${day}일 · 지원 1곳` });
+  const dayList = page.getByRole('region', { name: `${month}월 ${day}일 지원 1곳` });
   await dayButton.click();
   await visible(dayList);
   assert.equal(await dayButton.getAttribute('aria-pressed'), 'true');
   await page.mouse.move(0, 0); // 마우스를 치우면 클릭 포커스로는 말풍선이 남지 않는다
   assert.equal(await dayButton.locator('[aria-hidden="true"]').evaluate(element => getComputedStyle(element).display), 'none', '누른 뒤에는 말풍선 대신 목록');
-  await dayList.getByRole('button', { name: '달력 회사 개발자, 기록·상세 보기' }).click();
+  await dayList.getByRole('button', { name: '달력 회사 개발자, 기록과 상세 보기' }).click();
   const calendarPanel = page.getByRole('dialog', { name: '달력 회사' });
   await visible(calendarPanel.getByRole('form', { name: '기록 남기기' }).getByRole('textbox'));
   await page.keyboard.press('Escape');
   await calendarPanel.waitFor({ state: 'detached' });
-  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), '달력 회사 개발자, 기록·상세 보기');
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), '달력 회사 개발자, 기록과 상세 보기');
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), '390px 가로 넘침');
   await dayButton.click();
   await dayList.waitFor({ state: 'detached' });

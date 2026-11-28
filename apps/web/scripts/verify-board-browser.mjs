@@ -41,7 +41,7 @@ try {
   await screening.click();
   // 단계 거르기는 transition으로 바뀌어 한 박자 늦게 반영된다
   await stages.getByRole('button', { name: /서류 통과/, pressed: true }).waitFor();
-  await page.locator('#waiting-title').getByText('· 서류 통과만').waitFor();
+  await page.locator('#waiting-title').getByText('서류 통과만').waitFor();
   await scan('주간·단계 거르기');
   await screening.click();
   await stages.getByRole('button', { name: /서류 통과/, pressed: false }).waitFor();
@@ -93,7 +93,7 @@ try {
   // 검색과 지원 경로 칩
   const search = page.getByRole('searchbox', { name: '회사나 직무 검색' });
   await search.fill('가람');
-  await page.getByRole('status').filter({ hasText: /50건 중 \d+건을 보여드려요/ }).waitFor();
+  await page.getByRole('status').filter({ hasText: /50건 중 \d+건/ }).waitFor();
   await search.fill('');
   const chips = page.getByRole('group', { name: '지원 경로' });
   await chips.getByRole('button', { name: /^원티드/ }).click();

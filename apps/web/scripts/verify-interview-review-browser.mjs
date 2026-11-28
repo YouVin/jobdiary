@@ -46,7 +46,8 @@ try {
   await scan(page, '면접 후기 틀');
   await panel.getByRole('button', { name: '기록 남기기' }).click();
   await panel.getByText('기록을 남겼어요.').waitFor();
-  await panel.getByRole('region', { name: '지나온 기록' }).getByText(/면접 후기 · 면접 예정 때/).waitFor();
+  const journey = panel.getByRole('region', { name: '지나온 기록' });
+  await journey.locator('p', { hasText: '면접 후기' }).getByText('면접 예정 때', { exact: true }).waitFor();
   assert.deepEqual(errors, []);
   console.log('PASS 면접 후기: 같은 회사 지난 후기 펼치기·틀 넣기·커서·저장 뒤 "면접 후기" 표시·axe, 브라우저 예외 0건');
 } finally {

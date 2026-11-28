@@ -61,7 +61,7 @@ try {
   await list.waitFor();
   assert(Math.abs((await barArea.boundingBox()).height - barHeightBefore) < 0.5, '달력 목록을 열어도 막대 높이 그대로');
   await scan('달력 날짜 목록');
-  await list.getByRole('button', { name: /기록·상세 보기$/ }).first().click();
+  await list.getByRole('button', { name: /기록과 상세 보기$/ }).first().click();
   await page.getByRole('dialog').waitFor();
   await page.keyboard.press('Escape');
   await page.getByRole('dialog').waitFor({ state: 'detached' });
