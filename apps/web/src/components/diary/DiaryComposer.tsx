@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { TextAreaField } from '@/components/ui/TextField';
+import { useFinePointer } from '@/hooks/useFinePointer';
 import { useApplicationStore } from '@/store/applicationStore';
 import type { Application } from '@/types/application';
 import { createDiaryEntry, DIARY_MAX_LENGTH, DIARY_PROMPTS } from '@/utils/applicationJourney';
@@ -27,6 +28,8 @@ export function DiaryComposer({ application, onSavingChange }: DiaryComposerProp
   const [savedNotice, setSavedNotice] = useState(false);
   const isEmpty = content.trim().length === 0;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // 단축키 안내는 키보드가 있는 PC에서만(휴대폰에는 Ctrl·⌘ 키가 없다, #310)
+  const hasKeyboard = useFinePointer();
   const canUseReviewTemplate = INTERVIEW_REVIEW_STATUSES.includes(application.status) && isEmpty;
 
   // 면접 후기 틀 넣기 (#276): 빈 칸에 "받은 질문 / 내 답 / 아쉬운 점"을 넣고 첫 줄에 커서를 둔다
@@ -99,7 +102,7 @@ export function DiaryComposer({ application, onSavingChange }: DiaryComposerProp
         }}
         rows={content.includes('\n') ? 8 : 3}
         placeholder="짧게 적어도 괜찮아요."
-        hint="Ctrl(⌘) + Enter로 바로 남길 수 있어요"
+        hint={hasKeyboard ? 'Ctrl(⌘) + Enter로 바로 남길 수 있어요' : undefined}
         error={error}
         readOnly={isSaving}
       />
