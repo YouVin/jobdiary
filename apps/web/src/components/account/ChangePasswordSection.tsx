@@ -5,7 +5,7 @@ import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { PasswordField } from '@/components/ui/TextField';
-import { signIn, updatePassword } from '@/lib/auth';
+import { getLatestEmail, signIn, updatePassword } from '@/lib/auth';
 import { captureApplicationSession } from '@/store/applicationStore';
 import { useAuthStore } from '@/store/authStore';
 import { hasPasswordIdentity } from '@/utils/authIdentity';
@@ -77,10 +77,15 @@ export function ChangePasswordSection() {
 
     setIsSubmitting(true);
     try {
-      const { error: reauthError } = await signIn(email, currentPassword);
+      // 다시 확인할 때는 서버의 최신 이메일로 로그인한다. 세션의 이메일은 토큰을 새로 받을 때까지 예전 값이라,
+      // 이메일을 바꾼 직후에는 맞는 비밀번호로도 실패했다(#314)
+      const { email: latestEmail } = await getLatestEmail();
+      const { error: reauthError } = await signIn(latestEmail ?? email, currentPassword);
       if (!context.isCurrent()) return;
       if (reauthError) {
-        console.error('[change-password] 재확인 실패:', reauthError);
+        // 틀린 비밀번호는 예상한 결과라 오류로 남기지 않는다(개발 서버 터미널에 오류처럼 보였다)
+        const isWrongPassword = reauthError.code === 'invalid_credentials' || /invalid login credentials/i.test(reauthError.message ?? '');
+        if (!isWrongPassword) console.error('[change-password] 재확인 실패:', reauthError);
         setErrorMessage('지금 비밀번호가 맞지 않아요.');
         return;
       }
