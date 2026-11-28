@@ -248,6 +248,19 @@ otp_expiry = 3600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+# 인증 메일 한국어 템플릿(#331). 운영은 대시보드(Authentication → Emails → Templates)에 같은 내용을 붙여 넣는다.
+[auth.email.template.confirmation]
+subject = "취준일기 가입을 확인해 주세요"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "취준일기 비밀번호 재설정"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "취준일기 로그인 이메일 변경 확인"
+content_path = "./supabase/templates/email_change.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true
