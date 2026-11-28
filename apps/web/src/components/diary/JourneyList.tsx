@@ -51,8 +51,8 @@ export function JourneyList({ application }: { application: Application }) {
               {formatDateWithWeekday(item.date)}
               <span className="font-semibold text-text-primary">
                 {item.step ? STATUS_INFO[item.step.status].label : item.entry && isInterviewReview(item.entry) ? '면접 후기' : KIND_LABEL[item.kind]}
-                {item.entry?.status && ` · ${STATUS_INFO[item.entry.status].label} 때`}
               </span>
+              {item.entry?.status && <span>{STATUS_INFO[item.entry.status].label} 때</span>}
               {item.step && stepDetail(item.step) && <span>{stepDetail(item.step)}</span>}
               {item.isUpcoming && <Badge tone="info">예정</Badge>}
             </p>

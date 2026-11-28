@@ -65,7 +65,7 @@ function FunnelSection({ funnel, durations }: { funnel: StageFunnel; durations: 
         })}
       </ol>
       {/* 평균은 실제 이력이 2곳 이상일 때만. 없으면 안내 없이 비워 둔다(#293) */}
-      {averages.length > 0 && <p className="text-label text-text-secondary tabular-nums">{averages.join(' · ')}</p>}
+      {averages.length > 0 && <p className="text-label text-text-secondary tabular-nums">{averages.join(', ')}</p>}
     </section>
   );
 }
@@ -108,7 +108,7 @@ export function JourneyCard({ stage, funnel, durations, style }: JourneyCardProp
       {/* ── 아래: 끝난 지원 ── */}
       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-md bg-subtle px-4 py-3">
         <span className="text-label text-text-secondary tabular-nums">
-          끝난 지원 {stage.closed}건{stage.autoRejected > 0 && ` · 마감 자동 탈락 ${stage.autoRejected}건 포함`}
+          끝난 지원 {stage.closed}건{stage.autoRejected > 0 && `(마감 자동 탈락 ${stage.autoRejected}건 포함)`}
         </span>
         <Link href="/board" className={textLinkClassName('brand', 'text-label whitespace-nowrap')}>
           지원 보드에서 보기

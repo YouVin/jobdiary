@@ -32,7 +32,7 @@ function DayTooltip({ month, day }: { month: number; day: CalendarDay }) {
   return (
     <>
       <span className="font-semibold whitespace-nowrap">
-        {month}월 {day.day}일 · 지원 {day.count}곳
+        {month}월 {day.day}일 지원 {day.count}곳
       </span>
       {names.map((name, index) => (
         <span key={index} className="truncate">
@@ -145,7 +145,7 @@ export function CalendarCard({ today, applications, onSelect, style }: CalendarC
         <div id={listId} role="region" aria-labelledby={`${listId}-title`} className="flex flex-col rounded-md bg-subtle px-4 pt-3 pb-1">
           <div className="flex items-center justify-between gap-2">
             <h3 id={`${listId}-title`} className="text-label font-semibold text-text-primary">
-              {calendar.month}월 {selectedDay.day}일 · 지원 {selectedApplications.length}곳
+              {calendar.month}월 {selectedDay.day}일 지원 {selectedApplications.length}곳
             </h3>
             <IconButton label="날짜 목록 닫기" icon="close" size="sm" className="-mr-2" onClick={() => setSelectedDate(null)} />
           </div>
@@ -157,7 +157,7 @@ export function CalendarCard({ today, applications, onSelect, style }: CalendarC
                 platform={application.platform}
                 description={`${application.position} · ${STATUS_INFO[application.status].label}`}
                 onOpen={() => onSelect(application.id)}
-                openLabel={`${application.company} ${application.position}, 기록·상세 보기`}
+                openLabel={`${application.company} ${application.position}, 기록과 상세 보기`}
               />
             ))}
           </RowList>

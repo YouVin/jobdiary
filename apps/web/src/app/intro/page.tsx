@@ -55,7 +55,7 @@ export default function IntroPage() {
         {/* ── 첫 화면: 한 줄 소개 → 시작하기·익스텐션 → 기기 속 실제 홈 화면(예시 데이터, 장식) ── */}
         <section aria-labelledby="intro-title" className="flex flex-col items-center gap-10 text-center">
           <div className="flex max-w-170 flex-col items-center gap-5">
-            <p className="rounded-full bg-selected px-3 py-1 text-label font-semibold text-text-brand-strong">사람인 · 잡코리아 · 원티드</p>
+            <p className="rounded-full bg-selected px-3 py-1 text-label font-semibold text-text-brand-strong">사람인, 잡코리아, 원티드</p>
             <h1 id="intro-title" className="text-display-sm text-balance break-keep text-text-primary sm:text-display">
               {INTRO_TITLE}
             </h1>

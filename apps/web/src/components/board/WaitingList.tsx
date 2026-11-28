@@ -112,7 +112,7 @@ export function WaitingList({ items, scheduledCount, stage, moveError, onClearSt
         <h2 id="waiting-title" className="flex items-baseline gap-2 text-title-3 text-text-primary">
           결과 기다리는 중
           <span className="text-label font-semibold text-text-secondary tabular-nums">{items.length}</span>
-          {stage && <span className="text-label font-normal text-text-secondary">· {STATUS_INFO[stage].label}만</span>}
+          {stage && <span className="text-label font-normal text-text-secondary">{STATUS_INFO[stage].label}만</span>}
         </h2>
         {stage ? (
           <button

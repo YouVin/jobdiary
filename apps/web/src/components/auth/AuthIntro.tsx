@@ -30,7 +30,7 @@ export function AuthIntro({ className }: { className?: string }) {
             <br />
             <span className="text-text-brand">하루 한 장씩 쌓이는 취준일기</span>
           </p>
-          <p className="hidden text-body text-text-secondary sm:block">사람인·잡코리아·원티드 지원이 날짜별 일기로 정리돼요.</p>
+          <p className="hidden text-body text-text-secondary sm:block">사람인, 잡코리아, 원티드 지원이 날짜별 일기로 정리돼요.</p>
         </div>
 
         <div aria-hidden="true" className="relative">

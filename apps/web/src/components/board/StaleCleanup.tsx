@@ -93,7 +93,7 @@ export function StaleCleanup({ staleItems }: { staleItems: WaitingItem[] }) {
               <Checkbox checked={selected.has(application.id)} disabled={isSaving} onChange={(event) => toggle(application.id, event.target.checked)}>
                 <span className="font-semibold text-text-primary">{application.company}</span>
                 <span className="text-text-secondary">
-                  {application.position ? ` · ${application.position}` : ''} · {waitDays}일째
+                  {application.position ? ` ${application.position}` : ''} ({waitDays}일째)
                 </span>
               </Checkbox>
             </li>

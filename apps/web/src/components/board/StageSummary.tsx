@@ -73,9 +73,9 @@ export function ResultRow({ counts, total, onShowBoard }: ResultRowProps) {
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
       <h2 className="text-body text-text-secondary">
         <b className="font-semibold text-text-primary tabular-nums">끝난 지원 {total}건</b>
+        {/* 결과별 건수는 가운뎃점 대신 간격으로 나눈다(#324) */}
         {RESULT_ORDER.map((status) => (
-          <span key={status} className="tabular-nums">
-            {' · '}
+          <span key={status} className="ml-3 tabular-nums">
             {STATUS_INFO[status].label} {counts[status]}
           </span>
         ))}
