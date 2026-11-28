@@ -20,10 +20,16 @@ async function newPage({ account = user } = {}) {
   const context = await browser.newContext({ locale: 'ko-KR', timezoneId: 'Asia/Seoul', reducedMotion: 'reduce' });
   await routeSupabase(context);
   const sent = { passwordLogins: [], userUpdates: [], recover: [], deleted: 0 };
+  let pendingEmail = null; // 이메일 변경을 요청하면 확인 전까지 서버 사용자 정보에 new_email로 남는다
   await context.route('https://*.supabase.co/auth/v1/user*', async (route) => {
     const request = route.request();
     if (request.method() === 'PUT') sent.userUpdates.push(request.postDataJSON());
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(account) });
+    // 이미 가입된 이메일로 바꾸려 하면 Supabase처럼 422 email_exists
+    if (request.method() === 'PUT' && request.postDataJSON().email === 'taken@example.test') {
+      return route.fulfill({ status: 422, contentType: 'application/json', body: JSON.stringify({ code: 422, error_code: 'email_exists', msg: 'A user with this email address has already been registered' }) });
+    }
+    if (request.method() === 'PUT' && request.postDataJSON().email) pendingEmail = request.postDataJSON().email;
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ...account, new_email: pendingEmail }) });
   });
   await context.route('https://*.supabase.co/auth/v1/token?grant_type=password', async (route) => {
     const body = route.request().postDataJSON();
@@ -54,12 +60,27 @@ try {
     const { context, page, sent } = await newPage();
     await signIn(page, origin, '/account');
     const form = page.locator('[aria-labelledby="change-password-title"]');
+    const alerts = form.locator('p[role="alert"]:not(.sr-only), [role="alert"] >> visible=true');
+    // 지금 비밀번호와 같은 새 비밀번호: 요청 없이 칸 아래 안내
+    await form.getByLabel('지금 비밀번호', { exact: true }).fill('same-pass-123');
+    await form.getByLabel('새 비밀번호', { exact: true }).fill('same-pass-123');
+    await form.getByLabel('새 비밀번호 확인', { exact: true }).fill('same-pass-123');
+    await form.getByRole('button', { name: '비밀번호 바꾸기' }).click();
+    await form.getByText('지금 비밀번호와 다른 비밀번호를 입력해 주세요.').waitFor();
+    assert.equal(sent.passwordLogins.length, 0, '같으면 서버에 묻지 않는다');
+    // 틀린 지금 비밀번호: 아래 오류 하나
     await form.getByLabel('지금 비밀번호', { exact: true }).fill('wrong-pass');
     await form.getByLabel('새 비밀번호', { exact: true }).fill('new-pass-123');
     await form.getByLabel('새 비밀번호 확인', { exact: true }).fill('new-pass-123');
     await form.getByRole('button', { name: '비밀번호 바꾸기' }).click();
     await form.getByText('지금 비밀번호가 맞지 않아요.').waitFor();
     assert.equal(sent.userUpdates.length, 0, '틀리면 바꾸지 않는다');
+    // 그 상태에서 확인 칸을 다르게 고치면 지난 오류는 사라지고 칸 아래 안내 하나만
+    await form.getByLabel('새 비밀번호 확인', { exact: true }).fill('new-pass-124');
+    await form.getByText('비밀번호가 서로 달라요', { exact: false }).waitFor();
+    assert.equal(await form.getByText('지금 비밀번호가 맞지 않아요.').count(), 0, '지난 오류는 지운다');
+    assert.equal(await alerts.count(), 1, '오류는 한 번에 하나');
+    await form.getByLabel('새 비밀번호 확인', { exact: true }).fill('new-pass-123');
     await form.getByLabel('지금 비밀번호', { exact: true }).fill(CURRENT_PASSWORD);
     await form.getByRole('button', { name: '비밀번호 바꾸기' }).click();
     // 결과는 카드 안 버튼 아래에 남는다(토스트처럼 사라지지 않게)
@@ -71,6 +92,10 @@ try {
 
     // ── 2) 이메일 변경: 새 이메일로 요청하고 확인 메일 안내 ──
     const emailForm = page.locator('[aria-labelledby="change-email-title"]');
+    // 이미 가입된 이메일은 그렇다고 안내
+    await emailForm.getByLabel('새 이메일').fill('taken@example.test');
+    await emailForm.getByRole('button', { name: '확인 메일 보내기' }).click();
+    await emailForm.getByText('이미 가입된 이메일이에요. 다른 이메일을 입력해 주세요.').waitFor();
     // 지금 이메일과 같으면 요청하지 않고 안내
     const updatesBefore = sent.userUpdates.length;
     await emailForm.getByLabel('새 이메일').fill(user.email);
@@ -81,7 +106,12 @@ try {
     await emailForm.getByRole('button', { name: '확인 메일 보내기' }).click();
     await emailForm.getByText(/확인 메일을 보냈어요/).waitFor();
     assert.equal(sent.userUpdates.at(-1).email, 'new@example.test');
-    console.log('PASS 이메일 변경: 같은 이메일은 요청 없이 안내, 새 이메일 요청·확인 메일 안내');
+    // 확인 전인 변경은 지금 이메일 아래에 남는다(새로고침해도)
+    await emailForm.getByText('로 바꾸는 중이에요', { exact: false }).waitFor();
+    await page.reload();
+    await emailForm.getByText('new@example.test', { exact: false }).waitFor();
+    await emailForm.getByText('로 바꾸는 중이에요', { exact: false }).waitFor();
+    console.log('PASS 이메일 변경: 이미 가입된 이메일 안내, 같은 이메일은 요청 없이 안내, 새 이메일 요청·확인 메일 안내, 바꾸는 중인 이메일 표시(새로고침 뒤에도)');
 
     // ── 3) 회원 탈퇴: 확인 문구 → 탈퇴 → 로그아웃 → 로그인 화면 안내 ──
     const deleteForm = page.locator('[aria-labelledby="delete-account-title"]');
