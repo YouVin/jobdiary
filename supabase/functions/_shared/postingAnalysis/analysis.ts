@@ -252,6 +252,16 @@ export function keepKnownStrengths(result: AnalysisResult): { result: AnalysisRe
   return { result: { ...result, strengths }, dropped: result.strengths.length - strengths.length };
 }
 
+// 원하는 모습(wants)과 넣으면 좋은 경험(experiences)이 모두 빈 강점은 버린다(#322). 결과 형식은 두 칸을 요구하지만
+// 빈 글·빈 목록도 통과해서, 이미지 공고(글을 길게 옮겨 적은 뒤)에서 이름과 인용만 있는 강점이 나왔다(2026-11-28 운영 결과:
+// 지시문 2026-11-25.5 이미지 공고 3건 중 2건이 강점 전부). 설명이 없는 강점은 화면에서 이름과 접힌 근거만 남아 도움이 되지 않는다.
+const hasText = (value: unknown) => typeof value === 'string' && value.trim().length > 0;
+
+export function keepExplainedStrengths(result: AnalysisResult): { result: AnalysisResult; dropped: number } {
+  const strengths = result.strengths.filter((item) => hasText(item.wants) || (Array.isArray(item.experiences) && item.experiences.some(hasText)));
+  return { result: { ...result, strengths }, dropped: result.strengths.length - strengths.length };
+}
+
 // 글자·숫자만 남겨 비교한다. 가운뎃점·글머리표·괄호·줄바꿈 같은 차이로 진짜 인용을 버리지 않게 한다(#237).
 // 공고에 없는 문장은 글자가 달라 여전히 걸러진다.
 function normalizeForQuote(value: string): string {
