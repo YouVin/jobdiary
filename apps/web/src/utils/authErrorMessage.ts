@@ -33,8 +33,8 @@ export function getFriendlyErrorMessage(rawMessage: string): FriendlyAuthError {
       kind: 'email-not-confirmed',
     };
   }
-  // 메일을 보낼 수 없을 때: Supabase 기본 메일은 팀원 주소에만 가고(not authorized) 프로젝트 전체 시간당 몇 통뿐이다(email rate limit).
-  // 처음 가입하는 사람도 겪으니 "너무 잦아요"가 아니라 메일 없이 되는 Google 로그인을 알린다.
+  // 메일을 보낼 수 없을 때: 메일 발송 한도(email rate limit, Supabase 기본 메일은 문서상 프로젝트 전체 시간당 2통)를 넘었거나
+  // 받는 주소가 허용되지 않은 경우(not authorized). 처음 가입하는 사람도 겪으니 "너무 잦아요"가 아니라 메일 없이 되는 Google 로그인을 알린다.
   if (rawMessage.includes('not authorized') || rawMessage.toLowerCase().includes('email rate limit')) {
     return { message: MAIL_UNAVAILABLE_MESSAGE, kind: 'other' };
   }
