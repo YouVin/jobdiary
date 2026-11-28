@@ -5,7 +5,6 @@ import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { PasswordField } from '@/components/ui/TextField';
-import { useToast } from '@/components/ui/Toast';
 import { signIn, updatePassword } from '@/lib/auth';
 import { captureApplicationSession } from '@/store/applicationStore';
 import { useAuthStore } from '@/store/authStore';
@@ -15,12 +14,11 @@ import { getConfirmPasswordError, getPasswordError, MIN_PASSWORD_LENGTH } from '
 const FAILED_MESSAGE = '비밀번호를 바꾸지 못했어요. 잠시 뒤 다시 시도해 주세요.';
 
 // 비밀번호 변경 전 현재 비밀번호를 재확인한다 — 세션이 탈취/방치된 상태에서 그대로 비밀번호가
-// 바뀌는 것을 막기 위함이다 (docs/AUTH.md §6.5.2, §6.5.5). 바꾸면 토스트로 알린다(#205).
+// 바뀌는 것을 막기 위함이다 (docs/AUTH.md §6.5.2, §6.5.5). 바꾸면 버튼 아래에 안내를 남긴다(#314, 전에는 토스트 #205).
 export function ChangePasswordSection() {
   const session = useAuthStore((state) => state.session);
   const email = session?.user.email ?? '';
   const canChangePassword = hasPasswordIdentity(session?.user);
-  const showToast = useToast();
   const currentInput = useRef<HTMLInputElement>(null);
   const newInput = useRef<HTMLInputElement>(null);
   const confirmInput = useRef<HTMLInputElement>(null);
@@ -32,6 +30,7 @@ export function ChangePasswordSection() {
   const [isChecked, setIsChecked] = useState(false); // 제출했거나 칸을 벗어난 뒤에만 오류를 보여준다
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // 현재 비밀번호는 "일치하는지"가 아니라 "입력했는지"만 클라이언트에서 확인한다 —
   // 실제 일치 여부는 아래 signIn 재확인이 서버에서 검증한다.
@@ -53,6 +52,7 @@ export function ChangePasswordSection() {
     event.preventDefault();
     if (isSubmitting) return;
     setErrorMessage(null);
+    setSuccessMessage(null);
     setIsChecked(true);
 
     // 첫 오류 칸으로 포커스를 옮겨 오류 문구를 함께 읽게 한다.
@@ -83,7 +83,8 @@ export function ChangePasswordSection() {
         return;
       }
 
-      showToast({ message: '비밀번호를 바꿨어요' });
+      // 토스트는 금방 사라져 놓치기 쉬워, 이메일 변경처럼 카드 안 버튼 아래에 남긴다(#314)
+      setSuccessMessage('비밀번호를 바꿨어요. 다음 로그인부터 새 비밀번호를 써 주세요.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
@@ -143,6 +144,9 @@ export function ChangePasswordSection() {
         {/* ── 오류·제출 버튼 ── */}
         <p role="alert" className={errorMessage ? 'text-label text-danger-text' : 'sr-only'}>
           {errorMessage}
+        </p>
+        <p role="status" className={successMessage ? 'rounded-md bg-selected px-4 py-3 text-label text-text-brand-strong' : 'sr-only'}>
+          {successMessage}
         </p>
         <Button type="submit" isLoading={isSubmitting} loadingLabel="바꾸는 중" className="self-start">
           비밀번호 바꾸기

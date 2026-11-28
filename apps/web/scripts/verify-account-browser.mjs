@@ -62,10 +62,12 @@ try {
     assert.equal(sent.userUpdates.length, 0, '틀리면 바꾸지 않는다');
     await form.getByLabel('지금 비밀번호', { exact: true }).fill(CURRENT_PASSWORD);
     await form.getByRole('button', { name: '비밀번호 바꾸기' }).click();
-    await page.getByText('비밀번호를 바꿨어요').waitFor();
+    // 결과는 카드 안 버튼 아래에 남는다(토스트처럼 사라지지 않게)
+    await form.getByRole('status').filter({ hasText: '비밀번호를 바꿨어요. 다음 로그인부터 새 비밀번호를 써 주세요.' }).waitFor();
+    assert.equal(await form.getByLabel('지금 비밀번호', { exact: true }).inputValue(), '', '칸은 비운다');
     assert.deepEqual(sent.passwordLogins, ['wrong-pass', CURRENT_PASSWORD], '지금 비밀번호로 다시 확인한 뒤');
     assert.deepEqual(sent.userUpdates.map((body) => body.password), ['new-pass-123']);
-    console.log('PASS 비밀번호 변경: 지금 비밀번호 틀림 안내·바꾸지 않음, 맞으면 다시 확인 → 새 비밀번호 저장·알림');
+    console.log('PASS 비밀번호 변경: 지금 비밀번호 틀림 안내·바꾸지 않음, 맞으면 다시 확인 → 새 비밀번호 저장·버튼 아래 안내·칸 비움');
 
     // ── 2) 이메일 변경: 새 이메일로 요청하고 확인 메일 안내 ──
     const emailForm = page.locator('[aria-labelledby="change-email-title"]');
