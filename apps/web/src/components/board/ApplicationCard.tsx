@@ -10,13 +10,12 @@ import { getRejectedAfterLabel } from '@/utils/statusHistory';
 interface ApplicationCardProps {
   application: Application;
   isDuplicate?: boolean;
-  today: string;
   onOpen: (applicationId: string) => void;
 }
 
 // 칸반 작은 카드 (#204). 누르면(Enter) 상세 패널, 끌거나 Space로 집으면 단계 옮기기.
 // dnd-kit이 주는 role=button·tabIndex·안내 연결(aria-describedby)을 그대로 쓰고, 이름은 회사·직무·단계로 준다.
-export function ApplicationCard({ application, isDuplicate = false, today, onOpen }: ApplicationCardProps) {
+export function ApplicationCard({ application, isDuplicate = false, onOpen }: ApplicationCardProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: application.id,
     data: { status: application.status },
@@ -44,7 +43,7 @@ export function ApplicationCard({ application, isDuplicate = false, today, onOpe
         isDragging && 'opacity-40',
       )}
     >
-      <ApplicationCardContent application={application} isDuplicate={isDuplicate} today={today} />
+      <ApplicationCardContent application={application} isDuplicate={isDuplicate} />
     </div>
   );
 }

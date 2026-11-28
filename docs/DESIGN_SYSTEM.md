@@ -55,8 +55,9 @@
 | Menu | `ui/Menu.tsx` | 공개(disclosure) 방식: 버튼 `aria-expanded`·`aria-controls`, 열면 첫 항목 포커스, Esc 닫고 버튼으로 복귀, 바깥 누름·Tab 이탈 시 닫힘 |
 | RatioBar · BarChart · DonutChart | `charts/` | `role="img"` + 모든 값을 담은 이름 |
 | CalendarCell | `ui/CalendarCell.tsx` | 칸 하나를 "11월 18일 수요일, 오늘, 지원 3곳, 면접 1개"로 읽음, 오늘 `aria-current="date"`. 버튼이면 `aria-pressed`·`aria-controls`(열린 목록), 말풍선은 장식(aria-hidden) |
-| StageTrack | `ui/StageTrack.tsx` | 점이 버튼, 현재 `aria-current="step"`, 24×24 |
-| ProcessTrack · ProcessDots | `process/ProcessTrack.tsx` | 지원별 전형 절차 트랙(#295, #303). StageTrack과 같은 점 모양에 단계 수만큼 열, 7단계부터 지금 단계 이름만(나머지는 점 `title`). 상세 패널·결과 기다리는 중에서 쓰고, 칸반 카드는 누를 수 없는 작은 트랙(`ProcessDots`) + "과제 전형 2/4" 글자 |
+| StepTrack · StepDots | `ui/StepTrack.tsx` | 단계 트랙 하나(#306). 점이 버튼, 현재 `aria-current="step"`, 24×24. 단계 수만큼 열(2~10), 7단계부터 지금 단계 이름만(나머지는 점 `title`). `StepDots`는 칸반 카드용 누를 수 없는 작은 트랙 |
+| StageTrack | `ui/StageTrack.tsx` | StepTrack에 기본 4단계(지원 완료~면접 완료)를 넣은 것 |
+| ApplicationProcessTrack | `process/ProcessTrack.tsx` | 지원에 잇는 트랙(#295, #303): 전형 절차가 있으면 공고 단계로 StepTrack, 없으면 StageTrack. 상세 패널·결과 기다리는 중 |
 | EmptyState | `ui/EmptyState.tsx` | 상황 + 다음 행동 |
 | ToastProvider · useToast | `ui/Toast.tsx` | 항상 그려 둔 `role="status"` 영역, 3초(되돌리기 5초) |
 | Dialog · SidePanel | `ui/Overlay.tsx` | body에 그린다(#293, 연 자리의 transform에 막이 갇히지 않게). `useDialogFocus`: 포커스 이동·Tab 순환·Esc·되돌리기, 제목·설명 연결, 모바일 아래 시트. 지원 추가는 Dialog(저장 버튼은 footer, `form` 속성으로 연결), 상세는 SidePanel(#205) |

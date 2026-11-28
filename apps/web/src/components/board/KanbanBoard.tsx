@@ -19,7 +19,6 @@ import { Column } from '@/components/board/Column';
 import { STATUS_INFO, STATUS_ORDER } from '@/constants/status';
 import { useApplicationStore } from '@/store/applicationStore';
 import type { Application, Status } from '@/types/application';
-import { getTodayInKorea } from '@/utils/applicationDeadline';
 import { getDuplicateApplicationIds } from '@/utils/duplicateDetection';
 
 interface KanbanBoardProps {
@@ -57,7 +56,6 @@ export function KanbanBoard({ applications, visibleApplications = applications, 
   const updateStatus = useApplicationStore((state) => state.updateStatus);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeWidth, setActiveWidth] = useState<number | undefined>(undefined);
-  const today = getTodayInKorea();
 
   // ── 끌기 설정: 입력 방식별 시작 조건과 스크린리더 안내 ──
   // 데스크톱: 8px 이상 움직여야 드래그 시작 (클릭과 공존)
@@ -128,7 +126,6 @@ export function KanbanBoard({ applications, visibleApplications = applications, 
               status={status}
               applications={visibleApplications.filter((application) => application.status === status)}
               duplicateIds={duplicateIds}
-              today={today}
               onOpen={onOpen}
             />
           ))}
@@ -139,7 +136,7 @@ export function KanbanBoard({ applications, visibleApplications = applications, 
       <DragOverlay>
         {activeApplication && (
           <div style={{ width: activeWidth }} className="flex rotate-2 cursor-grabbing flex-col gap-1 rounded-md bg-surface p-3 shadow-lg">
-            <ApplicationCardContent application={activeApplication} isDuplicate={duplicateIds.has(activeApplication.id)} today={today} />
+            <ApplicationCardContent application={activeApplication} isDuplicate={duplicateIds.has(activeApplication.id)} />
           </div>
         )}
       </DragOverlay>
