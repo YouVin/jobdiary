@@ -52,10 +52,14 @@ try {
   const dayButton = calendar.getByRole('button').first();
   const dayLabel = await dayButton.getAttribute('aria-label');
   assert.match(dayLabel, /^\d+월 \d+일 .요일(, 오늘)?, 지원 \d+곳/);
+  // 목록이 열려 줄이 높아져도 주간 지원 막대 높이는 그대로, 남는 공간은 위아래 여백(#320)
+  const barArea = page.locator('[aria-labelledby="weekly-title"] .grid').first();
+  const barHeightBefore = (await barArea.boundingBox()).height;
   await dayButton.click();
   assert.equal(await dayButton.getAttribute('aria-pressed'), 'true');
   const list = page.getByRole('region', { name: /지원 \d+곳$/ });
   await list.waitFor();
+  assert(Math.abs((await barArea.boundingBox()).height - barHeightBefore) < 0.5, '달력 목록을 열어도 막대 높이 그대로');
   await scan('달력 날짜 목록');
   await list.getByRole('button', { name: /기록·상세 보기$/ }).first().click();
   await page.getByRole('dialog').waitFor();
@@ -96,7 +100,7 @@ try {
   }
   await scan('390px');
   assert.deepEqual(pageErrors, []);
-  console.log('PASS 요약 문장·차트 이름·건너뛰기·계정 메뉴 Esc·달력 목록→상세 패널·달 이동·일정 펼치기(카드 높이 그대로)·3개 너비, 브라우저 예외 0건');
+  console.log('PASS 요약 문장·차트 이름·건너뛰기·계정 메뉴 Esc·달력 목록→상세 패널(막대 높이 그대로)·달 이동·일정 펼치기(카드 높이 그대로)·3개 너비, 브라우저 예외 0건');
 } finally {
   await browser.close();
 }
