@@ -21,3 +21,4 @@
 | [002](002-company-info-server.md) | 회사 정보 서버를 Supabase Edge Function에 두기 | 결정 |
 | [003](003-posting-reader.md) | 회사 정보의 공고 내용을 익스텐션이 공고 페이지에서 읽어 오기 | 결정 |
 | [004](004-usage-metrics.md) | 사용량 지표를 DB 방문 기록 + Vercel Web Analytics로 | 결정 |
+| [005](005-stage-move-drilling.md) | 단계 옮기기 drilling을 지금은 children 조합으로, 스토어 정리는 홍보 뒤로 | 결정 (B 구현 · C 홍보 뒤) |
