@@ -42,7 +42,7 @@ try {
   assert.equal(await install.getAttribute('target'), '_blank');
   assert.equal(await page.getByRole('main').getByRole('link', { name: '무료로 시작하기' }).count(), 2);
   for (const name of ['이용약관', '개인정보처리방침']) await page.getByRole('contentinfo').getByRole('link', { name, exact: true }).waitFor();
-  for (const src of ['home', 'board', 'detail', 'recap']) assert.ok((await page.locator(`img[src*="${src}.png"], img[srcset*="${src}.png"]`).first().getAttribute('alt')).length > 10);
+  for (const src of ['home', 'board', 'detail', 'recap']) assert.ok((await page.locator(`img[src*="${src}-v"], img[srcset*="${src}-v"]`).first().getAttribute('alt')).length > 10);
 
   // 질문은 키보드로 연다
   const question = page.getByText('채용 사이트 비밀번호를 알려 줘야 하나요?', { exact: true });
@@ -55,6 +55,15 @@ try {
     await page.setViewportSize({ width, height: 900 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), 0, `${width}px 가로 넘침`);
   }
+
+  // 휴대폰(#310): 설치할 수 없는 익스텐션 버튼 대신 "가져오기는 PC 크롬" 안내, 휴대폰 화면 사진(alt 있음)
+  await page.setViewportSize({ width: 390, height: 900 });
+  assert.equal(await install.isVisible(), false, '휴대폰에서는 익스텐션 설치 버튼을 숨긴다');
+  await page.getByText(/지원 내역 가져오기는 PC 크롬에서 해요/).waitFor({ state: 'visible' });
+  for (const src of ['home-mobile', 'board-mobile']) assert.ok((await page.locator(`img[src*="${src}-v"], img[srcset*="${src}-v"]`).first().getAttribute('alt')).length > 10);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  assert.equal(await install.isVisible(), true);
+  await page.getByText(/지원 내역 가져오기는 PC 크롬에서 해요/).waitFor({ state: 'hidden' });
 
   // ── 로그인한 사람: 시작하기 대신 내 홈으로 ──
   await signIn(page, origin, '/intro');
