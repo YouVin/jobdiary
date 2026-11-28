@@ -25,7 +25,7 @@ export function WeeklyCard({ weeks, style }: WeeklyCardProps) {
   let detail: string;
   if (total === 0) {
     summary = '최근 8주 동안 지원이 없어요';
-    detail = '지원을 기록하면 주마다 몇 곳에 지원했는지 보여드려요';
+    detail = '지원을 기록하면 주마다 몇 곳에 지원했는지 보여요';
   } else if (thisWeek.count > 0) {
     summary = (
       <>
@@ -60,11 +60,14 @@ export function WeeklyCard({ weeks, style }: WeeklyCardProps) {
         <p className="text-label text-text-secondary">{detail}</p>
       </div>
       {/* ── 최근 주별 막대 ── */}
-      {/* 옆 카드와 같은 높이로 늘어나므로 막대 영역이 남는 세로 공간을 채운다(최소 160, #293) */}
-      <BarChart label={chartLabel} bars={bars} className="flex-1" heightClass="min-h-40 flex-1" />
-      <p className="mt-auto text-label text-text-secondary tabular-nums">
-        8주 동안 {total}곳 · 주 평균 {average}곳
-      </p>
+      {/* 막대 높이는 고정(휴대폰 160·태블릿 이상 224px). 옆 카드(달력 날짜 목록 등)로 줄이 높아져도 막대는 그대로이고,
+          남는 공간은 그래프(아래 합계 줄 포함) 위아래 여백으로 나눈다(#320, 사용자 결정. 예전에는 막대가 남는 높이를 채웠다 #293) */}
+      <div className="my-auto flex flex-col gap-3">
+        <BarChart label={chartLabel} bars={bars} heightClass="h-40 md:h-56" />
+        <p className="text-label text-text-secondary tabular-nums">
+          8주 동안 {total}곳, 주 평균 {average}곳
+        </p>
+      </div>
     </Card>
   );
 }

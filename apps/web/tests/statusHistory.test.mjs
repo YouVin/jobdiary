@@ -50,7 +50,7 @@ test('이력이 없는 예전 탈락은 면접 날짜·단계 기록으로 추�
   assert.equal(getReachedStatus(row('d', { status: 'rejected', interviewDate: '2026-11-12', statusHistory: [change(null, 'rejected', '2026-11-20', 'extension')] })), 'interview');
 });
 
-test('서류 통과율과 돌아보기는 면접 후 탈락을 통과로 센다', () => {
+test('서류 통과율은 면접 후 탈락을 통과로 센다', () => {
   const rows = [
     row('a', { status: 'rejected', statusHistory: [change('interview', 'rejected', '2026-11-20')] }),
     row('b', { status: 'rejected', statusHistory: [change('applied', 'rejected', '2026-11-20')] }),
@@ -62,7 +62,8 @@ test('서류 통과율과 돌아보기는 면접 후 탈락을 통과로 센다'
   assert.equal(stage.passedScreening, 2);
   assert.equal(stage.screeningBase, 4);
   assert.equal(stage.screeningPassRate, 0.5);
-  assert.equal(getMonthlyRecap(rows, '2026-11-26').passedCount, 3); // 돌아보기는 이번 달 지원 전체 기준(취소 포함)
+  // 돌아보기의 서류 통과는 "그 달에 서류 통과로 옮긴 곳"이라(#316) 여기 이력(탈락·취소로 옮김)만으로는 0이다
+  assert.equal(getMonthlyRecap(rows, '2026-11').passedCount, 0);
 });
 
 test('지나온 단계 흐름은 어디까지 갔는지로 센다', () => {

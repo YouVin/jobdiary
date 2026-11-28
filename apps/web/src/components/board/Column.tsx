@@ -12,14 +12,13 @@ interface ColumnProps {
   status: Status;
   applications: Application[];
   duplicateIds: Set<string>;
-  today: string;
   onOpen: (applicationId: string) => void;
   limit?: number;
 }
 
 // 칸반 한 열 (#204, 캔버스 보드 시안). 회색 판(muted) 위 흰 카드. 처음 limit장만 보이고 "N건 더 보기"로 펼친다.
 // 카드를 끌어 올리면 파란 테두리와 selected 바탕으로 놓을 자리를 알린다.
-export function Column({ status, applications, duplicateIds, today, onOpen, limit = 5 }: ColumnProps) {
+export function Column({ status, applications, duplicateIds, onOpen, limit = 5 }: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
   const [isExpanded, setIsExpanded] = useState(false);
   const label = STATUS_INFO[status].label;
@@ -48,7 +47,7 @@ export function Column({ status, applications, duplicateIds, today, onOpen, limi
       </div>
 
       {visible.map((application) => (
-        <ApplicationCard key={application.id} application={application} isDuplicate={duplicateIds.has(application.id)} today={today} onOpen={onOpen} />
+        <ApplicationCard key={application.id} application={application} isDuplicate={duplicateIds.has(application.id)} onOpen={onOpen} />
       ))}
 
       {applications.length === 0 && (

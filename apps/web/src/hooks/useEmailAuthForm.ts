@@ -87,7 +87,7 @@ export function useEmailAuthForm(mode: AuthMode) {
       // 이 경우 홈으로 보내지 않고 메일 확인 안내만 표시한다.
       if (isSignUp && !result.session) {
         console.log(`[${mode}] 성공 (이메일 확인 대기)`);
-        setInfoMessage('확인 메일을 보냈어요. 메일함에서 인증한 뒤 로그인해 주세요.');
+        setInfoMessage('확인 메일을 보냈어요. 메일함에서 인증한 뒤 로그인해 주세요. 메일이 없으면 스팸함도 확인해 주세요.');
         return;
       }
 

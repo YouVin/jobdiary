@@ -129,7 +129,7 @@ export function LoginForm({ mode }: LoginFormProps) {
             {isSignUp ? '로그인하기' : '가입하기'}
           </Link>
         </p>
-        <p id="google-auth-hint" className="text-label text-text-secondary">
+        <p id="google-auth-hint" className="text-label break-keep text-text-secondary">
           Google에서는 이메일과 프로필만 받아요. 약관 동의가 필요하면 로그인한 뒤 한 번만 물어봐요.{' '}
           <PolicyLinks joiner=" · " />
         </p>

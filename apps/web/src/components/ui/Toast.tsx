@@ -1,5 +1,6 @@
 'use client';
 
+import { clsx } from 'clsx';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { Icon } from '@/components/common/Icon';
 
@@ -37,14 +38,19 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={show}>
       {children}
-      <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-6 z-toast flex justify-center px-4">
+      {/* 화면 아래 가운데. 아이폰 홈 막대(safe area) 위로 띄운다(#318) */}
+      <div role="status" aria-live="polite" className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+2rem)] z-toast flex justify-center px-4">
         {toast && (
           <div
             key={toast.id}
-            className="pointer-events-auto inline-flex h-12 items-center gap-3 rounded-md bg-inverse pr-2 pl-5 text-body text-text-on-color shadow-md motion-safe:animate-rise"
+            className={clsx(
+              // 좌우 여백은 같게, 오른쪽 버튼이 있을 때만 버튼 쪽을 줄인다. 긴 문구는 줄을 바꾼다(#318)
+              'pointer-events-auto flex min-h-12 max-w-full items-center gap-3 rounded-md bg-inverse py-2 pl-5 text-body text-text-on-color shadow-md motion-safe:animate-rise',
+              toast.actionLabel ? 'pr-2' : 'pr-5',
+            )}
           >
-            <Icon name="check" className="h-5 w-5 text-chart-2" />
-            <span>{toast.message}</span>
+            <Icon name="check" className="h-5 w-5 shrink-0 text-chart-2" />
+            <span className="break-keep">{toast.message}</span>
             {toast.actionLabel && (
               <button
                 type="button"

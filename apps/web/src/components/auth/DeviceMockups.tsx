@@ -1,4 +1,5 @@
 import { clsx } from 'clsx';
+import type { ReactNode } from 'react';
 import { PlatformIcon } from '@/components/badge/PlatformIcon';
 import { BrandLogo } from '@/components/common/BrandMark';
 import { Icon } from '@/components/common/Icon';
@@ -42,7 +43,8 @@ const DIARY_STATS = [
 ] as const;
 
 // 1024px 이상: 맥북. 소개 영역 오른쪽 끝에서 잘리도록 폭을 고정한다.
-export function MacBookMockup({ className }: { className?: string }) {
+// screen을 주면 예시 화면 대신 그것(실제 화면 사진)을 화면 가득 보여준다(#310, 소개 페이지).
+export function MacBookMockup({ className, screen }: { className?: string; screen?: ReactNode }) {
   return (
     <div className={clsx('relative w-160 shrink-0', className)}>
       {/* 화면 덮개 */}
@@ -50,9 +52,13 @@ export function MacBookMockup({ className }: { className?: string }) {
         <div className="relative h-101 rounded-t-device-lid-inner bg-device-glass px-3 pt-3">
           <span className="absolute top-3 left-1/2 z-10 h-3 w-22 -translate-x-1/2 rounded-b-sm bg-device-glass" />
           <span className="absolute top-4 left-1/2 z-10 size-1 -translate-x-1/2 rounded-full bg-device-hinge" />
-          <div className="h-full overflow-hidden rounded-t-sm bg-linear-150 from-selected via-page to-chart-3 pt-8 pl-7">
-            <MacBookScreen />
-          </div>
+          {screen ? (
+            <div className="h-full overflow-hidden rounded-t-sm bg-surface">{screen}</div>
+          ) : (
+            <div className="h-full overflow-hidden rounded-t-sm bg-linear-150 from-selected via-page to-chart-3 pt-8 pl-7">
+              <MacBookScreen />
+            </div>
+          )}
         </div>
       </div>
       {/* 경첩 · 바닥판 · 그림자 */}
@@ -111,7 +117,8 @@ function MacBookScreen() {
 }
 
 // 1024px 미만: 아이폰. 640px 미만에서는 0.9배로 줄여 첫 화면이 너무 길어지지 않게 한다.
-export function IPhoneMockup({ className }: { className?: string }) {
+// screen을 주면 예시 화면 대신 그것(실제 화면 사진)을 보여준다. 카메라 섬 아래부터 놓는다(#310).
+export function IPhoneMockup({ className, screen }: { className?: string; screen?: ReactNode }) {
   return (
     <div className={clsx('relative h-110 w-53 shrink-0 text-left max-sm:[zoom:0.9]', className)}>
       {/* 옆 버튼: 왼쪽 동작 버튼·음량 2개, 오른쪽 전원 */}
@@ -123,7 +130,7 @@ export function IPhoneMockup({ className }: { className?: string }) {
         <div className="h-full rounded-device-phone-bezel bg-device-glass p-1">
           <div className="relative h-full overflow-hidden rounded-device-phone-screen bg-page">
             <span className="absolute top-2 left-1/2 z-10 h-5 w-16 -translate-x-1/2 rounded-full bg-device-glass" />
-            <IPhoneScreen />
+            {screen ? <div className="h-full bg-surface pt-9">{screen}</div> : <IPhoneScreen />}
           </div>
         </div>
       </div>

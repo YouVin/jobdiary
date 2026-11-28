@@ -55,7 +55,7 @@ export function GettingStartedCard() {
           흩어진 지원 내역을 한곳에 모아 볼까요?
         </h1>
         <p className="break-keep text-body text-text-secondary">
-          사람인·잡코리아·원티드에서 지원한 곳을 익스텐션이 한 번에 가져와요. 3단계면 끝나요.
+          사람인, 잡코리아, 원티드에서 지원한 곳을 익스텐션이 한 번에 가져와요. 3단계면 끝나요.
         </p>
       </div>
 

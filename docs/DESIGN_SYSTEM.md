@@ -55,8 +55,9 @@
 | Menu | `ui/Menu.tsx` | 공개(disclosure) 방식: 버튼 `aria-expanded`·`aria-controls`, 열면 첫 항목 포커스, Esc 닫고 버튼으로 복귀, 바깥 누름·Tab 이탈 시 닫힘 |
 | RatioBar · BarChart · DonutChart | `charts/` | `role="img"` + 모든 값을 담은 이름 |
 | CalendarCell | `ui/CalendarCell.tsx` | 칸 하나를 "11월 18일 수요일, 오늘, 지원 3곳, 면접 1개"로 읽음, 오늘 `aria-current="date"`. 버튼이면 `aria-pressed`·`aria-controls`(열린 목록), 말풍선은 장식(aria-hidden) |
-| StageTrack | `ui/StageTrack.tsx` | 점이 버튼, 현재 `aria-current="step"`, 24×24 |
-| ProcessTrack · ProcessDots | `process/ProcessTrack.tsx` | 지원별 전형 절차 트랙(#295, #303). StageTrack과 같은 점 모양에 단계 수만큼 열, 7단계부터 지금 단계 이름만(나머지는 점 `title`). 상세 패널·결과 기다리는 중에서 쓰고, 칸반 카드는 누를 수 없는 작은 트랙(`ProcessDots`) + "과제 전형 2/4" 글자 |
+| StepTrack · StepDots | `ui/StepTrack.tsx` | 단계 트랙 하나(#306). 점이 버튼, 현재 `aria-current="step"`, 24×24. 단계 수만큼 열(2~10), 7단계부터 지금 단계 이름만(나머지는 점 `title`). `StepDots`는 칸반 카드용 누를 수 없는 작은 트랙 |
+| StageTrack | `ui/StageTrack.tsx` | StepTrack에 기본 4단계(지원 완료~면접 완료)를 넣은 것 |
+| ApplicationProcessTrack | `process/ProcessTrack.tsx` | 지원에 잇는 트랙(#295, #303): 전형 절차가 있으면 공고 단계로 StepTrack, 없으면 StageTrack. 상세 패널·결과 기다리는 중 |
 | EmptyState | `ui/EmptyState.tsx` | 상황 + 다음 행동 |
 | ToastProvider · useToast | `ui/Toast.tsx` | 항상 그려 둔 `role="status"` 영역, 3초(되돌리기 5초) |
 | Dialog · SidePanel | `ui/Overlay.tsx` | body에 그린다(#293, 연 자리의 transform에 막이 갇히지 않게). `useDialogFocus`: 포커스 이동·Tab 순환·Esc·되돌리기, 제목·설명 연결, 모바일 아래 시트. 지원 추가는 Dialog(저장 버튼은 footer, `form` 속성으로 연결), 상세는 SidePanel(#205) |
@@ -87,6 +88,14 @@
 - 기기 속 작은 글자: 디자인 시스템 글자 단계(caption~title-1)로 실제 크기에 그리고 화면 전체를 `[zoom:0.75]`로 줄인다. 임의 글자 크기를 만들지 않으며, `transform: scale`과 달리 줄인 만큼 자리도 줄어든다.
 - 기기 고유색·모서리는 화면 역할 색과 섞지 않게 목업 전용 토큰으로 둔다: 색 `device-edge`·`device-steel`·`device-shade`·`device-glass`·`device-hinge`·`device-hinge-light`·`device-base`, 모서리 `rounded-device-phone`(46)·`device-phone-bezel`(45)·`device-phone-screen`(41)·`device-lid`(24)·`device-lid-inner`(23). 디자인 시스템 원본에는 없는 코드 전용 토큰이다.
 - 문구는 해요체. 입력 검사 문구(`utils/authValidation.ts`)도 "~해 주세요"로 띄어 쓴다.
+
+## 문구와 안내 (2026-11-28 사용자 결정, #314·#324)
+
+- 안내·오류는 한 번에 하나만 보인다. 칸 아래 안내가 보이는 동안 아래 오류·결과 상자는 숨기고, 고치기 시작하면 지난 결과를 지운다.
+- 상자 안 글자는 상자 가운데에 온다(`flex min-h-12 items-center`).
+- 가운뎃점(·)은 목록 한 줄에서 짧은 사실 둘을 나눌 때(예: "12.01 화 · 면접")와 링크 사이에만 쓴다. 문장과 요약 줄에서는 쉼표, "와/과", 괄호, 간격으로 나눈다.
+- "보여드려요", "정리해 드려요" 같은 서비스 말투 대신 "보여요", "정리해요"처럼 짧게 쓴다.
+- 한글 문장은 낱말 중간에서 줄이 바뀌지 않게 `break-keep`, 이름과 숫자처럼 붙어야 하는 글은 `whitespace-nowrap`.
 
 ## 간격과 크기
 

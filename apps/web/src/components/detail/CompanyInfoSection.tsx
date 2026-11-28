@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { clsx } from 'clsx';
 import { getPostingReference } from '@jobdiary/shared';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -114,7 +115,7 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
 
       {/* ── 서류 통과 전 안내 ── */}
       {stage === 'early' && loadState === 'ready' && !info && (
-        <p className="break-keep text-label text-text-secondary">서류 통과로 바꾸면 이 회사가 하는 일과 공고가 원하는 강점을 정리해 드려요.</p>
+        <p className="break-keep text-label text-text-secondary">서류 통과로 바꾸면 이 회사가 하는 일과 공고가 원하는 강점을 정리할 수 있어요.</p>
       )}
 
       {/* ── 만들기: 안내 문구 → 버튼 → 진행·오류 ── */}
@@ -124,15 +125,15 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
             <>
               {/* 한글은 단어 중간에서 줄이 끊기지 않게 break-keep (#242 피드백) */}
               <p className="break-keep text-label text-text-primary">
-                {PLATFORM_NAME[pageReference.platform]} 공고를 읽고 회사 소개, 원하는 강점, 근무 조건을 정리해 드려요.
+                {PLATFORM_NAME[pageReference.platform]} 공고를 읽고 회사 소개, 원하는 강점, 근무 조건을 정리해요.
               </p>
               <p className="break-keep text-caption font-normal text-text-secondary">
-                공고 내용만 AI(Anthropic)에 보내요 · 하루 {COMPANY_INFO_DAILY_LIMIT}번까지
+                공고 내용만 AI(Anthropic)에 보내요. 하루 {COMPANY_INFO_DAILY_LIMIT}번까지 쓸 수 있어요.
               </p>
             </>
           ) : (
             <p className="break-keep text-label text-text-secondary">
-              잡코리아·사람인·원티드 공고 주소가 있어야 정리할 수 있어요. &ldquo;정보 수정&rdquo;에서 공고 주소를 넣어 주세요.
+              잡코리아, 사람인, 원티드 공고 주소가 있어야 정리할 수 있어요. &ldquo;정보 수정&rdquo;에서 공고 주소를 넣어 주세요.
             </p>
           )}
           {(pageReference || info) && (
@@ -175,6 +176,16 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
 const SUMMARY_CLASS =
   'flex cursor-pointer list-none items-center justify-between gap-2 rounded-md px-3 py-2 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus-ring [&::-webkit-details-marker]:hidden';
 const LINK_CLASS = 'text-text-brand underline underline-offset-2';
+
+// 공고 원문 인용
+function QuoteBlock({ quote, className }: { quote: string; className?: string }) {
+  return (
+    <blockquote className={clsx('border-l-2 border-line-divider pl-3 text-label text-text-secondary', className)}>
+      <span className="sr-only">공고 원문: </span>
+      {quote}
+    </blockquote>
+  );
+}
 
 // 결과 (#235): 이 회사는 → 원하는 강점(넣으면 좋은 경험) → 근무 조건. 정보는 꼭 필요한 것만 둔다(사용자 피드백).
 // 판은 흰 바탕 + 얇은 테두리, 강점 줄은 회색으로 구분한다(#229: 회색 판 위 회색 부품은 경계가 사라졌다).
@@ -225,19 +236,21 @@ function CompanyInfoResult({ info, canRegenerate, onRegenerate }: { info: Compan
                     </ul>
                   </div>
                 )}
-                {/* 근거(공고 원문)는 접어 둔다. 기본 details/summary라 키보드·펼침 상태 읽기를 브라우저가 맡는다 */}
-                <details className="group">
-                  <summary className={`${SUMMARY_CLASS} -mx-3 -mb-1 text-caption font-normal text-text-secondary`}>
-                    <span>
-                      <span className="group-open:hidden">공고 근거 보기</span>
-                      <span className="hidden group-open:inline">공고 근거 접기</span>
-                    </span>
-                  </summary>
-                  <blockquote className="mt-2 border-l-2 border-line-divider pl-3 text-label text-text-secondary">
-                    <span className="sr-only">공고 원문: </span>
-                    {item.quote}
-                  </blockquote>
-                </details>
+                {/* 근거(공고 원문)는 접어 둔다. 기본 details/summary라 키보드·펼침 상태 읽기를 브라우저가 맡는다.
+                    설명(원하는 모습·경험)이 빈 예전 결과는 접힌 버튼만 남지 않게 근거를 펼쳐 보여 준다(#322) */}
+                {item.wants || item.experiences.length > 0 ? (
+                  <details className="group">
+                    <summary className={`${SUMMARY_CLASS} -mx-3 -mb-1 text-caption font-normal text-text-secondary`}>
+                      <span>
+                        <span className="group-open:hidden">공고 근거 보기</span>
+                        <span className="hidden group-open:inline">공고 근거 접기</span>
+                      </span>
+                    </summary>
+                    <QuoteBlock quote={item.quote} className="mt-2" />
+                  </details>
+                ) : (
+                  <QuoteBlock quote={item.quote} />
+                )}
               </li>
             ))}
           </ul>
@@ -283,7 +296,7 @@ function CompanyInfoResult({ info, canRegenerate, onRegenerate }: { info: Compan
       {/* ── 아래: 기준 시각·AI 안내·다시 만들기 ── */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-caption font-normal text-text-secondary">
-          {formatKoreanDateTime(info.createdAt)} 기준{info.fromImage ? ' · 이미지에서 읽은 내용' : ''} · AI가 정리한 내용이라 틀릴 수 있어요.
+          {formatKoreanDateTime(info.createdAt)}에 AI가 {info.fromImage ? '공고 이미지를 읽고 ' : ''}정리했어요. 틀린 내용이 있을 수 있어요.
         </p>
         {canRegenerate && (
           <Button variant="secondary" size="sm" onClick={onRegenerate}>

@@ -1,9 +1,10 @@
 import Image from 'next/image';
 import { clsx } from 'clsx';
-import { ProcessDots } from '@/components/process/ProcessTrack';
 import { Badge } from '@/components/ui/Badge';
+import { StepDots } from '@/components/ui/StepTrack';
 import { STATUS_INFO } from '@/constants/status';
 import type { Application, Platform } from '@/types/application';
+import { getTodayInKorea } from '@/utils/applicationDeadline';
 import { daysBetween, toDateOnly } from '@/utils/applicationStats';
 import { getCurrentStepIndex, getProcessSteps } from '@/utils/hiringProcess';
 import { getRejectedAfterLabel } from '@/utils/statusHistory';
@@ -11,7 +12,6 @@ import { getRejectedAfterLabel } from '@/utils/statusHistory';
 interface ApplicationCardContentProps {
   application: Application;
   isDuplicate?: boolean;
-  today: string;
 }
 
 const SITE_ICON: Record<Exclude<Platform, 'manual'>, string> = {
@@ -34,7 +34,7 @@ function ProcessLine({ application }: { application: Application }) {
   const order = `${index + 1}/${steps.length}`;
   return (
     <div className="mt-2 flex min-w-0 flex-col gap-1">
-      <ProcessDots total={steps.length} currentIndex={index} />
+      <StepDots total={steps.length} currentIndex={index} />
       <p className="flex min-w-0 items-baseline gap-1 text-caption tabular-nums">
         {name !== STATUS_INFO[application.status].label && <span className="truncate font-semibold text-text-brand-strong">{name}</span>}
         <span className="shrink-0 font-normal text-text-secondary">{order}</span>
@@ -63,7 +63,9 @@ function nextTag(application: Application, today: string): { label: string; isTo
 // 표시는 한 개만: 중복 지원(지원일 줄 오른쪽 빨간 뱃지) > 가까운 면접·마감 D-day > 어디서 탈락했는지(#283) > 마감 자동 탈락.
 // D-day와 자동 탈락은 뱃지 대신 지원일 아래 왼쪽 정렬 글자 한 줄로 둔다(#215). 칸반 열이 좁아(카드 안쪽 약 120px)
 // '마감 D-37' 뱃지가 지원일 줄에 들어가지 못하고 혼자 다음 줄 오른쪽으로 떨어져 보였기 때문이다. D-DAY만 주황 글자로 강조한다.
-export function ApplicationCardContent({ application, isDuplicate = false, today }: ApplicationCardContentProps) {
+export function ApplicationCardContent({ application, isDuplicate = false }: ApplicationCardContentProps) {
+  // 오늘 날짜는 공유 상태가 아니라 시계 값이라 쓰는 이 자리에서 구한다(#306). 위에서 넘겨받지 않는다.
+  const today = getTodayInKorea();
   const { company, position, platform, appliedAt, statusSource, status } = application;
   const isClosed = status === 'offer' || status === 'rejected' || status === 'canceled';
   const tag = isClosed ? null : nextTag(application, today);

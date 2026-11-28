@@ -73,7 +73,7 @@ export function SummaryCard({ today, overview, stage, nextEvent, platformCounts,
                 {nextEvent.daysLeft === 0 ? '이 있어요' : '이에요'}
               </span>
               {/* 마리골드는 오늘·D-day에만 쓴다 */}
-              {nextEvent.daysLeft === 0 ? <Badge tone="today">D-DAY</Badge> : <span className="tabular-nums">· D-{nextEvent.daysLeft}</span>}
+              {nextEvent.daysLeft === 0 ? <Badge tone="today">D-DAY</Badge> : <Badge>D-{nextEvent.daysLeft}</Badge>}
             </p>
           )
         )}
@@ -98,7 +98,7 @@ export function SummaryCard({ today, overview, stage, nextEvent, platformCounts,
           return (
             <span key={platform}>
               {' · '}
-              <a href={page.url} target="_blank" rel="noopener noreferrer" className={textLinkClassName('quiet', 'text-text-secondary')}>
+              <a href={page.url} target="_blank" rel="noopener noreferrer" className={textLinkClassName('quiet', 'whitespace-nowrap text-text-secondary')}>
                 {label} {platformCounts[platform]}
                 <span className="sr-only">건 저장됨, {page.label} (새 탭에서 열림)</span>
               </a>
