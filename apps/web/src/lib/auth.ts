@@ -71,6 +71,18 @@ export async function resendSignUpEmail(email: string): Promise<{ error: AuthErr
   return { error };
 }
 
+// 서버의 최신 사용자 이메일과 바꾸는 중인 이메일(확인 전). 브라우저에 저장된 세션의 이메일은 토큰을 새로 받을 때까지
+// 예전 값이라, 다른 탭·기기에서 확인 링크를 눌렀어도 새로고침만으로는 바뀌지 않는다. 계정 화면은 이것으로 보여 준다(#314).
+export async function getLatestEmail(): Promise<{ email: string | null; pendingEmail: string | null }> {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) return { email: null, pendingEmail: null };
+    return { email: data.user.email ?? null, pendingEmail: data.user.new_email ?? null };
+  } catch {
+    return { email: null, pendingEmail: null };
+  }
+}
+
 // 이메일 변경 요청 — Supabase가 새(설정에 따라 기존도) 이메일로 확인 메일을 보내고,
 // 확인 전까지는 실제 이메일이 바뀌지 않는다 (docs/AUTH.md §6.5.3).
 export async function updateEmail(email: string): Promise<{ error: AuthError | null }> {
