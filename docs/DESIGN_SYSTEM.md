@@ -89,6 +89,14 @@
 - 기기 고유색·모서리는 화면 역할 색과 섞지 않게 목업 전용 토큰으로 둔다: 색 `device-edge`·`device-steel`·`device-shade`·`device-glass`·`device-hinge`·`device-hinge-light`·`device-base`, 모서리 `rounded-device-phone`(46)·`device-phone-bezel`(45)·`device-phone-screen`(41)·`device-lid`(24)·`device-lid-inner`(23). 디자인 시스템 원본에는 없는 코드 전용 토큰이다.
 - 문구는 해요체. 입력 검사 문구(`utils/authValidation.ts`)도 "~해 주세요"로 띄어 쓴다.
 
+## 문구와 안내 (2026-11-28 사용자 결정, #314·#324)
+
+- 안내·오류는 한 번에 하나만 보인다. 칸 아래 안내가 보이는 동안 아래 오류·결과 상자는 숨기고, 고치기 시작하면 지난 결과를 지운다.
+- 상자 안 글자는 상자 가운데에 온다(`flex min-h-12 items-center`).
+- 가운뎃점(·)은 목록 한 줄에서 짧은 사실 둘을 나눌 때(예: "12.01 화 · 면접")와 링크 사이에만 쓴다. 문장과 요약 줄에서는 쉼표, "와/과", 괄호, 간격으로 나눈다.
+- "보여드려요", "정리해 드려요" 같은 서비스 말투 대신 "보여요", "정리해요"처럼 짧게 쓴다.
+- 한글 문장은 낱말 중간에서 줄이 바뀌지 않게 `break-keep`, 이름과 숫자처럼 붙어야 하는 글은 `whitespace-nowrap`.
+
 ## 간격과 크기
 
 - `p-3`, `gap-2`처럼 정수 Tailwind 단위만 쓴다(1 = 4px). `h-4.5`·`gap-1.5` 같은 소수 클래스와 `h-[18px]` 같은 임의 크기는 `check:ui`가 막는다.
