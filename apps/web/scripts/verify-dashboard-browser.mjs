@@ -52,10 +52,14 @@ try {
   const dayButton = calendar.getByRole('button').first();
   const dayLabel = await dayButton.getAttribute('aria-label');
   assert.match(dayLabel, /^\d+월 \d+일 .요일(, 오늘)?, 지원 \d+곳/);
+  // 목록이 열려 줄이 높아져도 주간 지원 막대 높이는 그대로, 남는 공간은 위아래 여백(#320)
+  const barArea = page.locator('[aria-labelledby="weekly-title"] .grid').first();
+  const barHeightBefore = (await barArea.boundingBox()).height;
   await dayButton.click();
   assert.equal(await dayButton.getAttribute('aria-pressed'), 'true');
   const list = page.getByRole('region', { name: /지원 \d+곳$/ });
   await list.waitFor();
+  assert(Math.abs((await barArea.boundingBox()).height - barHeightBefore) < 0.5, '달력 목록을 열어도 막대 높이 그대로');
   await scan('달력 날짜 목록');
   await list.getByRole('button', { name: /기록·상세 보기$/ }).first().click();
   await page.getByRole('dialog').waitFor();
@@ -70,11 +74,22 @@ try {
   await page.getByRole('button', { name: '이번 달', exact: true }).click();
   assert.equal(await monthTitle.textContent(), before);
 
-  // 다가오는 일정: 펼치기
+  // 다가오는 일정: 펼치기. 같은 줄 카드는 늘어나지 않고 펼친 목록이 카드 안에서 스크롤된다(#320)
   const more = page.getByRole('button', { name: /^나머지 \d+건 보기$/ });
   if (await more.count()) {
+    const rowHeights = () => page.evaluate(() => ['upcoming-title', 'weekly-title', 'calendar-title'].map((id) => document.querySelector(`[aria-labelledby="${id}"]`).getBoundingClientRect().height));
+    const before = await rowHeights();
     await more.click();
     await page.getByRole('button', { name: '접기' }).waitFor();
+    const after = await rowHeights();
+    for (let index = 0; index < before.length; index += 1) assert(Math.abs(after[index] - before[index]) < 0.5, `펼쳐도 카드 높이 그대로: ${before} → ${after}`);
+    const list = await page.locator('[aria-labelledby="upcoming-title"] [class*="contain-size"]').evaluate((element) => ({ client: element.clientHeight, scroll: element.scrollHeight }));
+    assert(list.scroll > list.client, '펼친 목록은 카드 안에서 스크롤');
+    // 아래에 더 있으면 끝을 흐리게, 끝까지 내리면 흐림을 없앤다
+    const fade = page.locator('[aria-labelledby="upcoming-title"] [aria-hidden="true"].sticky');
+    await fade.waitFor();
+    await page.locator('[aria-labelledby="upcoming-title"] [class*="contain-size"]').evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
+    await fade.waitFor({ state: 'detached' });
   }
 
   for (const width of [1440, 768, 390]) {
@@ -85,7 +100,7 @@ try {
   }
   await scan('390px');
   assert.deepEqual(pageErrors, []);
-  console.log('PASS 요약 문장·차트 이름·건너뛰기·계정 메뉴 Esc·달력 목록→상세 패널·달 이동·일정 펼치기·3개 너비, 브라우저 예외 0건');
+  console.log('PASS 요약 문장·차트 이름·건너뛰기·계정 메뉴 Esc·달력 목록→상세 패널(막대 높이 그대로)·달 이동·일정 펼치기(카드 높이 그대로)·3개 너비, 브라우저 예외 0건');
 } finally {
   await browser.close();
 }
