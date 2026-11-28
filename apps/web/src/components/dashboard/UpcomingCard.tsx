@@ -103,7 +103,7 @@ export function UpcomingCard({ today, events, onSelect, limit = 4, style }: Upco
         <Button
           variant="text"
           size="sm"
-          className="mt-auto self-start"
+          className="self-start"
           aria-expanded={isExpanded}
           onClick={() => {
             if (!isExpanded) setCollapsedHeight(listRef.current?.getBoundingClientRect().height ?? null);
