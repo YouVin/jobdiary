@@ -115,7 +115,7 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
 
       {/* ── 서류 통과 전 안내 ── */}
       {stage === 'early' && loadState === 'ready' && !info && (
-        <p className="break-keep text-label text-text-secondary">서류 통과로 바꾸면 이 회사가 하는 일과 공고가 원하는 강점을 정리해 드려요.</p>
+        <p className="break-keep text-label text-text-secondary">서류 통과로 바꾸면 이 회사가 하는 일과 공고가 원하는 강점을 정리할 수 있어요.</p>
       )}
 
       {/* ── 만들기: 안내 문구 → 버튼 → 진행·오류 ── */}
@@ -125,15 +125,15 @@ export function CompanyInfoSection({ applicationId, postingUrl, stage }: Company
             <>
               {/* 한글은 단어 중간에서 줄이 끊기지 않게 break-keep (#242 피드백) */}
               <p className="break-keep text-label text-text-primary">
-                {PLATFORM_NAME[pageReference.platform]} 공고를 읽고 회사 소개, 원하는 강점, 근무 조건을 정리해 드려요.
+                {PLATFORM_NAME[pageReference.platform]} 공고를 읽고 회사 소개, 원하는 강점, 근무 조건을 정리해요.
               </p>
               <p className="break-keep text-caption font-normal text-text-secondary">
-                공고 내용만 AI(Anthropic)에 보내요 · 하루 {COMPANY_INFO_DAILY_LIMIT}번까지
+                공고 내용만 AI(Anthropic)에 보내요. 하루 {COMPANY_INFO_DAILY_LIMIT}번까지 쓸 수 있어요.
               </p>
             </>
           ) : (
             <p className="break-keep text-label text-text-secondary">
-              잡코리아·사람인·원티드 공고 주소가 있어야 정리할 수 있어요. &ldquo;정보 수정&rdquo;에서 공고 주소를 넣어 주세요.
+              잡코리아, 사람인, 원티드 공고 주소가 있어야 정리할 수 있어요. &ldquo;정보 수정&rdquo;에서 공고 주소를 넣어 주세요.
             </p>
           )}
           {(pageReference || info) && (
@@ -296,7 +296,7 @@ function CompanyInfoResult({ info, canRegenerate, onRegenerate }: { info: Compan
       {/* ── 아래: 기준 시각·AI 안내·다시 만들기 ── */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-caption font-normal text-text-secondary">
-          {formatKoreanDateTime(info.createdAt)} 기준{info.fromImage ? ' · 이미지에서 읽은 내용' : ''} · AI가 정리한 내용이라 틀릴 수 있어요.
+          {formatKoreanDateTime(info.createdAt)}에 AI가 {info.fromImage ? '공고 이미지를 읽고 ' : ''}정리했어요. 틀린 내용이 있을 수 있어요.
         </p>
         {canRegenerate && (
           <Button variant="secondary" size="sm" onClick={onRegenerate}>

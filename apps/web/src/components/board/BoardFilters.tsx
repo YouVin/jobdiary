@@ -48,13 +48,13 @@ export function BoardFilters({ applications, filters, onChange, visibleCount }: 
             </FilterChip>
           ))}
         </ChipGroup>
-        <FilterChip isSelected={filters.hideClosed} onClick={() => onChange({ ...filters, hideClosed: !filters.hideClosed })} title="합격·탈락·지원 취소를 숨겨요">
+        <FilterChip isSelected={filters.hideClosed} onClick={() => onChange({ ...filters, hideClosed: !filters.hideClosed })} title="합격, 탈락, 지원 취소를 숨겨요">
           끝난 지원 숨기기
         </FilterChip>
       </div>
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-label text-text-secondary">
         <p role="status" aria-atomic="true" className="tabular-nums">
-          {hasFilters ? `${applications.length}건 중 ${visibleCount}건을 보여드려요` : `전체 ${applications.length}건`}
+          {hasFilters ? `${applications.length}건 중 ${visibleCount}건` : `전체 ${applications.length}건`}
         </p>
         {hasFilters && (
           <button

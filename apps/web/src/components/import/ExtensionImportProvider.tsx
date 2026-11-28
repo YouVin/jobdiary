@@ -11,11 +11,9 @@ const ExtensionImportContext = createContext<ExtensionImportState | null>(null);
 
 // 가져오기 결과 한 줄 (해요체 과거형). 새로 넣은 것, 다른 사이트와 겹친 것, 이미 있어서 건너뛴 것을 나눠 말한다.
 export function importSummaryMessage(summary: ImportSummary): string {
-  const parts: string[] = [];
-  if (summary.duplicateCount > 0) parts.push(`다른 사이트와 겹친 ${summary.duplicateCount}건 포함`);
-  if (summary.skippedCount > 0) parts.push(`이미 있던 ${summary.skippedCount}건은 건너뛰었어요`);
-  const head = summary.addedCount > 0 ? `지원 ${summary.addedCount}건을 가져왔어요` : '새로 가져온 지원이 없어요';
-  return parts.length > 0 ? `${head} · ${parts.join(' · ')}` : head;
+  const duplicate = summary.addedCount > 0 && summary.duplicateCount > 0 ? `(다른 사이트와 겹친 ${summary.duplicateCount}건 포함)` : '';
+  const head = summary.addedCount > 0 ? `지원 ${summary.addedCount}건을 가져왔어요${duplicate}` : '새로 가져온 지원이 없어요';
+  return summary.skippedCount > 0 ? `${head}. 이미 있던 ${summary.skippedCount}건은 건너뛰었어요` : head;
 }
 
 // 익스텐션 가져오기 상태를 보호 화면(홈·지원 보드·계정) 전체가 함께 쓴다 (#203).

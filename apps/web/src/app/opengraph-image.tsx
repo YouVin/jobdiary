@@ -49,7 +49,7 @@ export default async function OpengraphImage() {
               <span>여기저기 지원한 회사,</span>
               <span style={{ color: color('text', 'brand') }}>취준일기 한곳에 모아요</span>
             </div>
-            <span style={{ fontSize: 28, fontWeight: 600, color: color('text', 'secondary') }}>사람인 · 잡코리아 · 원티드 지원 내역을 날짜별로</span>
+            <span style={{ fontSize: 28, fontWeight: 600, color: color('text', 'secondary') }}>사람인, 잡코리아, 원티드 지원 내역을 날짜별로</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <span style={{ display: 'flex', padding: '8px 18px', borderRadius: 999, background: color('selected'), color: color('text', 'brand-strong'), fontSize: 24, fontWeight: 700 }}>무료</span>

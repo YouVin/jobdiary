@@ -75,7 +75,7 @@ export function ProcessSection({ application, track }: ProcessSectionProps) {
             if (error) setError(null);
           }}
           placeholder={EXAMPLE}
-          hint="단계 사이를 > 로 나눠 주세요. 이름에 맞춰 서류·테스트·면접·최종으로 나눠 셉니다."
+          hint="단계 사이를 > 로 나눠 주세요. 이름에 맞춰 서류, 테스트, 면접, 최종으로 나눠 세요."
           error={error}
           readOnly={isSaving}
           autoFocus

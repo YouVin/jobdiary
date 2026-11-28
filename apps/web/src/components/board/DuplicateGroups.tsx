@@ -86,7 +86,7 @@ export function DuplicateGroups({ groups, totalCount, onOpen }: DuplicateGroupsP
                   </div>
                 </div>
                 <Badge tone="danger">
-                  {group.platforms.length}개 사이트 · {group.applications.length}건
+                  {group.platforms.length}개 사이트에서 {group.applications.length}건
                 </Badge>
               </div>
               <ul className="pl-11">

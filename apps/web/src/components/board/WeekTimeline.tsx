@@ -33,7 +33,7 @@ export function weekTitle(offset: number): string {
 
 function dayHeading(day: WeekDay): string {
   const base = `${Number(day.date.slice(5, 7))}월 ${day.dayOfMonth}일 ${WEEKDAYS[day.weekdayIndex]}요일`;
-  return day.isToday ? `${base} · 오늘` : base;
+  return day.isToday ? `${base}, 오늘` : base;
 }
 
 // 지원 보드 주간 일정 (#204, 캔버스 주간 시안).
@@ -125,7 +125,7 @@ export function WeekTimeline({ timeline, today, offset, onOffsetChange, onSelect
           {eventDays.length === 0 ? (
             <EmptyState
               title={`${weekTitle(offset)}에는 잡힌 일정이 없어요`}
-              description="면접일이나 공고 마감일을 기록하면 날짜별로 보여드려요"
+              description="면접일이나 공고 마감일을 넣으면 날짜별로 보여요"
             />
           ) : (
             <div className="flex flex-col gap-4 border-t border-line-divider pt-3">

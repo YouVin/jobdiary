@@ -27,7 +27,7 @@ try {
   await scan(page, '소식 없는 지원 정리');
 
   // 하나는 남기고 나머지를 탈락으로
-  const kept = (await boxes.first().locator('xpath=..').textContent()).split(' · ')[0];
+  const kept = await boxes.first().locator('xpath=..').locator('span.font-semibold').first().textContent(); // 회사 이름(굵은 글자)
   await boxes.first().uncheck();
   await dialog.getByRole('button', { name: `${staleCount - 1}건 탈락으로 옮기기` }).click();
   await dialog.waitFor({ state: 'detached' });

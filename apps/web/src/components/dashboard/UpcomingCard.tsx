@@ -62,7 +62,7 @@ export function UpcomingCard({ today, events, onSelect, limit = 4, style }: Upco
       <CardHeader title="다가오는 일정" titleId="upcoming-title" meta={`${events.length}건`} />
       {/* ── 기간별(오늘·이번 주·그 뒤) 일정 목록, 없으면 빈 상태 ── */}
       {events.length === 0 ? (
-        <EmptyState title="다가오는 일정이 없어요" description="면접일이나 공고 마감일을 기록하면 여기에 보여드려요" />
+        <EmptyState title="다가오는 일정이 없어요" description="면접일이나 공고 마감일을 넣으면 여기에 보여요" />
       ) : (
         <div
           ref={listRef}

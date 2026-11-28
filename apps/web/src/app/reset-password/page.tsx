@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: '비밀번호 재설정', robots: PRI
 export default function ResetPasswordPage() {
   return (
     <AuthShell mobileIntro={false}>
-      <AuthHeading title="비밀번호 재설정" description="가입한 이메일을 입력하면 재설정 링크를 보내 드려요." />
+      <AuthHeading title="비밀번호 재설정" description="가입한 이메일을 입력하면 재설정 링크를 보내요." />
       <ResetPasswordForm />
     </AuthShell>
   );
