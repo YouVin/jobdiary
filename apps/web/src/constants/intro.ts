@@ -10,8 +10,8 @@ export const INTRO_MOBILE_NOTE = '지원 내역 가져오기는 PC 크롬에서 
 
 // 첫 화면 기기 속 실제 홈 화면(예시 데이터). scripts/capture-intro-screens.mjs로 다시 찍는다.
 export const INTRO_HERO = {
-  desktop: { src: '/intro/hero-desktop-v2.png', width: 1920, height: 1224 },
-  mobile: { src: '/intro/hero-mobile-v2.png', width: 780, height: 1660 },
+  desktop: { src: '/intro/hero-desktop-v3.png', width: 1920, height: 1224 },
+  mobile: { src: '/intro/hero-mobile-v3.png', width: 780, height: 1660 },
 };
 
 export interface IntroStep {
@@ -52,30 +52,32 @@ export const INTRO_FEATURES: IntroFeature[] = [
     label: '홈',
     title: '지금 어디까지 왔는지 한눈에',
     points: ['이번 주 지원 수와 서류 통과율', '지원 → 서류 통과 → 면접 → 합격까지 지나온 단계', '다가오는 면접과 마감 일정, 지원 달력'],
-    image: { src: '/intro/home-v2.png', width: 2400, height: 1588, alt: '취준일기 홈: 한 문장 요약과 숫자 4칸, 전형 여정과 지나온 단계, 지원 경로 도넛 차트' },
-    mobileImage: { src: '/intro/home-mobile-v2.png', width: 780, height: 2200, alt: '휴대폰의 취준일기 홈: 한 문장 요약과 숫자 4칸, 전형 여정' },
+    image: { src: '/intro/home-v3.png', width: 2400, height: 1588, alt: '취준일기 홈: 한 문장 요약과 숫자 4칸, 전형 여정과 지나온 단계, 지원 경로 도넛 차트' },
+    mobileImage: { src: '/intro/home-mobile-v3.png', width: 780, height: 2200, alt: '휴대폰의 취준일기 홈: 한 문장 요약과 숫자 4칸, 전형 여정' },
   },
   {
     key: 'board',
     label: '지원 보드',
     title: '회사마다 지금 어느 단계인지',
     points: ['카드마다 그 회사의 지금 전형 단계(코딩테스트 2/5)', '요일별 면접과 마감 일정, 단계별 보드', '소식 없는 지원 정리와 같은 공고 중복 지원 찾기'],
-    image: { src: '/intro/board-v2.png', width: 2400, height: 1520, alt: '취준일기 지원 보드: 단계별 칸반 보드, 카드마다 회사별 전형 단계(예: 2차 면접 4/5)' },
-    mobileImage: { src: '/intro/board-mobile-v2.png', width: 780, height: 1196, alt: '휴대폰의 결과 기다리는 중: 회사마다 다른 전형 단계(서류전형 → 코딩테스트 → 1차 면접…)와 지금 단계' },
+    image: { src: '/intro/board-v3.png', width: 2400, height: 1520, alt: '취준일기 지원 보드: 단계별 칸반 보드, 카드마다 회사별 전형 단계(예: 2차 면접 4/5)' },
+    mobileImage: { src: '/intro/board-mobile-v3.png', width: 780, height: 1196, alt: '휴대폰의 결과 기다리는 중: 회사마다 다른 전형 단계(서류전형 → 코딩테스트 → 1차 면접…)와 지금 단계' },
   },
   {
     key: 'detail',
     label: '지원 상세',
     title: '회사마다 다른 전형 절차와 지나온 기록',
     points: ['공고에 적힌 전형 절차로 회사마다 단계를 만들어요', '공고에서 회사가 원하는 강점을 정리해요(하루 5번)', '받은 질문, 내 답, 아쉬운 점을 적는 면접 후기 틀', '단계가 바뀐 날과 내가 남긴 기록을 한 줄로'],
-    image: { src: '/intro/detail-v2.png', width: 1040, height: 3968, alt: '지원 상세 패널: 서류전형부터 최종 합격까지 공고의 전형 절차 트랙, 회사 정보와 원하는 강점, 면접 후기가 담긴 지나온 기록' },
+    image: { src: '/intro/detail-v3.png', width: 1040, height: 3968, alt: '지원 상세 패널: 서류전형부터 최종 합격까지 공고의 전형 절차 트랙, 회사 정보와 원하는 강점, 면접 후기가 담긴 지나온 기록' },
   },
   {
     key: 'recap',
     label: '이번 달 돌아보기',
-    title: '한 달을 한 장으로 남겨요',
-    points: ['이번 달 지원, 서류 통과, 면접 숫자를 이미지로 저장', '휴대폰에서는 바로 공유할 수 있어요', '회사 이름은 이미지에 넣지 않아요'],
-    image: { src: '/intro/recap-v2.png', width: 1080, height: 1350, alt: '이번 달 돌아보기 이미지: 이번 달 지원 수와 서류 통과, 면접, 합격, 기록 숫자' },
+    // #326: 앱 안에서 보는 월간 화면(#317). 예전에는 공유 이미지를 보여 줬다
+    title: '한 달을 달력 한 장으로 돌아봐요',
+    points: ['지원한 날과 서류 통과, 면접, 합격 소식을 달력에서', '지원, 서류 통과, 면접, 남긴 기록 수를 지난달과 비교', '이 달을 한 줄로 남기고, 필요하면 이미지로 저장'],
+    image: { src: '/intro/recap-v3.png', width: 1800, height: 1444, alt: '이번 달 돌아보기 창: 지원한 날과 소식이 표시된 달력, 지난달과 비교한 숫자 네 칸, 최근 소식 목록, 이번 달 한 줄' },
+    mobileImage: { src: '/intro/recap-mobile-v3.png', width: 780, height: 1394, alt: '휴대폰의 이번 달 돌아보기: 지원한 날과 소식이 표시된 달력, 지난달과 비교한 숫자 네 칸' },
   },
 ];
 
