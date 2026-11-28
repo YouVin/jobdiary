@@ -19,8 +19,9 @@ const errors = [];
 async function newPage({ account = user } = {}) {
   const context = await browser.newContext({ locale: 'ko-KR', timezoneId: 'Asia/Seoul', reducedMotion: 'reduce' });
   await routeSupabase(context);
-  const sent = { passwordLogins: [], userUpdates: [], recover: [], deleted: 0 };
+  const sent = { passwordLogins: [], loginEmails: [], userUpdates: [], recover: [], deleted: 0, consoleErrors: [] };
   let pendingEmail = null; // 이메일 변경을 요청하면 확인 전까지 서버 사용자 정보에 new_email로 남는다
+  const server = { email: null }; // 다른 곳에서 이메일 변경을 확인해 서버 이메일만 바뀐 상황(세션 이메일은 그대로)
   await context.route('https://*.supabase.co/auth/v1/user*', async (route) => {
     const request = route.request();
     if (request.method() === 'PUT') sent.userUpdates.push(request.postDataJSON());
@@ -29,11 +30,12 @@ async function newPage({ account = user } = {}) {
       return route.fulfill({ status: 422, contentType: 'application/json', body: JSON.stringify({ code: 422, error_code: 'email_exists', msg: 'A user with this email address has already been registered' }) });
     }
     if (request.method() === 'PUT' && request.postDataJSON().email) pendingEmail = request.postDataJSON().email;
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ...account, new_email: pendingEmail }) });
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ...account, email: server.email ?? account.email, new_email: pendingEmail }) });
   });
   await context.route('https://*.supabase.co/auth/v1/token?grant_type=password', async (route) => {
     const body = route.request().postDataJSON();
     sent.passwordLogins.push(body.password);
+    sent.loginEmails.push(body.email);
     if (body.password !== CURRENT_PASSWORD) {
       return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ code: 'invalid_credentials', error_code: 'invalid_credentials', msg: 'Invalid login credentials' }) });
     }
@@ -50,15 +52,21 @@ async function newPage({ account = user } = {}) {
   });
   const page = await context.newPage();
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') sent.consoleErrors.push(message.text());
+  });
   page.setDefaultTimeout(15000);
-  return { context, page, sent };
+  return { context, page, sent, server };
 }
 
 try {
   // ── 1) 비밀번호 변경: 지금 비밀번호가 틀리면 안내, 맞으면 바꾸고 알림 ──
   {
-    const { context, page, sent } = await newPage();
+    const { context, page, sent, server } = await newPage();
     await signIn(page, origin, '/account');
+    // 다른 기기에서 이메일 변경을 마쳐 서버 이메일만 바뀐 상태: 다시 확인은 서버 이메일로 해야 한다(#314)
+    await page.waitForLoadState('networkidle'); // 이메일 변경 카드가 처음 정보를 다 받은 뒤에 바꾼다
+    server.email = 'changed@example.test';
     const form = page.locator('[aria-labelledby="change-password-title"]');
     const alerts = form.locator('p[role="alert"]:not(.sr-only), [role="alert"] >> visible=true');
     // 지금 비밀번호와 같은 새 비밀번호: 요청 없이 칸 아래 안내
@@ -75,6 +83,7 @@ try {
     await form.getByRole('button', { name: '비밀번호 바꾸기' }).click();
     await form.getByText('지금 비밀번호가 맞지 않아요.').waitFor();
     assert.equal(sent.userUpdates.length, 0, '틀리면 바꾸지 않는다');
+    assert.equal(sent.consoleErrors.filter((text) => text.includes('[change-password]')).length, 0, '틀린 비밀번호는 오류 기록이 아니다');
     // 그 상태에서 확인 칸을 다르게 고치면 지난 오류는 사라지고 칸 아래 안내 하나만
     await form.getByLabel('새 비밀번호 확인', { exact: true }).fill('new-pass-124');
     await form.getByText('비밀번호가 서로 달라요', { exact: false }).waitFor();
@@ -87,8 +96,10 @@ try {
     await form.getByRole('status').filter({ hasText: '비밀번호를 바꿨어요. 다음 로그인부터 새 비밀번호를 써 주세요.' }).waitFor();
     assert.equal(await form.getByLabel('지금 비밀번호', { exact: true }).inputValue(), '', '칸은 비운다');
     assert.deepEqual(sent.passwordLogins, ['wrong-pass', CURRENT_PASSWORD], '지금 비밀번호로 다시 확인한 뒤');
+    assert.deepEqual(sent.loginEmails, ['changed@example.test', 'changed@example.test'], '세션의 예전 이메일이 아니라 서버 이메일로 확인');
+    server.email = null;
     assert.deepEqual(sent.userUpdates.map((body) => body.password), ['new-pass-123']);
-    console.log('PASS 비밀번호 변경: 지금 비밀번호 틀림 안내·바꾸지 않음, 맞으면 다시 확인 → 새 비밀번호 저장·버튼 아래 안내·칸 비움');
+    console.log('PASS 비밀번호 변경: 지금 비밀번호 틀림 안내·바꾸지 않음, 맞으면 서버 이메일로 다시 확인 → 새 비밀번호 저장·버튼 아래 안내·칸 비움, 틀린 비밀번호는 오류 기록 없음');
 
     // ── 2) 이메일 변경: 새 이메일로 요청하고 확인 메일 안내 ──
     const emailForm = page.locator('[aria-labelledby="change-email-title"]');
