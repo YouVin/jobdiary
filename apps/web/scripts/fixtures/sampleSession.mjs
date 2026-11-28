@@ -73,6 +73,8 @@ export const companyInfoStore = new Map();
 export const companyInfoRequests = [];
 export const feedbackRequests = [];
 export const acquisitionRequests = []; // 가입 경로(#290)
+export const monthlyNotes = new Map(); // 이번 달 한 줄(#316): 달(YYYY-MM) → 글
+export const monthlyNoteWrites = [];
 export const processRequests = []; // 전형 절차 AI(#295)
 // 공고 이미지만 있는 공고에 서버가 돌려줄 절차(실제 AI 대신)
 export const SAMPLE_PROCESS = [
@@ -160,6 +162,22 @@ export async function routeSupabase(context) {
       const { p_message: message, p_page: page } = route.request().postDataJSON();
       feedbackRequests.push({ message, page });
       return send(!message.includes('[한도]'));
+    }
+    // 이번 달 한 줄(#316): 달마다 하나. 읽기·쓰기(upsert)·지우기
+    if (url.pathname === '/rest/v1/monthly_notes') {
+      const method = route.request().method();
+      const month = url.searchParams.get('month')?.replace(/^eq\./, '');
+      if (method === 'GET') return send(monthlyNotes.has(month) ? [{ note: monthlyNotes.get(month) }] : []);
+      if (method === 'DELETE') {
+        monthlyNotes.delete(month);
+        monthlyNoteWrites.push({ month, note: null });
+        return route.fulfill({ status: 204 });
+      }
+      const body = route.request().postDataJSON();
+      const row = Array.isArray(body) ? body[0] : body;
+      monthlyNotes.set(row.month, row.note);
+      monthlyNoteWrites.push({ month: row.month, note: row.note });
+      return route.fulfill({ status: 201, contentType: 'application/json', body: '[]' });
     }
     // 전형 절차(#295): 공고 이미지만 있는 공고를 AI 대신 예시 절차로 답한다
     if (url.pathname === '/functions/v1/hiring-process') {
