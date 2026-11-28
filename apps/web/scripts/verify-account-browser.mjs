@@ -106,12 +106,13 @@ try {
     await emailForm.getByRole('button', { name: '확인 메일 보내기' }).click();
     await emailForm.getByText(/확인 메일을 보냈어요/).waitFor();
     assert.equal(sent.userUpdates.at(-1).email, 'new@example.test');
-    // 확인 전인 변경은 지금 이메일 아래에 남는다(새로고침해도)
-    await emailForm.getByText('로 바꾸는 중이에요', { exact: false }).waitFor();
+    // 보낸 직후에는 결과 상자 하나만(같은 말을 두 번 하지 않게), 새로고침하면 지금 이메일 아래 "바꾸는 중" 한 줄만
+    await page.waitForTimeout(500);
+    assert.equal(await emailForm.getByText('로 바꾸는 중이에요', { exact: false }).count(), 0, '보낸 직후에는 결과 상자만');
     await page.reload();
-    await emailForm.getByText('new@example.test', { exact: false }).waitFor();
-    await emailForm.getByText('로 바꾸는 중이에요', { exact: false }).waitFor();
-    console.log('PASS 이메일 변경: 이미 가입된 이메일 안내, 같은 이메일은 요청 없이 안내, 새 이메일 요청·확인 메일 안내, 바꾸는 중인 이메일 표시(새로고침 뒤에도)');
+    await emailForm.getByText('new@example.test로 바꾸는 중이에요', { exact: false }).waitFor();
+    assert.equal(await emailForm.getByText(/확인 메일을 보냈어요/).count(), 0, '새로고침 뒤에는 바꾸는 중 한 줄만');
+    console.log('PASS 이메일 변경: 이미 가입된 이메일 안내, 같은 이메일은 요청 없이 안내, 새 이메일 요청·결과 상자 하나, 새로고침 뒤 바꾸는 중인 이메일 한 줄');
 
     // ── 3) 회원 탈퇴: 확인 문구 → 탈퇴 → 로그아웃 → 로그인 화면 안내 ──
     const deleteForm = page.locator('[aria-labelledby="delete-account-title"]');

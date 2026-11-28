@@ -74,8 +74,8 @@ export function ChangeEmailSection() {
         setErrorMessage(changeEmailErrorMessage(error.message ?? '', error.code));
         return;
       }
-      // 보안 이메일 변경이 켜져 있으면 지금 이메일로도 확인 메일이 간다(Supabase 기본값). 두 경우 모두 맞는 안내로 쓴다
-      setSuccessMessage(`${newEmail}로 확인 메일을 보냈어요. 메일의 링크를 눌러야 이메일이 바뀌어요. 지금 이메일로도 확인 메일이 오면 그 링크도 눌러 주세요.`);
+      // 보안 이메일 변경(Supabase 기본값)이라 새 이메일과 지금 이메일 두 곳의 링크를 모두 눌러야 바뀐다
+      setSuccessMessage('확인 메일을 보냈어요. 새 이메일과 지금 이메일로 온 링크를 모두 눌러야 바뀌어요.');
       setNewEmail('');
       setEmailTouched(false);
       loadLatest(); // 바꾸는 중인 이메일을 위에 보여 준다
@@ -104,9 +104,10 @@ export function ChangeEmailSection() {
           지금 이메일: <span className="text-text-primary">{currentEmail}</span>
         </p>
         {/* 확인 전인 변경: 메일 링크를 눌러야 바뀐다는 것을 계속 보여 준다(새로고침해도) */}
-        {pendingEmail && (
+        {/* 보낸 직후에는 아래 결과 상자 하나만 보인다(같은 말을 두 번 하지 않게) */}
+        {pendingEmail && !successMessage && (
           <p className="text-label break-keep text-text-secondary">
-            <span className="text-text-primary">{pendingEmail}</span>로 바꾸는 중이에요. 메일의 확인 링크를 눌러야 바뀌고, 지금 이메일로도 확인 메일이 왔다면 그 링크도 눌러 주세요.
+            <span className="text-text-primary">{pendingEmail}</span>로 바꾸는 중이에요. 두 메일함에 온 확인 링크를 모두 눌러야 바뀌어요.
           </p>
         )}
       </div>
