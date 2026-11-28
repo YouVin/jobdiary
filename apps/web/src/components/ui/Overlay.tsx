@@ -23,6 +23,9 @@ interface OverlayProps {
   children: ReactNode;
   closeDisabled?: boolean; // 제출 중처럼 닫으면 안 될 때 Esc·바깥 누름·닫기 버튼을 막는다
   footer?: ReactNode; // 아래 버튼 줄 (주요 버튼은 오른쪽)
+  size?: 'md' | 'lg'; // 가운데 창 폭: md 520px(기본), lg 900px(돌아보기처럼 두 칸, #316)
+  headerAction?: ReactNode; // 제목 오른쪽(닫기 앞)에 둘 조작. 예: 달 넘기기
+  initialFocus?: 'field' | 'container'; // 열 때 첫 입력칸(기본) 또는 창 자체. 읽는 창은 container(휴대폰 키보드가 바로 뜨지 않게)
 }
 
 // 모바일 아래 시트의 손잡이 막대 (디자인 시스템 Overlay, #205). 장식이라 읽지 않는다. 640px 이상에서는 없다.
@@ -30,13 +33,14 @@ function SheetHandle() {
   return <span aria-hidden="true" className="-mt-3 -mb-2 h-1 w-10 shrink-0 self-center rounded-full bg-muted sm:hidden" />;
 }
 
-function OverlayHeader({ titleId, descriptionId, title, description, onClose, closeDisabled }: {
+function OverlayHeader({ titleId, descriptionId, title, description, onClose, closeDisabled, action }: {
   titleId: string;
   descriptionId: string;
   title: string;
   description?: string;
   onClose: () => void;
   closeDisabled: boolean;
+  action?: ReactNode;
 }) {
   return (
     <div className="flex items-start justify-between gap-3">
@@ -50,16 +54,19 @@ function OverlayHeader({ titleId, descriptionId, title, description, onClose, cl
           </p>
         )}
       </div>
-      <IconButton label="닫기" icon="close" onClick={onClose} disabled={closeDisabled} className="-mr-2" />
+      <div className="flex shrink-0 items-center gap-2">
+        {action}
+        <IconButton label="닫기" icon="close" onClick={onClose} disabled={closeDisabled} className="-mr-2" />
+      </div>
     </div>
   );
 }
 
-export function Dialog({ isOpen, onClose, title, description, children, closeDisabled = false, footer }: OverlayProps) {
+export function Dialog({ isOpen, onClose, title, description, children, closeDisabled = false, footer, size = 'md', headerAction, initialFocus = 'field' }: OverlayProps) {
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
-  useDialogFocus(panelRef, { isOpen, onClose, closeDisabled });
+  useDialogFocus(panelRef, { isOpen, onClose, closeDisabled, initialFocus });
   if (!isOpen) return null;
 
   const requestClose = () => {
@@ -77,10 +84,10 @@ export function Dialog({ isOpen, onClose, title, description, children, closeDis
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
-        className="flex max-h-[90dvh] w-full flex-col gap-5 overflow-y-auto rounded-t-xl bg-surface p-6 shadow-lg focus:outline-none motion-safe:animate-rise sm:max-w-130 sm:rounded-xl"
+        className={clsx('flex max-h-[90dvh] w-full flex-col gap-5 overflow-y-auto rounded-t-xl bg-surface p-6 shadow-lg focus:outline-none motion-safe:animate-rise sm:rounded-xl', size === 'lg' ? 'sm:max-w-225' : 'sm:max-w-130')}
       >
         <SheetHandle />
-        <OverlayHeader titleId={titleId} descriptionId={descriptionId} title={title} description={description} onClose={requestClose} closeDisabled={closeDisabled} />
+        <OverlayHeader titleId={titleId} descriptionId={descriptionId} title={title} description={description} onClose={requestClose} closeDisabled={closeDisabled} action={headerAction} />
         <div>{children}</div>
         {footer && <div className="flex justify-end gap-2">{footer}</div>}
       </div>

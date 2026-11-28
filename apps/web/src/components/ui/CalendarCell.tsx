@@ -19,6 +19,7 @@ interface CalendarCellProps {
   controls?: string; // 버튼이 여닫는 목록 id
   tooltip?: ReactNode; // 마우스를 올리거나 키보드로 왔을 때 보이는 말풍선 (장식, 스크린리더는 칸 이름으로 읽는다)
   tooltipAlign?: 'start' | 'center' | 'end'; // 말풍선이 카드 밖으로 나가지 않게 맞출 쪽
+  news?: string; // 그날 생긴 일(예: 서류 통과). 주면 칸 모서리에 작은 점을 찍고 칸 이름에 붙여 읽는다(돌아보기, #316)
 }
 
 const EVENT_CLASS: Record<CalendarEvent, string> = { interview: 'bg-event-interview', deadline: 'bg-event-deadline' };
@@ -26,7 +27,7 @@ const EVENT_LABEL: Record<CalendarEvent, string> = { interview: '면접', deadli
 const TOOLTIP_ALIGN = { start: 'left-0', center: 'left-1/2 -translate-x-1/2', end: 'right-0' } as const;
 
 export function CalendarCell({
-  day, fullLabel, count = 0, isTop = false, isToday = false, events = [], onSelect, isSelected = false, controls, tooltip, tooltipAlign = 'center',
+  day, fullLabel, count = 0, isTop = false, isToday = false, events = [], onSelect, isSelected = false, controls, tooltip, tooltipAlign = 'center', news,
 }: CalendarCellProps) {
   // "11월 18일 수요일, 오늘, 지원 3곳, 면접 1개"처럼 칸 하나를 한 문장으로 읽는다.
   const parts = [fullLabel];
@@ -36,6 +37,7 @@ export function CalendarCell({
     const n = events.filter((event) => event === kind).length;
     if (n > 0) parts.push(`${EVENT_LABEL[kind]} ${n}개`);
   }
+  if (news) parts.push(news);
 
   const className = clsx(
     'group relative flex h-11 w-full flex-col items-center justify-center gap-px rounded-sm text-label leading-tight tabular-nums',
@@ -48,13 +50,16 @@ export function CalendarCell({
 
   const content = (
     <>
+      {/* 그날 생긴 일: 지원한 날은 칸 모서리 작은 점(파랑 칸 위에서도 보이게 흰 테두리), 지원 없는 날은 숫자 자리에 점 */}
+      {news && count > 0 && <span aria-hidden="true" className="absolute top-1 right-1 h-2 w-2 rounded-full bg-action-primary ring-2 ring-surface" />}
       {isToday ? (
         <span className="grid h-7 w-7 place-items-center rounded-full bg-today font-bold text-text-primary">{day}</span>
       ) : (
         <span>{day}</span>
       )}
       {count > 0 && <span className={clsx('text-caption', isTop ? 'text-text-on-color' : 'text-text-brand-strong')}>{count}</span>}
-      {count === 0 && events.length > 0 && (
+      {count === 0 && news && <span aria-hidden="true" className="h-2 w-2 rounded-full bg-action-primary" />}
+      {count === 0 && !news && events.length > 0 && (
         <span className="flex gap-1">
           {events.slice(0, 3).map((event, index) => (
             <span key={`${event}-${index}`} className={clsx('h-2 w-2 rounded-full', EVENT_CLASS[event])} />
