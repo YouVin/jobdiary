@@ -6,7 +6,7 @@ export default function PrivacyPage() {
   return (
     <>
       <h1 className="text-title-1-sm text-text-primary sm:text-title-1">개인정보처리방침</h1>
-      <p>시행일: 2026년 10월 17일 · 최종 수정: 2026년 11월 28일. 취준일기 운영자 및 개인정보 보호 담당자 황유빈은 서비스 제공에 필요한 개인정보를 다음과 같이 처리합니다. 문의·권리 행사: <a href="mailto:dbqls1210@gmail.com" className="text-text-brand underline underline-offset-2">dbqls1210@gmail.com</a></p>
+      <p>시행일: 2026년 10월 17일 · 최종 수정: 2026년 11월 28일. 취준일기 운영자 및 개인정보 보호 담당자 황유빈은 서비스 제공에 필요한 개인정보를 다음과 같이 처리합니다. 문의·권리 행사: <a href="mailto:jobdiary.team@gmail.com" className="text-text-brand underline underline-offset-2">jobdiary.team@gmail.com</a></p>
       <section className="space-y-2">
         <h2 className="text-title-3 text-text-primary">1. 처리 항목과 목적</h2>
         <p>계약 체결·이행을 위해 이메일, 계정 식별자, 인증 정보, 약관 확인 버전·시점을 처리합니다. 이메일 가입의 비밀번호는 인증 제공업체가 해시로 저장하며 운영자가 원문을 조회하지 않습니다. Google 로그인에서는 Google 계정 식별자, 이메일과 제공되는 이름·프로필 이미지 정보를 인증 제공업체가 전달받습니다. Google 비밀번호는 받지 않습니다.</p>

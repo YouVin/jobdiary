@@ -98,7 +98,7 @@ export function ConsentGate() {
         <p role="alert" aria-atomic="true" className={error ? 'text-label text-danger-text' : 'sr-only'}>
           {error}
         </p>
-        <p className="text-label text-text-secondary">계정 삭제 및 개인정보 문의: dbqls1210@gmail.com</p>
+        <p className="text-label text-text-secondary">계정 삭제 및 개인정보 문의: jobdiary.team@gmail.com</p>
       </main>
     </div>
   );
