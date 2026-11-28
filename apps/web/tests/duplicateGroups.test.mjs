@@ -46,8 +46,8 @@ const { isSamePosting, companyKey, getImportDecision } = load('@/utils/duplicate
 
 test('사람인 모집 부문과 잡코리아 공고 제목이 달라도 같은 회사·같은 직무면 한 묶음이다', () => {
   const rows = [
-    row('sa', 'saramin', '2026-11-17', { company: '(주)스테이지파이브', position: '프론트엔드' }),
-    row('jk', 'jobkorea', '2026-11-15', { company: '㈜스테이지파이브', position: '[IT/통신] STAGE FIVE 프론트엔드 개발자 채용', status: 'rejected' }),
+    row('sa', 'saramin', '2026-11-17', { company: '(주)루트랩스', position: '프론트엔드' }),
+    row('jk', 'jobkorea', '2026-11-15', { company: '㈜루트랩스', position: '[IT/통신] ROOT LABS 프론트엔드 개발자 채용', status: 'rejected' }),
   ];
   const groups = getDuplicateGroups(rows);
   assert.equal(groups.length, 1);
@@ -56,9 +56,9 @@ test('사람인 모집 부문과 잡코리아 공고 제목이 달라도 같은 
 });
 
 test('회사 이름의 법인 표기·공백·기호는 비교에서 뺀다', () => {
-  const names = ['(주)스테이지파이브', '㈜ 스테이지파이브', '주식회사 스테이지파이브', '스테이지 파이브(주)', '스테이지파이브'];
-  for (const name of names) assert.equal(companyKey(name), '스테이지파이브', name);
-  assert.notEqual(companyKey('스테이지파이브랩'), companyKey('스테이지파이브'));
+  const names = ['(주)루트랩스', '㈜ 루트랩스', '주식회사 루트랩스', '루트 랩스(주)', '루트랩스'];
+  for (const name of names) assert.equal(companyKey(name), '루트랩스', name);
+  assert.notEqual(companyKey('루트랩스랩'), companyKey('루트랩스'));
 });
 
 test('영어 직무 표기와 말머리·흔한 말은 같은 공고 판단을 막지 않는다', () => {
@@ -79,8 +79,8 @@ test('같은 회사라도 직무가 다르면 다른 공고이고, 회사가 다
 });
 
 test('가져오기는 다른 사이트의 같은 공고만 중복으로 세고, 같은 사이트의 비슷한 공고는 새 지원으로 더한다', () => {
-  const existing = [row('jk', 'jobkorea', '2026-11-15', { company: '㈜스테이지파이브', position: '[IT/통신] STAGE FIVE 프론트엔드 개발자 채용' })];
-  const incoming = (platform, position) => ({ company: '(주)스테이지파이브', position, platform, status: 'applied', appliedAt: '2026-11-17' });
+  const existing = [row('jk', 'jobkorea', '2026-11-15', { company: '㈜루트랩스', position: '[IT/통신] ROOT LABS 프론트엔드 개발자 채용' })];
+  const incoming = (platform, position) => ({ company: '(주)루트랩스', position, platform, status: 'applied', appliedAt: '2026-11-17' });
   assert.equal(getImportDecision(existing, incoming('saramin', '프론트엔드')).type, 'add-duplicate');
   assert.equal(getImportDecision(existing, incoming('jobkorea', '프론트엔드 개발자 경력')).type, 'add');
   assert.equal(getImportDecision(existing, incoming('saramin', '백엔드')).type, 'add');
