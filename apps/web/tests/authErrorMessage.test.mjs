@@ -13,7 +13,9 @@ test('Supabase 영어 오류를 해요체 문구로 바꾸고, 인증 메일 미
     ['Unable to validate email address: invalid format', '이메일 형식을 확인해 주세요.', 'other'],
     ['Email not confirmed', /이메일 인증이 아직/, 'email-not-confirmed'],
     ['For security purposes, you can only request this after 30 seconds', /요청이 너무 잦아요/, 'other'],
-    ['email rate limit exceeded', /요청이 너무 잦아요/, 'other'],
+    // 메일을 보낼 수 없을 때(기본 메일 한도·팀원 아닌 주소)는 Google 로그인을 알린다
+    ['email rate limit exceeded', /Google로 계속하기/, 'other'],
+    ['Email address "a@b.com" cannot be used as it is not authorized', /Google로 계속하기/, 'other'],
     ['Failed to fetch', /인터넷 연결/, 'other'],
     ['TypeError: NetworkError when attempting to fetch resource.', /인터넷 연결/, 'other'],
     ['something unexpected', /요청을 처리하지 못했어요/, 'other'],

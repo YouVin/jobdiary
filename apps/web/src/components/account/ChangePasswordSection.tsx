@@ -5,8 +5,7 @@ import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader } from '@/components/ui/Card';
 import { PasswordField } from '@/components/ui/TextField';
-import { useToast } from '@/components/ui/Toast';
-import { signIn, updatePassword } from '@/lib/auth';
+import { getLatestEmail, signIn, updatePassword } from '@/lib/auth';
 import { captureApplicationSession } from '@/store/applicationStore';
 import { useAuthStore } from '@/store/authStore';
 import { hasPasswordIdentity } from '@/utils/authIdentity';
@@ -15,12 +14,11 @@ import { getConfirmPasswordError, getPasswordError, MIN_PASSWORD_LENGTH } from '
 const FAILED_MESSAGE = '비밀번호를 바꾸지 못했어요. 잠시 뒤 다시 시도해 주세요.';
 
 // 비밀번호 변경 전 현재 비밀번호를 재확인한다 — 세션이 탈취/방치된 상태에서 그대로 비밀번호가
-// 바뀌는 것을 막기 위함이다 (docs/AUTH.md §6.5.2, §6.5.5). 바꾸면 토스트로 알린다(#205).
+// 바뀌는 것을 막기 위함이다 (docs/AUTH.md §6.5.2, §6.5.5). 바꾸면 버튼 아래에 안내를 남긴다(#314, 전에는 토스트 #205).
 export function ChangePasswordSection() {
   const session = useAuthStore((state) => state.session);
   const email = session?.user.email ?? '';
   const canChangePassword = hasPasswordIdentity(session?.user);
-  const showToast = useToast();
   const currentInput = useRef<HTMLInputElement>(null);
   const newInput = useRef<HTMLInputElement>(null);
   const confirmInput = useRef<HTMLInputElement>(null);
@@ -32,11 +30,13 @@ export function ChangePasswordSection() {
   const [isChecked, setIsChecked] = useState(false); // 제출했거나 칸을 벗어난 뒤에만 오류를 보여준다
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // 현재 비밀번호는 "일치하는지"가 아니라 "입력했는지"만 클라이언트에서 확인한다 —
   // 실제 일치 여부는 아래 signIn 재확인이 서버에서 검증한다.
   const currentPasswordError = currentPassword ? null : '지금 비밀번호를 입력해 주세요.';
-  const newPasswordError = getPasswordError(newPassword);
+  // 지금 비밀번호와 같으면 바꿀 것이 없다(Supabase도 거절한다, #314)
+  const newPasswordError = getPasswordError(newPassword) ?? (newPassword && newPassword === currentPassword ? '지금 비밀번호와 다른 비밀번호를 입력해 주세요.' : null);
   const confirmNewPasswordError = getConfirmPasswordError(newPassword, confirmNewPassword);
 
   if (!canChangePassword) {
@@ -48,11 +48,21 @@ export function ChangePasswordSection() {
     );
   }
 
+  // 칸을 고치기 시작하면 지난 결과(오류·완료)는 지운다. 칸 아래 안내가 보이는 동안에는 아래 오류를 숨겨 한 번에 하나만 보인다(#314)
+  const edit = (setter: (value: string) => void, value: string) => {
+    setter(value);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
+  const hasFieldError = isChecked && Boolean(currentPasswordError || newPasswordError || confirmNewPasswordError);
+  const formError = hasFieldError ? null : errorMessage;
+
   // ── 제출: 검사 → 현재 비밀번호 확인 → 변경 ──
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (isSubmitting) return;
     setErrorMessage(null);
+    setSuccessMessage(null);
     setIsChecked(true);
 
     // 첫 오류 칸으로 포커스를 옮겨 오류 문구를 함께 읽게 한다.
@@ -67,10 +77,15 @@ export function ChangePasswordSection() {
 
     setIsSubmitting(true);
     try {
-      const { error: reauthError } = await signIn(email, currentPassword);
+      // 다시 확인할 때는 서버의 최신 이메일로 로그인한다. 세션의 이메일은 토큰을 새로 받을 때까지 예전 값이라,
+      // 이메일을 바꾼 직후에는 맞는 비밀번호로도 실패했다(#314)
+      const { email: latestEmail } = await getLatestEmail();
+      const { error: reauthError } = await signIn(latestEmail ?? email, currentPassword);
       if (!context.isCurrent()) return;
       if (reauthError) {
-        console.error('[change-password] 재확인 실패:', reauthError);
+        // 틀린 비밀번호는 예상한 결과라 오류로 남기지 않는다(개발 서버 터미널에 오류처럼 보였다)
+        const isWrongPassword = reauthError.code === 'invalid_credentials' || /invalid login credentials/i.test(reauthError.message ?? '');
+        if (!isWrongPassword) console.error('[change-password] 재확인 실패:', reauthError);
         setErrorMessage('지금 비밀번호가 맞지 않아요.');
         return;
       }
@@ -79,11 +94,13 @@ export function ChangePasswordSection() {
       if (!context.isCurrent()) return;
       if (updateError) {
         console.error('[change-password] 변경 실패:', updateError);
-        setErrorMessage(FAILED_MESSAGE);
+        const isSame = updateError.code === 'same_password' || /different from the old/i.test(updateError.message ?? '');
+        setErrorMessage(isSame ? '지금 비밀번호와 같은 비밀번호예요. 다른 비밀번호를 입력해 주세요.' : FAILED_MESSAGE);
         return;
       }
 
-      showToast({ message: '비밀번호를 바꿨어요' });
+      // 토스트는 금방 사라져 놓치기 쉬워, 이메일 변경처럼 카드 안 버튼 아래에 남긴다(#314)
+      setSuccessMessage('비밀번호를 바꿨어요. 다음 로그인부터 새 비밀번호를 써 주세요.');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
@@ -108,7 +125,7 @@ export function ChangePasswordSection() {
             id="currentPassword"
             label="지금 비밀번호"
             value={currentPassword}
-            onChange={(event) => setCurrentPassword(event.target.value)}
+            onChange={(event) => edit(setCurrentPassword, event.target.value)}
             autoComplete="current-password"
             aria-required="true"
             error={isChecked ? currentPasswordError : null}
@@ -119,7 +136,7 @@ export function ChangePasswordSection() {
               id="newPassword"
               label="새 비밀번호"
               value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
+              onChange={(event) => edit(setNewPassword, event.target.value)}
               placeholder={`${MIN_PASSWORD_LENGTH}자 이상`}
               autoComplete="new-password"
               aria-required="true"
@@ -133,7 +150,7 @@ export function ChangePasswordSection() {
             id="confirmNewPassword"
             label="새 비밀번호 확인"
             value={confirmNewPassword}
-            onChange={(event) => setConfirmNewPassword(event.target.value)}
+            onChange={(event) => edit(setConfirmNewPassword, event.target.value)}
             placeholder="비밀번호를 한 번 더 입력해 주세요"
             autoComplete="new-password"
             aria-required="true"
@@ -141,8 +158,11 @@ export function ChangePasswordSection() {
           />
         </fieldset>
         {/* ── 오류·제출 버튼 ── */}
-        <p role="alert" className={errorMessage ? 'text-label text-danger-text' : 'sr-only'}>
-          {errorMessage}
+        <p role="alert" className={formError ? 'text-label text-danger-text' : 'sr-only'}>
+          {formError}
+        </p>
+        <p role="status" className={successMessage ? 'flex min-h-12 items-center rounded-md bg-selected px-4 py-3 text-label break-keep text-text-brand-strong' : 'sr-only'}>
+          {successMessage}
         </p>
         <Button type="submit" isLoading={isSubmitting} loadingLabel="바꾸는 중" className="self-start">
           비밀번호 바꾸기
