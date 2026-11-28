@@ -7,7 +7,8 @@ import { routeSupabase, rows, scan, signIn } from './fixtures/sampleSession.mjs'
 const origin = process.env.TEST_ORIGIN || 'http://localhost:3100';
 const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
 const base = rows[0];
-const later = new Date(Date.now() + 2 * 86_400_000).toISOString();
+// 면접은 오늘(한국 날짜) 밤 11시. "며칠 뒤"로 두면 주말에는 다음 주가 되어 이번 주 일정에 없어 실패했다(2026-11-28 토요일).
+const later = `${today}T14:00:00.000Z`;
 rows.splice(0, rows.length,
   // 지금 면접 예정인 지원
   { ...base, id: '00000000-0000-4000-8000-000000000101', company: '(주)가람소프트', position: '프론트엔드 개발자', status: 'interview', interview_date: later, applied_at: `${today}T01:00:00Z`, diary: [] },
